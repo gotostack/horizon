@@ -409,9 +409,16 @@ class FloatingIpManager(network_base.FloatingIpManager):
         self._set_instance_info(fip)
         return FloatingIp(fip)
 
-    def allocate(self, pool):
-        body = {'floatingip': {'floating_network_id': pool,
-                               'tenant_id': self.request.user.project_id}}
+    def update(self, floating_ip_id, **params):
+        update_dict = {'port_id': params.get('port_id', None)}
+        self.client.update_floatingip(floating_ip_id,
+                                      {'floatingip': update_dict})
+
+    def allocate(self, pool, tenant_id=None):
+        body = {'floatingip': {'floating_network_id': pool}}
+        if not tenant_id:
+            tenant_id = self.request.user.project_id
+        body.get('floatingip').update({"tenant_id": tenant_id})
         fip = self.client.create_floatingip(body).get('floatingip')
         self._set_instance_info(fip)
         return FloatingIp(fip)

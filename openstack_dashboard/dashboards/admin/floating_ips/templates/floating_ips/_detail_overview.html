@@ -1,0 +1,45 @@
+{% load i18n sizeformat %}
+{% load url from future %}
+
+<h3>{% trans "Floating IP Overview" %}</h3>
+
+<div class="info row-fluid detail">
+  <h4>{% trans "Floating IP" %}</h4>
+  <hr class="header_rule">
+  <dl class="dl-horizontal">
+    <dt>{% trans "IP" %}</dt>
+    <dd>{{ floating_ip.ip|default:_("None") }}</dd>
+    <dt>{% trans "ID" %}</dt>
+    <dd>{{ floating_ip.id|default:_("None") }}</dd>
+    <dt>{% trans "Status" %}</dt>
+    <dd>{{ floating_ip.status|default:_("None") }}</dd>
+
+
+
+    <dt>{% trans "Project ID" %}</dt>
+    <dd>{{ floating_ip.tenant_id|default:"-" }}</dd>
+
+    <dt>{% trans "Fixed IP" %}</dt>
+    <dd>{{ floating_ip.fixed_ip_address|default:_("None") }}</dd>
+
+    {% url 'horizon:admin:networks:detail' floating_ip.floating_network_id as network_url %}
+    <dt>{% trans "Floating Network ID" %}</dt>
+    <dd><a href="{{ network_url }}">{{ floating_ip.floating_network_id|default:_("None") }}</a></dd>
+
+    <dt>{% trans "Port ID" %}</dt>
+    {% if floating_ip.port_id %}
+    {% url 'horizon:admin:networks:ports:detail' floating_ip.port_id as port_url %}
+    <dd><a href="{{ port_url }}">{{ floating_ip.port_id }}</a></dd>
+    {% else %}
+    <dd>{% trans "No associated port" %}</dd>
+    {% endif %}
+
+    <dt>{% trans "Router ID" %}</dt>
+    {% if floating_ip.router_id %}
+    {% url 'horizon:admin:routers:detail' floating_ip.router_id as router_url %}
+    <dd><a href="{{ router_url }}">{{ floating_ip.router_id }}</a></dd>
+    {% else %}
+    <dd>{% trans "No router" %}</dd>
+    {% endif %}
+  </dl>
+</div>
