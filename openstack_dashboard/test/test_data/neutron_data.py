@@ -33,6 +33,7 @@ def data(TEST):
     TEST.routers_with_rules = utils.TestDataContainer()
     TEST.routers_with_routes = utils.TestDataContainer()
     TEST.q_floating_ips = utils.TestDataContainer()
+    TEST.q_floating_ips_with_instance = utils.TestDataContainer()
     TEST.q_secgroups = utils.TestDataContainer()
     TEST.q_secgroup_rules = utils.TestDataContainer()
     TEST.providers = utils.TestDataContainer()
@@ -433,6 +434,11 @@ def data(TEST):
     TEST.api_q_floating_ips.add(fip_dict)
     TEST.q_floating_ips.add(neutron.FloatingIp(fip_dict))
 
+    fip_with_instance = copy.deepcopy(fip_dict)
+    fip_with_instance.update({'instance_id': None})
+    TEST.q_floating_ips_with_instance.add(
+        neutron.FloatingIp(fip_with_instance))
+
     # Associated (with compute port on 1st network).
     fip_dict = {'tenant_id': '1',
                 'floating_ip_address': '172.16.88.228',
@@ -443,6 +449,11 @@ def data(TEST):
                 'router_id': router_dict['id']}
     TEST.api_q_floating_ips.add(fip_dict)
     TEST.q_floating_ips.add(neutron.FloatingIp(fip_dict))
+
+    fip_with_instance = copy.deepcopy(fip_dict)
+    fip_with_instance.update({'instance_id': "1"})
+    TEST.q_floating_ips_with_instance.add(
+        neutron.FloatingIp(fip_with_instance))
 
     # Security group.
 

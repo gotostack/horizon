@@ -1,4 +1,5 @@
-# Copyright 2012 Nebula, Inc.
+# Copyright 2014 Letv Cloud Computing
+# All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,26 +13,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 
 import horizon
 
-
-class SystemPanels(horizon.PanelGroup):
-    slug = "admin"
-    name = _("System")
-    panels = ('overview', 'metering', 'hypervisors', 'aggregates',
-              'instances', 'volumes', 'flavors', 'images',
-              'networks', 'routers', 'floating_ips', 'defaults',
-              'metadata_defs', 'info')
+from openstack_dashboard.dashboards.admin import dashboard
 
 
-class Admin(horizon.Dashboard):
-    name = _("Admin")
-    slug = "admin"
-    panels = (SystemPanels,)
-    default_panel = 'overview'
-    permissions = ('openstack.roles.admin',)
+class AdminFloatingIps(horizon.Panel):
+    name = _("Floating IPs")
+    slug = 'floating_ips'
+    permissions = ('openstack.roles.admin', 'openstack.services.network', )
 
-
-horizon.register(Admin)
+network_config = getattr(settings, 'OPENSTACK_NEUTRON_NETWORK', {})
+if network_config.get('enable_router', True):
+    dashboard.Admin.register(AdminFloatingIps)
