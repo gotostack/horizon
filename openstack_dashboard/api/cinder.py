@@ -197,8 +197,8 @@ def volume_list(request, search_opts=None):
         return []
 
     # build a dictionary of volume_id -> transfer
-    transfers = {t.volume_id: t
-                 for t in transfer_list(request, search_opts=search_opts)}
+    transfers = dict([(t.volume_id, t)
+                 for t in transfer_list(request, search_opts=search_opts)])
 
     volumes = []
     for v in c_client.volumes.list(search_opts=search_opts):

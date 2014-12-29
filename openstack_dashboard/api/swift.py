@@ -282,6 +282,7 @@ def swift_upload_object(request, container_name, object_name,
     size = 0
     if object_file:
         headers['X-Object-Meta-Orig-Filename'] = object_file.name
+        headers['Content-Length'] = object_file.size
         size = object_file.size
 
     etag = swift_api(request).put_object(container_name,

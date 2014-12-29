@@ -457,8 +457,9 @@ class FloatingIpManager(network_base.FloatingIpManager):
                               config_name='enable_lb',
                               ext_name='lbaas'):
             # Also get the loadbalancer VIPs
-            vip_dict = {v['port_id']: v['name']
-                        for v in self.client.list_vips().get('vips', [])}
+            vip_dict = dict(
+                [(obj.port_id, obj.name)
+                    for obj in self.client.list_vips().get('vips', [])])
         else:
             vip_dict = {}
 
