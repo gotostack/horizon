@@ -208,6 +208,86 @@ horizon.addInitFunction(horizon.instances.init = function () {
     $(modal).find("#id_source_type").change();
   });
 
+  /* Launch instance azure workflow */
+
+  // Role size
+  function update_launch_azure_rolesize_displayed_fields (field) {
+    var $this = $(field),
+      base_type = $this.val();
+
+    $this.closest(".form-group").nextAll().hide();
+
+    switch(base_type) {
+      case "flavor_basic":
+        $("#id_flavor_basic").closest(".form-group").show();
+        break;
+
+      case "flavor_standard":
+        $("#id_flavor_standard").closest(".form-group").show();
+        break;
+    }
+  }
+
+  $document.on('change', '.workflow #id_role_size_type', function (evt) {
+    update_launch_azure_rolesize_displayed_fields(this);
+  });
+
+  $('.workflow #id_role_size_type').change();
+  horizon.modals.addModalInitFunction(function (modal) {
+    $(modal).find("#id_role_size_type").change();
+  });
+
+  // azure image source
+  function update_launch_azure_image_source_displayed_fields (field) {
+    var $this = $(field),
+      base_type = $this.val();
+
+    $this.closest(".form-group").nextAll().hide();
+
+    switch(base_type) {
+      case "windows_image_id":
+        $("#id_windows_image_id").closest(".form-group").show();
+        break;
+
+      case "linux_image_id":
+        $("#id_linux_image_id").closest(".form-group").show();
+        break;
+    }
+  }
+
+  $document.on('change', '.workflow #id_azure_source_type', function (evt) {
+    update_launch_azure_image_source_displayed_fields(this);
+  });
+
+  $('.workflow #id_azure_source_type').change();
+  horizon.modals.addModalInitFunction(function (modal) {
+    $(modal).find("#id_azure_source_type").change();
+  });
+
+  // azure cloud service choice
+  function update_launch_azure_cloud_service_displayed_fields (field) {
+    var $this = $(field),
+      base_type = $this.val();
+
+    $this.closest(".form-group").nextAll().hide();
+
+    switch(base_type) {
+      case "new_cloudservice":
+        $("#id_cloud_service_name").closest(".form-group").show();
+        break;
+
+    }
+  }
+
+  $document.on('change', '.workflow #id_cloud_services', function (evt) {
+	  update_launch_azure_cloud_service_displayed_fields(this);
+  });
+
+  $('.workflow #id_cloud_services').change();
+  horizon.modals.addModalInitFunction(function (modal) {
+    $(modal).find("#id_cloud_services").change();
+  });
+
   /*
    Update the device size value to reflect minimum allowed
    for selected image and flavor

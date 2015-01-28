@@ -1,0 +1,12 @@
+    <h4>private</h4>
+    <ul>
+      <li>{{ instance.ip_address }}</li>
+    </ul>
+{% if instance.public_ips %}
+    <h4>Public</h4>
+    <ul>
+    {% for address in instance.public_ips %}
+      <li>{{ address }}</li>
+    {% endfor %}
+    </ul>
+{% endif %}

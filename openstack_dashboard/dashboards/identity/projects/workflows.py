@@ -154,6 +154,22 @@ class CreateProjectInfoAction(workflows.Action):
                                  required=False,
                                  initial=True)
 
+    subscription_name = forms.CharField(
+        label=_("Subscription Name"),
+        help_text=_("Azure Subscription Name."))
+
+    subscription_id = forms.CharField(
+        label=_("Subscription ID"),
+        help_text=_("Azure Subscription ID"
+                    " associated with this new project."))
+
+    certificate_path = forms.CharField(
+        label=_("Subscription ID"),
+        help_text=_("Path to .pem certificate file (httplib),"
+                    " or location of the certificate in your"
+                    " Personal certificate store (winhttp) in the"
+                    " CURRENT_USER\my\CertificateName format."))
+
     def __init__(self, request, *args, **kwargs):
         super(CreateProjectInfoAction, self).__init__(request,
                                                       *args,
@@ -177,7 +193,10 @@ class CreateProjectInfo(workflows.Step):
                    "project_id",
                    "name",
                    "description",
-                   "enabled")
+                   "enabled",
+                   "subscription_name",
+                   "subscription_id",
+                   "certificate_path")
 
 
 class UpdateProjectMembersAction(workflows.MembershipAction):
@@ -434,11 +453,15 @@ class CreateProject(CommonQuotaWorkflow):
         domain_id = data['domain_id']
         try:
             desc = data['description']
+            kw = {"subscription_name": data['subscription_name'],
+                  "subscription_id": data['subscription_id'],
+                  "certificate_path": data['certificate_path']}
             self.object = api.keystone.tenant_create(request,
                                                      name=data['name'],
                                                      description=desc,
                                                      enabled=data['enabled'],
-                                                     domain=domain_id)
+                                                     domain=domain_id,
+                                                     **kw)
             return self.object
         except Exception:
             exceptions.handle(request, ignore=True)
@@ -605,12 +628,16 @@ class UpdateProject(CommonQuotaWorkflow):
         # update project info
         try:
             project_id = data['project_id']
+            kw = {"subscription_name": data['subscription_name'],
+                  "subscription_id": data['subscription_id'],
+                  "certificate_path": data['certificate_path']}
             return api.keystone.tenant_update(
                 request,
                 project_id,
                 name=data['name'],
                 description=data['description'],
-                enabled=data['enabled'])
+                enabled=data['enabled'],
+                **kw)
         except Exception:
             exceptions.handle(request, ignore=True)
             return

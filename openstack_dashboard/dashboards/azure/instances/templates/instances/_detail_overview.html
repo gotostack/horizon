@@ -1,0 +1,64 @@
+{% load i18n sizeformat %}
+{% load url from future %}
+
+<h3>{% trans "Instance Overview" %}</h3>
+
+<div class="status detail">
+  <h4>{% trans "Information" %}</h4>
+  <hr class="header_rule">
+  <dl class="dl-horizontal">
+    <dt>{% trans "Name" %}</dt>
+    <dd>{{ instance.role_name }}</dd>
+    <dt>{% trans "Affinity Group" %}</dt>
+    <dd>{{ instance.availability_set_name|default:_("-") }}</dd>
+    <dt>{% trans "Size" %}</dt>
+    <dd>{{ instance.role_size|default:_("-") }}</dd>
+  </dl>
+</div>
+
+
+
+{% if instance.configuration_sets %}
+{% for conf in instance.configuration_sets %}
+<div class="status detail">
+    <h4>{% trans "Configuration" %}</h4>
+    <hr class="header_rule">
+    <dl class="dl-horizontal">
+      {% for item in conf.input_endpoints %}
+        <dt>{% trans "Endpoint" %}</dt>
+        <dd>{% trans "Protocol:" %} {{ item.protocol }} | {% trans "Name:" %} {{ item.name }} | {% trans "Public Port:" %} {{ item.port }} | {% trans "Local Port:" %} {{ item.local_port }}</dd>
+        {% empty %}
+        <dt>{% trans "Endpoint" %}</dt>
+        <dd><em>{% trans "No available endpoint." %}</em></dd>
+      {% endfor %}
+    </dl>
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="status detail">
+    <h4>{% trans "System Disk" %}</h4>
+    <hr class="header_rule">
+    <dl class="dl-horizontal">
+      <dt>{% trans "OS" %}</dt>
+      <dd>{{ instance.os_virtual_hard_disk.os }}</dd>
+      <dt>{% trans "Disk Name(Blob Name)" %}</dt>
+      <dd>{{ instance.os_virtual_hard_disk.disk_name }}</dd>
+      <dt>{% trans "Source Image Name" %}</dt>
+      <dd>{{ instance.os_virtual_hard_disk.source_image_name }}</dd>
+    </dl>
+</div>
+
+<div class="volumes detail">
+    <h4>{% trans "Data Volumes Attached" %}</h4>
+    <hr class="header_rule">
+    <dl class="dl-horizontal">
+    {% for volume in instance.data_virtual_hard_disks %}
+        <dt>{% trans "Attached To" %}</dt>
+        <dd>{% trans "Volume Name:" %} {{volume.disk_name}} | {% trans "Size:" %} {{ volume.logical_disk_size_in_gb }}</dd>
+        {% empty %}
+        <dt>{% trans "Volume" %}</dt>
+        <dd><em>{% trans "No volumes attached." %}</em></dd>
+    {% endfor %}
+    </dl>
+</div>

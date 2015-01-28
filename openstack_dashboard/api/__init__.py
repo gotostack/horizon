@@ -31,6 +31,7 @@ In other words, Horizon developers not working on openstack_dashboard.api
 shouldn't need to understand the finer details of APIs for
 Keystone/Nova/Glance/Swift et. al.
 """
+from openstack_dashboard.api import azure_api
 from openstack_dashboard.api import base
 from openstack_dashboard.api import ceilometer
 from openstack_dashboard.api import cinder
@@ -49,6 +50,7 @@ from openstack_dashboard.api import vpn
 
 
 __all__ = [
+    "azure_api",
     "base",
     "cinder",
     "fwaas",

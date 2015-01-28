@@ -6,6 +6,7 @@
 # added in alphabetical order, however, some dependencies may need to
 # be installed in a specific order.
 #
+azure
 # PBR should always appear first
 pbr>=0.11,<2.0
 # Horizon Core Requirements
