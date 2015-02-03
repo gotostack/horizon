@@ -15,13 +15,23 @@
 
 import logging
 
-from django.core.urlresolvers import reverse
+from django.core import urlresolvers
 from django.http import HttpResponse  # noqa
 from django import template
+from django.utils.http import urlencode
+from django.utils.translation import npgettext_lazy
+from django.utils.translation import pgettext_lazy
 from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ungettext_lazy
 
 from horizon import tables
 from horizon.templatetags import sizeformat
+
+from openstack_dashboard import api
+from openstack_dashboard.dashboards.azure.instances.workflows \
+    import resize_instance
+from openstack_dashboard.dashboards.azure.instances.workflows \
+    import update_instance
 
 LOG = logging.getLogger(__name__)
 
@@ -55,17 +65,17 @@ def get_ips(instance):
 
 
 def get_size(instance):
-    if hasattr(instance, "role"):
+    if hasattr(instance, "role_size"):
         template_name = 'azure/instances/_instance_flavor.html'
-        size_ram = sizeformat.mb_float_format(instance.role.memory_in_mb)
+        size_ram = sizeformat.mb_float_format(instance.role_size.memory_in_mb)
         size_disk = sizeformat.diskgbformat(
-            instance.role.virtual_machine_resource_disk_size_in_mb)
+            instance.role_size.virtual_machine_resource_disk_size_in_mb)
         context = {
-            "name": instance.role.name,
+            "name": instance.role_size.name,
             "id": instance.role_name,
             "size_disk": size_disk,
             "size_ram": size_ram,
-            "vcpus": instance.role.cores
+            "vcpus": instance.role_size.cores
         }
         return template.loader.render_to_string(template_name, context)
     return _("Not available")
@@ -77,16 +87,18 @@ class DetailLink(tables.LinkAction):
     url = "horizon:azure:instances:detail"
 
     def get_link_url(self, datum):
-        return reverse(self.url, args=(datum.cloud_service_name,
-                                       datum.deployment_name,
-                                       datum.role_name))
+        return urlresolvers.reverse(self.url,
+                                    args=(datum.cloud_service_name,
+                                          datum.deployment_name,
+                                          datum.role_name))
 
 
 def get_detail_link(datum):
     url = "horizon:azure:instances:detail"
-    return reverse(url, args=(datum.cloud_service_name,
-                              datum.deployment_name,
-                              datum.instance_name))
+    return urlresolvers.reverse(url,
+                                args=(datum.cloud_service_name,
+                                      datum.deployment_name,
+                                      datum.instance_name))
 
 
 class LaunchLink(tables.LinkAction):
@@ -106,13 +118,249 @@ class LaunchLink(tables.LinkAction):
         return HttpResponse(self.render())
 
 
-class InstanceFilterAction(tables.FilterAction):
+class FilterAction(tables.FilterAction):
 
-    def filter(self, table, users, filter_string):
+    def filter(self, table, items, filter_string):
         """Naive case-insensitive search."""
         q = filter_string.lower()
-        return [u for u in users
-                if q in u.name.lower()]
+        return [i for i in items
+                if q in i.name.lower()]
+
+
+class TerminateInstance(tables.BatchAction):
+    name = "terminate"
+    classes = ("btn-danger",)
+    icon = "off"
+
+    @staticmethod
+    def action_present(count):
+        return ungettext_lazy(
+            u"Terminate Instance",
+            u"Terminate Instances",
+            count
+        )
+
+    @staticmethod
+    def action_past(count):
+        return ungettext_lazy(
+            u"Scheduled termination of Instance",
+            u"Scheduled termination of Instances",
+            count
+        )
+
+    def action(self, request, obj_id):
+        datum = self.table.get_object_by_id(obj_id)
+        cs = api.azure_api.cloud_service_detail(
+            request,
+            datum.cloud_service_name,
+            True)
+
+        # In this azure dashboard, all cloud service has only one deployment
+        if len(cs.deployments[0].role_list) <= 1:
+            # If the instance is the last one of
+            # this cloudservice/deployment,
+            # just delete the deployment directly.
+            api.azure_api.delete_deployment(
+                request,
+                datum.cloud_service_name,
+                # If instance was created from horizon,
+                # the deployment name was same as cloud_service_name.
+                datum.cloud_service_name)
+            # Can not delete the cloud service here because
+            # delete deployment request just return 202 (Accepted).
+            # If here delete the cloud service immediately,
+            # it will cause a 409 (Conflict) error.
+            # Why 409 ? Because the delete deployment request was not
+            # completely finished.
+            # TODO(Yulong) delete the cloud service
+            # api.azure_api.cloud_service_delete(request,
+            #                                   datum.cloud_service_name)
+        else:
+            api.azure_api.virtual_machine_delete(
+                request,
+                datum.cloud_service_name,
+                # If instance was created from horizon,
+                # the deployment name was same as cloud_service_name.
+                datum.cloud_service_name,
+                obj_id)
+
+
+class StartInstance(tables.BatchAction):
+    name = "start"
+    classes = ('btn-confirm',)
+
+    @staticmethod
+    def action_present(count):
+        return ungettext_lazy(
+            u"Start Instance",
+            u"Start Instances",
+            count
+        )
+
+    @staticmethod
+    def action_past(count):
+        return ungettext_lazy(
+            u"Started Instance",
+            u"Started Instances",
+            count
+        )
+
+    def allowed(self, request, instance):
+        return ((instance is None) or
+                (instance.power_state in ("Stopped", "Suspended")))
+
+    def action(self, request, obj_id):
+        datum = self.table.get_object_by_id(obj_id)
+        api.azure_api.virtual_machine_start(request,
+                                            datum.cloud_service_name,
+                                            datum.cloud_service_name,
+                                            obj_id)
+
+
+class RestartInstance(tables.BatchAction):
+    name = "reboot"
+    classes = ('btn-danger', 'btn-reboot')
+
+    @staticmethod
+    def action_present(count):
+        return ungettext_lazy(
+            u"Restart Instance",
+            u"Restart Instances",
+            count
+        )
+
+    @staticmethod
+    def action_past(count):
+        return ungettext_lazy(
+            u"Restart Instance",
+            u"Restart Instances",
+            count
+        )
+
+    def allowed(self, request, instance=None):
+        if instance is not None:
+            return ((instance.power_state == 'Started')
+                    and instance.power_state.lower() != "deleting")
+        else:
+            return True
+
+    def action(self, request, obj_id):
+        datum = self.table.get_object_by_id(obj_id)
+        api.azure_api.virtual_machine_restart(request,
+                                              datum.cloud_service_name,
+                                              datum.cloud_service_name,
+                                              obj_id)
+
+
+class StopInstance(tables.BatchAction):
+    name = "stop"
+    classes = ('btn-danger',)
+
+    @staticmethod
+    def action_present(count):
+        return npgettext_lazy(
+            "Action to perform (the instance is currently running)",
+            u"Shut Off Instance",
+            u"Shut Off Instances",
+            count
+        )
+
+    @staticmethod
+    def action_past(count):
+        return npgettext_lazy(
+            "Past action (the instance is currently already Shut Off)",
+            u"Shut Off Instance",
+            u"Shut Off Instances",
+            count
+        )
+
+    def allowed(self, request, instance):
+        return ((instance is None)
+                or ((instance.power_state in ("Started",
+                                              "Starting",
+                                              "Suspended"))
+                    and instance.power_state.lower() != "deleting"))
+
+    def action(self, request, obj_id):
+        datum = self.table.get_object_by_id(obj_id)
+        api.azure_api.virtual_machine_shutdown(request,
+                                               datum.cloud_service_name,
+                                               datum.cloud_service_name,
+                                               obj_id)
+
+
+class ResizeLink(tables.LinkAction):
+    name = "resize"
+    verbose_name = _("Resize Instance")
+    url = "horizon:azure:instances:resize"
+    classes = ("ajax-modal", "btn-resize")
+
+    def get_link_url(self, project):
+        return self._get_link_url(project, 'flavor_choice')
+
+    def _get_link_url(self, project, step_slug):
+        base_url = urlresolvers.reverse(
+            self.url,
+            args=[project.cloud_service_name,
+                  project.deployment_name,
+                  project.role_name])
+        next_url = self.table.get_full_url()
+        params = {"step": step_slug,
+                  resize_instance.ResizeInstance.redirect_param_name: next_url}
+        param = urlencode(params)
+        return "?".join([base_url, param])
+
+    def allowed(self, request, instance):
+        return ((instance.power_state in ("Started",
+                                          "Starting",
+                                          "Suspended"))
+                and instance.power_state.lower() != "deleting")
+
+
+class EditInstance(tables.LinkAction):
+    name = "edit"
+    verbose_name = _("Edit Instance")
+    url = "horizon:azure:instances:update"
+    classes = ("ajax-modal",)
+    icon = "pencil"
+
+    def get_link_url(self, project):
+        return self._get_link_url(project, 'instance_info')
+
+    def _get_link_url(self, project, step_slug):
+        base_url = urlresolvers.reverse(
+            self.url,
+            args=[project.cloud_service_name,
+                  project.deployment_name,
+                  project.role_name])
+        next_url = self.table.get_full_url()
+        params = {"step": step_slug,
+                  update_instance.UpdateInstance.redirect_param_name: next_url}
+        param = urlencode(params)
+        return "?".join([base_url, param])
+
+    def allowed(self, request, instance):
+        return ((instance.power_state in ("Started",
+                                          "Starting",
+                                          "Suspended"))
+                and instance.power_state.lower() != "deleting")
+
+
+STATUS_DISPLAY_CHOICES = (
+    ("Started", pgettext_lazy("Current status of an Instance", u"Started")),
+    ("Suspended", pgettext_lazy("Current status of an Instance",
+                                u"Suspended")),
+    ("RunningTransitioning", pgettext_lazy("Current status of an Instance",
+                                           u"RunningTransitioning")),
+    ("SuspendedTransitioning", pgettext_lazy(
+        "Current status of an Instance", u"SuspendedTransitioning")),
+    ("Starting", pgettext_lazy("Current status of an Instance", u"Starting")),
+    ("Suspending", pgettext_lazy("Current status of an Instance",
+                                 u"Suspending")),
+    ("Deploying", pgettext_lazy("Current status of an Instance",
+                                u"Deploying")),
+    ("Deleting", pgettext_lazy("Current status of an Instance", u"Deleting")),
+)
 
 
 class InstancesTable(tables.DataTable):
@@ -122,13 +370,14 @@ class InstancesTable(tables.DataTable):
     )
 
     STATUS_CHOICES = (
-        ("Starting", True),
         ("Started", True),
-        ("Stopping", True),
-        ("Stopped", True),
-        ("Unknown", False),
-        ("rescue", True),
-        ("shelved_offloaded", True),
+        ("Suspended", True),
+        ("RunningTransitioning", True),
+        ("SuspendedTransitioning", True),
+        ("Starting", True),
+        ("Suspending", True),
+        ("Deploying", True),
+        ("Deleting", True),
     )
     name = tables.Column("instance_name",
                          link=get_detail_link,
@@ -139,11 +388,13 @@ class InstancesTable(tables.DataTable):
     size = tables.Column(get_size,
                          verbose_name=_("Size"),
                          attrs={'data-type': 'size'})
-    status = tables.Column("power_state",
-                           status=True,
-                           verbose_name=_("PowerState"))
+    power_state = tables.Column("power_state",
+                                status=True,
+                                verbose_name=_("Power State"),
+                                status_choices=STATUS_CHOICES,
+                                display_choices=STATUS_DISPLAY_CHOICES)
     dns_url = tables.Column("dns_url",
-                            verbose_name=_("SSH"))
+                            verbose_name=_("Endpoint"))
 
     def get_object_id(self, datum):
         return (datum.instance_name
@@ -152,7 +403,32 @@ class InstancesTable(tables.DataTable):
     class Meta:
         name = "instances"
         verbose_name = _("Instances")
-        # status_columns = ["status", "task"]
-        table_actions = (InstanceFilterAction,
-                         LaunchLink)
-        row_actions = (DetailLink, )
+        status_columns = ["power_state", ]
+        table_actions_menu = (StartInstance, StopInstance)
+        table_actions = (FilterAction, LaunchLink, TerminateInstance)
+        row_actions = (DetailLink, TerminateInstance,
+                       StartInstance, StopInstance,
+                       RestartInstance, ResizeLink,
+                       EditInstance)
+
+
+class EndpointsTable(tables.DataTable):
+    name = tables.Column("name",
+                         verbose_name=_("Name"))
+    protocol = tables.Column("protocol",
+                             verbose_name=_("Protocol"))
+    port = tables.Column("port",
+                         verbose_name=_("Port"))
+    local_port = tables.Column("local_port",
+                               verbose_name=_("Local Port"))
+    load_balanced_endpoint_set_name = tables.Column(
+        "load_balanced_endpoint_set_name",
+        verbose_name=_("load balanced endpoint set name"))
+
+    class Meta:
+        name = 'instance_endpoints'
+        verbose_name = _('Instance Endpoints')
+        table_actions = (FilterAction, )
+
+    def get_object_id(self, datum):
+        return datum.name

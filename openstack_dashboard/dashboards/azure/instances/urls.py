@@ -19,7 +19,8 @@ from openstack_dashboard.dashboards.azure.instances import views
 
 
 INSTANCES = r'^(?P<instance_id>[^/]+)/%s$'
-INSTANCES_KEYPAIR = r'^(?P<instance_id>[^/]+)/(?P<keypair_name>[^/]+)/%s$'
+AZURE_MOD = r'^(?P<cloud_service_name>[^/]+)/(?P<deployment_name>[^/]+)' \
+    '/(?P<instance_name>[^/]+)/%s$'
 VIEW_MOD = 'openstack_dashboard.dashboards.azure.instances.views'
 
 
@@ -27,7 +28,7 @@ urlpatterns = patterns(
     VIEW_MOD,
     url(r'^$', views.IndexView.as_view(), name='index'),
     url(r'^launch$', views.LaunchInstanceView.as_view(), name='launch'),
-    url(r'^(?P<cloud_service_name>[^/]+)/(?P<deployment_name>[^/]+)/'
-        '(?P<instance_name>[^/]+)/detail',
-        views.DetailView.as_view(), name='detail'),
+    url(AZURE_MOD % 'update', views.UpdateView.as_view(), name='update'),
+    url(AZURE_MOD % 'detail', views.DetailView.as_view(), name='detail'),
+    url(AZURE_MOD % 'resize', views.ResizeView.as_view(), name='resize'),
 )

@@ -13,6 +13,7 @@
 #    under the License.
 
 import logging
+import re
 
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
@@ -28,6 +29,11 @@ from openstack_dashboard import api
 
 
 LOG = logging.getLogger(__name__)
+
+INSTANCE_NAME_REGEX = re.compile(r"^[a-zA-Z][a-zA-Z0-9\-]*$", re.UNICODE)
+INSTANCE_ERROR_MESSAGES = {
+    'invalid': _('Instance name must begin with letter and only contain'
+                 ' letters, numbers and hyphens.')}
 
 
 class SelectProjectUserAction(workflows.Action):
@@ -64,8 +70,10 @@ class SelectProjectUser(workflows.Step):
 
 
 class SetInstanceDetailsAction(workflows.Action):
-    name = forms.CharField(label=_("Instance Name"),
-                           max_length=255)
+    name = forms.RegexField(max_length=255,
+                            label=_("Instance Name"),
+                            regex=INSTANCE_NAME_REGEX,
+                            error_messages=INSTANCE_ERROR_MESSAGES)
 
     role_size_type = forms.ChoiceField(
         label=_("VM Size Basic Spec"),
@@ -157,25 +165,6 @@ class SetInstanceDetailsAction(workflows.Action):
             reverse=False) if r.name[:6] != 'Basic_']
 
         return rolesize_list
-
-"""
-    def get_help_text(self, extra_context=None):
-        extra = extra_context or {}
-        extra['usages'] = {}
-        extra['usages_json'] = json.dumps(extra['usages'])
-        rolesize_list = self._get_role_size_list(self.request)
-        if rolesize_list is not None:
-            attrs = [
-                {'name': r.name,
-                 'cores': r.cores,
-                 'disk': r.virtual_machine_resource_disk_size_in_mb,
-                 'disk_total': r.max_data_disk_count,
-                 'ram': r.memory_in_mb}
-                    for r in rolesize_list]
-            extra['flavors'] = json.dumps(attrs)
-            LOG.info("================flavors : %s" % extra['flavors'])
-        return super(SetInstanceDetailsAction, self).get_help_text(extra)
-"""
 
 
 class SetInstanceDetails(workflows.Step):
@@ -452,16 +441,15 @@ class LaunchInstance(workflows.Workflow):
             location = context['location']
             enable_port = context['enable_port']
 
-            create_new_cloudservice = True \
-                if context['cloud_services'] == 'new_cloudservice' \
-                else False
+            create_new_cloudservice = True if (context['cloud_services'] ==
+                                               'new_cloudservice') else False
             # do create
             api.azure_api.virtual_machine_create(
                 request,
                 service_name=service_name,
                 location=location,
                 create_new_cloudservice=create_new_cloudservice,
-                deployment_name=vm_name,
+                deployment_name=service_name,
                 label=vm_name,
                 enable_port=enable_port,
                 role_name=vm_name,

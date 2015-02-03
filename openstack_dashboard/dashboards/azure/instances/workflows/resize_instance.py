@@ -12,8 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
-import json
+import logging
 
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.debug import sensitive_variables  # noqa
@@ -22,8 +21,8 @@ from horizon import exceptions
 from horizon import forms
 from horizon import workflows
 from openstack_dashboard import api
-from openstack_dashboard.dashboards.azure.instances \
-    import utils as instance_utils
+
+LOG = logging.getLogger(__name__)
 
 
 class SetFlavorChoiceAction(workflows.Action):
@@ -33,48 +32,79 @@ class SetFlavorChoiceAction(workflows.Action):
         widget=forms.TextInput(attrs={'readonly': 'readonly'}),
         required=False,
     )
-    flavor = forms.ChoiceField(label=_("New Flavor"),
-                               help_text=_("Choose the flavor to launch."))
+    role_size_type = forms.ChoiceField(
+        label=_("VM Size Basic Spec"),
+        help_text=_("Choose Your Boot Source Type."))
+
+    flavor_basic = forms.ChoiceField(
+        label=_("Flavor"),
+        help_text=_("Size of image to launch."),
+        required=False)
+
+    flavor_standard = forms.ChoiceField(
+        label=_("Flavor"),
+        help_text=_("Size of image to launch."),
+        required=False)
 
     class Meta:
         name = _("Flavor Choice")
         slug = 'flavor_choice'
         help_text_template = ("azure/instances/"
-                              "_flavors_and_quotas.html")
+                              "_resize_instance_help.html")
 
-    def populate_flavor_choices(self, request, context):
+    def __init__(self, request, context, *args, **kwargs):
+        self.request = request
+        self.context = context
+        super(SetFlavorChoiceAction, self).__init__(
+            request, context, *args, **kwargs)
+
+        role_size_type_choices = [
+            ("flavor_basic", _("Basic")),
+            ("flavor_standard", _("Standard")),
+        ]
+        self.fields['role_size_type'].choices = role_size_type_choices
+
+    def populate_flavor_basic_choices(self, request, context):
         old_flavor_id = context.get('old_flavor_id')
-        flavors = context.get('flavors').values()
+        flavors = context.get('flavors')
 
-        # Remove current flavor from the list of flavor choices
-        flavors = [flavor for flavor in flavors if flavor.id != old_flavor_id]
-        if len(flavors) > 1:
-            flavors = instance_utils.sort_flavor_list(request, flavors)
-        if flavors:
-            flavors.insert(0, ("", _("Select a New Flavor")))
-        else:
-            flavors.insert(0, ("", _("No flavors available")))
-        return flavors
+        rolesize_list = [(r.name, r.label) for r in sorted(
+            flavors,
+            key=lambda x: x.cores,
+            reverse=False) if (r.name[:6] == 'Basic_' and
+                               r.name != old_flavor_id)]
 
-    def get_help_text(self):
-        extra = {}
-        try:
-            extra['usages'] = api.nova.tenant_absolute_limits(self.request)
-            extra['usages_json'] = json.dumps(extra['usages'])
-            flavors = json.dumps([f._info for f in
-                                  instance_utils.flavor_list(self.request)])
-            extra['flavors'] = flavors
-            extra['resize_instance'] = True
-        except Exception:
-            exceptions.handle(self.request,
-                              _("Unable to retrieve quota information."))
-        return super(SetFlavorChoiceAction, self).get_help_text(extra)
+        return rolesize_list
+
+    def populate_flavor_standard_choices(self, request, context):
+        old_flavor_id = context.get('old_flavor_id')
+        flavors = context.get('flavors')
+
+        rolesize_list = [(r.name, r.label) for r in sorted(
+            flavors,
+            key=lambda x: x.cores,
+            reverse=False) if (r.name[:6] != 'Basic_' and
+                               r.name != old_flavor_id)]
+        return rolesize_list
 
 
 class SetFlavorChoice(workflows.Step):
     action_class = SetFlavorChoiceAction
-    depends_on = ("instance_id", "name")
-    contributes = ("old_flavor_id", "old_flavor_name", "flavors", "flavor")
+    depends_on = ("cloud_service_name", "deployment_name", "name",
+                  "old_flavor_id", "flavors")
+    contributes = ("rolesize_name", "old_flavor_name")
+
+    def contribute(self, data, context):
+        context = super(SetFlavorChoice, self).contribute(data, context)
+
+        # Translate form input to context for source values.
+        if "role_size_type" in data:
+            if data["role_size_type"] in ["flavor_basic", ]:
+                context["rolesize_name"] = data.get("flavor_basic", None)
+            else:
+                context["rolesize_name"] = data.get("flavor_standard", None)
+
+        return context
 
 
 class ResizeInstance(workflows.Workflow):
@@ -91,11 +121,16 @@ class ResizeInstance(workflows.Workflow):
 
     @sensitive_variables('context')
     def handle(self, request, context):
-        instance_id = context.get('instance_id', None)
-        flavor = context.get('flavor', None)
-        disk_config = context.get('disk_config', None)
+        cloud_service_name = context.get('cloud_service_name', None)
+        deployment_name = context.get('deployment_name', None)
+        instance_name = context.get('name', None)
+        rolesize_name = context.get('rolesize_name', None)
         try:
-            api.nova.server_resize(request, instance_id, flavor, disk_config)
+            api.azure_api.virtual_machine_resize(request,
+                                                 cloud_service_name,
+                                                 deployment_name,
+                                                 instance_name,
+                                                 rolesize_name)
             return True
         except Exception:
             exceptions.handle(request)

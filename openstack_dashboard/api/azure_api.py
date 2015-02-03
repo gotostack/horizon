@@ -15,6 +15,8 @@
 import os
 import uuid
 
+import random
+
 import logging
 
 from azure.servicemanagement import ConfigurationSet  # noqa
@@ -47,6 +49,7 @@ AZURE_KEY_FILE_FOLDER = getattr(
 
 
 def create_new_key_for_subscription(project_id):
+    """Create a new rsa key file for a tenant/subscription."""
     # use namespace to make sure each tenant_name has a constant uuid
     key_id = uuid.uuid3(uuid.NAMESPACE_X500, project_id)
     KEY_PEM = "%s/%s.pem" % (AZURE_KEY_FILE_FOLDER, key_id)
@@ -59,19 +62,23 @@ def create_new_key_for_subscription(project_id):
               ' -in %s -outform der -out %s' % (KEY_PEM, KEY_CER))
 
 
-def get_tenant_pem_file(project_id):
+def get_tenant_pem_file_path(project_id):
+    """Get the tenant cert pem file absolute path."""
     key_id = uuid.uuid3(uuid.NAMESPACE_X500, str(project_id))
     return "%s/%s.pem" % (AZURE_KEY_FILE_FOLDER, key_id)
 
 
 @memoized
 def azureclient(request):
-    """Initialization of Azure client."""
+    """Get a new the Azure service management client.
+
+    Need the authenticated/login user's subscription of tenant.
+    """
     project = next((proj for proj in request.user.authorized_tenants
                     if proj.id == request.user.project_id), None)
     if project:
         subscription_id = project.subscription_id
-        cert_file = get_tenant_pem_file(project.id)
+        cert_file = get_tenant_pem_file_path(project.id)
         return sms.ServiceManagementService(subscription_id,
                                             cert_file,
                                             host=AZURE_MANAGEMENT_HOST,
@@ -80,30 +87,36 @@ def azureclient(request):
 
 @memoized
 def location_list(request):
-    """Geographic domain."""
+    """Azure location geographic domain."""
     return azureclient(request).list_locations()
 
 
 @memoized
 def cloud_service_list(request):
-    """Azure Cloud Services."""
+    """Get all Azure Cloud Services of the subscription."""
     return azureclient(request).list_hosted_services()
+
+
+def cloud_service_delete(request, service_name):
+    """Delete a cloud service."""
+    return azureclient(request).delete_hosted_service(service_name)
 
 
 @memoized
 def storage_account_list(request):
-    """Azure Cloud Services."""
+    """Get all Azure storage accounts of the subscription."""
     return azureclient(request).list_storage_accounts()
 
 
 @memoized
 def affinity_group_list(request):
+    """Get all Azure affinity group of the subscription."""
     return azureclient(request).list_affinity_groups()
 
 
 @memoized
 def cloud_service_detail(request, service_name, embed_detail=False):
-    """Geographic domain."""
+    """Get details of one specific cloud service."""
     return azureclient(request).get_hosted_service_properties(
         service_name=service_name,
         embed_detail=embed_detail)
@@ -122,16 +135,31 @@ def get_deployment_by_name(request, service_name, deployment_name):
                                                        deployment_name)
 
 
-def get_instance_detail(request, service_name, deployment_name, role_name):
-    """Get the detail of an instance."""
-    return azureclient(request).get_role(service_name,
-                                         deployment_name,
-                                         role_name)
+def create_deployment(request,
+                      service_name, deployment_slot, name,
+                      package_url, label, configuration,
+                      start_deployment=False,
+                      treat_warnings_as_error=False,
+                      extended_properties=None):
+    """Create a new deployment on staging or production."""
+    return azureclient(request).create_deployment(
+        service_name=service_name, deployment_slot=deployment_slot,
+        name=name, package_url=package_url, label=label,
+        configuration=configuration,
+        start_deployment=start_deployment,
+        treat_warnings_as_error=treat_warnings_as_error,
+        extended_properties=extended_properties)
+
+
+def delete_deployment(request, service_name, deployment_name):
+    """Delete a azure deployment."""
+    return azureclient(request).delete_deployment(service_name,
+                                                  deployment_name)
 
 
 @memoized
 def list_operating_systems(request):
-    """Get the list of available images."""
+    """Lists the versions of the guest operating system."""
     return azureclient(request).list_operating_systems()
 
 
@@ -147,45 +175,55 @@ def list_operating_system_families(request):
     return azureclient(request).list_operating_system_families()
 
 
-def create_deployment(request,
-                      service_name, deployment_slot, name,
-                      package_url, label, configuration,
-                      start_deployment=False,
-                      treat_warnings_as_error=False,
-                      extended_properties=None):
-    return azureclient(request).create_deployment(
-        service_name=service_name, deployment_slot=deployment_slot,
-        name=name, package_url=package_url, label=label,
-        configuration=configuration,
-        start_deployment=start_deployment,
-        treat_warnings_as_error=treat_warnings_as_error,
-        extended_properties=extended_properties)
-
-
 def _create_linux_ssh_endpoint():
+    """Add ssh endpoint to a new linux vm network config."""
     network_config = ConfigurationSet()
     endpoint = ConfigurationSetInputEndpoint(name='SSH',
                                              protocol='tcp',
                                              port='10022',
-                                             local_port='10022')
+                                             local_port='22')
     network_config.input_endpoints.input_endpoints.append(endpoint)
     return network_config
 
 
 def _create_windows_endpoint():
+    """Add Remote Desktop and PowerShell endpoints.
+
+    to a new windows vm network config.
+    """
     network_config = ConfigurationSet()
     endpoint = ConfigurationSetInputEndpoint(name='Remote Desktop',
                                              protocol='tcp',
                                              port='13389',
-                                             local_port='13389')
+                                             local_port='3389')
     network_config.input_endpoints.input_endpoints.append(endpoint)
 
     endpoint2 = ConfigurationSetInputEndpoint(name='PowerShell',
                                               protocol='tcp',
                                               port='15986',
-                                              local_port='15986')
+                                              local_port='5986')
     network_config.input_endpoints.input_endpoints.append(endpoint2)
     return network_config
+
+
+def _get_cloudservice_used_public_ports(cloudservice):
+    """Get all used public ports of one cloud service."""
+    public_ports = []
+    for dep in cloudservice.deployments:
+        for role in dep.role_list:
+            for conf in role.configuration_sets:
+                for endpoint in conf.input_endpoints:
+                    public_ports.append(endpoint.port)
+    public_ports.sort()
+    return public_ports
+
+
+def virtual_machine_get(request, service_name,
+                        deployment_name, role_name):
+    """Get the detail of an instance."""
+    return azureclient(request).get_role(service_name,
+                                         deployment_name,
+                                         role_name)
 
 
 def virtual_machine_create(request,
@@ -215,19 +253,15 @@ def virtual_machine_create(request,
 
     client = azureclient(request)
 
-    if create_new_cloudservice:
-        client.create_hosted_service(
-            service_name=service_name,
-            label=service_name,
-            location=location)
-    else:
-        deployment_name = service_name
-
     if image_type == 'windows_image_id':
         conf = WindowsConfigurationSet(
             computer_name=deployment_name,
             admin_password=user_password,
             admin_username=admin_username)
+        conf.domain_join = None
+        conf.stored_certificate_settings = None
+        conf.win_rm = None
+        conf.additional_unattend_content = None
         if enable_port:
             network_config = _create_windows_endpoint()
 
@@ -235,28 +269,138 @@ def virtual_machine_create(request,
         conf = LinuxConfigurationSet(
             host_name=deployment_name,
             user_name=admin_username,
-            user_password=user_password,)
+            user_password=user_password,
+            disable_ssh_password_authentication=False)
         if enable_port:
             network_config = _create_linux_ssh_endpoint()
 
-    LOG.info("===============configure  : %s" % conf.__dict__)
-
-    new_os_sys_disk = '%s-%s-disk.vhd' % (deployment_name, role_name)
+    new_os_sys_disk_url = '%s-%s-sys-disk.vhd' % (deployment_name, role_name)
     osvhd = OSVirtualHardDisk(
         source_image_name=image_name,
         media_link=CN_STORAGE_BASE_URL % ('myvhdsaccount',
                                           'vhds',
-                                          new_os_sys_disk),
-        # caching mode of the operating system disk, all 'ReadOnly'
+                                          new_os_sys_disk_url),
+        # caching mode of the operating system disk
+        # all default 'ReadOnly'
         host_caching='ReadOnly')
 
-    return client.create_virtual_machine_deployment(
+    if create_new_cloudservice:
+        # Create a new cloud service and a deployment for this new vm
+        client.create_hosted_service(
+            service_name=service_name,
+            label=service_name,
+            location=location)
+        return client.create_virtual_machine_deployment(
+            service_name=service_name,
+            deployment_name=deployment_name,
+            deployment_slot=deployment_slot,
+            label=label,
+            role_name=role_name,
+            system_config=conf,
+            os_virtual_hard_disk=osvhd,
+            network_config=network_config,
+            role_size=role_size)
+    else:
+        # Add this new vm to the existing cloud-service/deployment
+        cs = client.get_hosted_service_properties(
+            service_name=service_name,
+            embed_detail=True)
+        if enable_port and cs.deployments:
+            public_ports = _get_cloudservice_used_public_ports(cs)
+            # Random a new public port in the existing cloud service
+            for endpoint in network_config.input_endpoints.input_endpoints:
+                new_port = random.randint(int(public_ports[-1]),
+                                          int(public_ports[-1]) + 10)
+                endpoint.port = str(new_port)
+                public_ports.append(str(new_port))
+            return client.add_role(
+                service_name=service_name,
+                deployment_name=deployment_name,
+                role_name=role_name,
+                system_config=conf,
+                os_virtual_hard_disk=osvhd,
+                network_config=network_config,
+                role_size=role_size)
+        else:
+            return client.create_virtual_machine_deployment(
+                service_name=service_name,
+                deployment_name=deployment_name,
+                deployment_slot=deployment_slot,
+                label=label,
+                role_name=role_name,
+                system_config=conf,
+                os_virtual_hard_disk=osvhd,
+                network_config=network_config,
+                role_size=role_size)
+
+
+def virtual_machine_delete(request, service_name,
+                           deployment_name, role_name):
+    """Delete an azure virtual of a cloudservice/deployment."""
+    return azureclient(request).delete_role(
         service_name=service_name,
         deployment_name=deployment_name,
-        deployment_slot=deployment_slot,
-        label=label,
+        role_name=role_name)
+
+
+def virtual_machine_shutdown(request, service_name,
+                             deployment_name, role_name,
+                             post_shutdown_action='Stopped'):
+    """Shutdown an azure vm of a cloudservice/deployment."""
+    return azureclient(request).shutdown_role(
+        service_name=service_name,
+        deployment_name=deployment_name,
         role_name=role_name,
-        system_config=conf,
-        os_virtual_hard_disk=osvhd,
-        network_config=network_config,
+        post_shutdown_action=post_shutdown_action)
+
+
+def virtual_machine_restart(request, service_name, deployment_name, role_name):
+    """Start an azure vm of a cloudservice/deployment."""
+    return azureclient(request).restart_role(service_name,
+                                             deployment_name,
+                                             role_name)
+
+
+def virtual_machine_start(request, service_name, deployment_name, role_name):
+    """Start an azure vm of a cloudservice/deployment."""
+    return azureclient(request).start_role(service_name,
+                                           deployment_name,
+                                           role_name)
+
+
+def virtual_machine_capture(request, service_name, deployment_name,
+                            role_name, post_capture_action,
+                            target_image_name, target_image_label,
+                            provisioning_configuration=None):
+    """captures a virtual machine image to your image gallery."""
+    return azureclient(request).capture_role(
+        service_name, deployment_name, role_name,
+        post_capture_action, target_image_name, target_image_label,
+        provisioning_configuration)
+
+
+def virtual_machine_resize(request, service_name,
+                           deployment_name, role_name,
+                           role_size):
+    """Resize an azure virtual machine."""
+    return azureclient(request).update_role(
+        service_name, deployment_name,
+        role_name,
         role_size=role_size)
+
+
+def virtual_machine_update(request, service_name, deployment_name, role_name,
+                           os_virtual_hard_disk=None, network_config=None,
+                           availability_set_name=None,
+                           data_virtual_hard_disks=None,
+                           role_size=None, role_type='PersistentVMRole',
+                           resource_extension_references=None,
+                           provision_guest_agent=None):
+    """Update an azure virtual machine."""
+    return azureclient(request).update_role(
+        service_name, deployment_name, role_name,
+        os_virtual_hard_disk, network_config,
+        availability_set_name, data_virtual_hard_disks,
+        role_size, role_type,
+        resource_extension_references,
+        provision_guest_agent)
