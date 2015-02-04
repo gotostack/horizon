@@ -31,4 +31,8 @@ urlpatterns = patterns(
     url(AZURE_MOD % 'update', views.UpdateView.as_view(), name='update'),
     url(AZURE_MOD % 'detail', views.DetailView.as_view(), name='detail'),
     url(AZURE_MOD % 'resize', views.ResizeView.as_view(), name='resize'),
+    url(AZURE_MOD % 'addendpoint',
+        views.AddEndpointView.as_view(), name='addendpoint'),
+    url(AZURE_MOD % 'removeendpoint',
+        views.RemoveEndpointView.as_view(), name='removeendpoint'),
 )

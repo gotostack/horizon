@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Add Endpoint" %}{% endblock %}
+
+{% block page_header %}
+  {% include "horizon/common/_page_header.html" with title=_("Add Endpoint") %}
+{% endblock %}
+
+{% block main %}
+  {% include "azure/instances/_add_endpoint.html" %}
+{% endblock %}

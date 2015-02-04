@@ -15,12 +15,15 @@
 """
 Views for managing instances.
 """
+import logging
+
 from django.core.urlresolvers import reverse
 from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
 
 from horizon import exceptions
 
+from horizon import forms
 from horizon import tables
 from horizon import tabs
 from horizon.utils import memoized
@@ -29,11 +32,15 @@ from horizon import workflows
 from openstack_dashboard import api
 
 from openstack_dashboard.dashboards.azure.instances \
+    import forms as project_forms
+from openstack_dashboard.dashboards.azure.instances \
     import tables as project_tables
 from openstack_dashboard.dashboards.azure.instances \
     import tabs as project_tabs
 from openstack_dashboard.dashboards.azure.instances \
     import workflows as project_workflows
+
+LOG = logging.getLogger(__name__)
 
 
 class IndexView(tables.DataTableView):
@@ -118,13 +125,21 @@ class DetailView(tabs.TabView):
         cloud_service_name = self.kwargs['cloud_service_name']
         deployment_name = self.kwargs['deployment_name']
         instance_name = self.kwargs['instance_name']
-        instance = api.azure_api.virtual_machine_get(
-            self.request,
-            cloud_service_name,
-            deployment_name,
-            instance_name)
-        instance.cloud_service_name = cloud_service_name
-        instance.deployment_name = deployment_name
+        try:
+            instance = api.azure_api.virtual_machine_get(
+                self.request,
+                cloud_service_name,
+                deployment_name,
+                instance_name)
+        except Exception:
+            instance = None
+            redirect = reverse("horizon:azure:instances:index")
+            exceptions.handle(self.request,
+                              _('Unable to retrieve instance detail info.'),
+                              redirect=redirect)
+        if instance:
+            instance.cloud_service_name = cloud_service_name
+            instance.deployment_name = deployment_name
         return instance
 
     def get_tabs(self, request, *args, **kwargs):
@@ -139,9 +154,17 @@ class LaunchInstanceView(workflows.WorkflowView):
         initial = super(LaunchInstanceView, self).get_initial()
         initial['project_id'] = self.request.user.tenant_id
         initial['user_id'] = self.request.user.id
-        tenant = api.keystone.tenant_get(self.request,
-                                         self.request.user.tenant_id)
-        initial['subscription_id'] = tenant.subscription_id
+        try:
+            tenant = api.keystone.tenant_get(self.request,
+                                             self.request.user.tenant_id)
+        except Exception:
+            tenant = None
+            redirect = reverse("horizon:azure:instances:index")
+            exceptions.handle(self.request,
+                              _('Unable to retrieve project info.'),
+                              redirect=redirect)
+        if tenant:
+            initial['subscription_id'] = tenant.subscription_id
 
         return initial
 
@@ -218,4 +241,65 @@ class ResizeView(UpdateView):
                  'old_flavor_id': getattr(_object, 'role_size', ''),
                  'old_flavor_name': _object.role.label,
                  'flavors': self.get_flavors()})
+        return initial
+
+
+class AddEndpointView(forms.ModalFormView):
+    form_class = project_forms.AddEndpointForm
+    template_name = 'azure/instances/add_endpoint.html'
+    success_url = reverse_lazy('horizon:azure:instances:index')
+
+    def get_context_data(self, **kwargs):
+        context = super(AddEndpointView, self).get_context_data(**kwargs)
+        context["cloud_service_name"] = self.kwargs['cloud_service_name']
+        context["deployment_name"] = self.kwargs['deployment_name']
+        context["instance_name"] = self.kwargs['instance_name']
+        return context
+
+    def get_initial(self):
+        return {'cloud_service_name': self.kwargs['cloud_service_name'],
+                'deployment_name': self.kwargs['deployment_name'],
+                'instance_name': self.kwargs['instance_name']}
+
+
+class RemoveEndpointView(AddEndpointView):
+    form_class = project_forms.RemoveEndpointForm
+    template_name = 'azure/instances/remove_endpoint.html'
+
+    @memoized.memoized_method
+    def get_object(self, *args, **kwargs):
+        cloud_service_name = self.kwargs['cloud_service_name']
+        deployment_name = self.kwargs['deployment_name']
+        instance_name = self.kwargs['instance_name']
+        try:
+            instance = api.azure_api.virtual_machine_get(
+                self.request,
+                cloud_service_name,
+                deployment_name,
+                instance_name)
+            instance.cloud_service_name = cloud_service_name
+            instance.deployment_name = deployment_name
+        except Exception:
+            redirect = reverse("horizon:azure:instances:index")
+            msg = _('Unable to retrieve instance details.')
+            exceptions.handle(self.request, msg, redirect=redirect)
+        return instance
+
+    def get_initial(self):
+        initial = super(RemoveEndpointView, self).get_initial()
+        _object = self.get_object()
+        if _object:
+            network_config = None
+            for cf in _object.configuration_sets:
+                network_config = cf if (cf.configuration_set_type ==
+                                        'NetworkConfiguration') else None
+            if network_config and network_config.input_endpoints is not None:
+                endpoints = network_config.input_endpoints.input_endpoints
+            else:
+                endpoints = []
+            initial.update(
+                {'cloud_service_name': self.kwargs['cloud_service_name'],
+                 'deployment_name': self.kwargs['deployment_name'],
+                 'instance_name': self.kwargs['instance_name'],
+                 'endpoints': endpoints})
         return initial

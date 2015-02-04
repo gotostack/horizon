@@ -22,7 +22,6 @@ from openstack_dashboard.dashboards.azure import dashboard
 class Instances(horizon.Panel):
     name = _("Instances")
     slug = 'instances'
-    permissions = ('openstack.services.compute',)
 
 
 dashboard.Azure.register(Instances)

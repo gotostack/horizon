@@ -28,21 +28,21 @@ LOG = logging.getLogger(__name__)
 class SetFlavorChoiceAction(workflows.Action):
     old_flavor_id = forms.CharField(required=False, widget=forms.HiddenInput())
     old_flavor_name = forms.CharField(
-        label=_("Old Flavor"),
+        label=_("Old Flavor Type"),
         widget=forms.TextInput(attrs={'readonly': 'readonly'}),
         required=False,
     )
     role_size_type = forms.ChoiceField(
-        label=_("VM Size Basic Spec"),
+        label=_("Size Spec"),
         help_text=_("Choose Your Boot Source Type."))
 
     flavor_basic = forms.ChoiceField(
-        label=_("Flavor"),
+        label=_("Flavor Basic"),
         help_text=_("Size of image to launch."),
         required=False)
 
     flavor_standard = forms.ChoiceField(
-        label=_("Flavor"),
+        label=_("Flavor Standard"),
         help_text=_("Size of image to launch."),
         required=False)
 

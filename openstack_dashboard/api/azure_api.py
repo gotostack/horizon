@@ -22,6 +22,7 @@ import logging
 from azure.servicemanagement import ConfigurationSet  # noqa
 from azure.servicemanagement import ConfigurationSetInputEndpoint  # noqa
 from azure.servicemanagement import LinuxConfigurationSet  # noqa
+from azure.servicemanagement import LoadBalancerProbe  # noqa
 from azure.servicemanagement import OSVirtualHardDisk  # noqa
 from azure.servicemanagement import servicemanagementservice as sms
 from azure.servicemanagement import WindowsConfigurationSet  # noqa
@@ -44,8 +45,25 @@ AZURE_KEY_FILE_FOLDER = getattr(
     # getattr(settings, 'ROOT_PATH', ''),
     '/home/yulong/azure_keys/test/test_1')
 
-# subscription_id='a3b9e639-f53a-4089-b66b-b075c5b805a1'
-# cert_file='/home/yulong/azure_keys/mycert.pem'
+RESERVED_ENDPOINT_NAME = {
+    "REMOTE DESKTOP": "Remote Desktop",
+    "REMOTEDESKTOP": "Remote Desktop",
+    "POWER SHELL": "PowerShell",
+    "POWERSHELL": "PowerShell",
+    "SSH": "SSH",
+    "FTP": "FTP",
+    "SMTP": "SMTP",
+    "DNS": "DNS",
+    "HTTP": "HTTP",
+    "POP3": "POP3",
+    "IMAP": "IMAP",
+    "LDAP": "LDAP",
+    "HTTPS": "HTTPS",
+    "SMTPS": "SMTPS",
+    "IMAPS": "IMAPS",
+    "POP3S": "POP3S",
+    "MSSQL": "MSSQL",
+    "MYSQL": "MYSQL"}
 
 
 def create_new_key_for_subscription(project_id):
@@ -218,6 +236,14 @@ def _get_cloudservice_used_public_ports(cloudservice):
     return public_ports
 
 
+def get_role_instance_status(deployment, role_instance_name):
+    """Get an instance status."""
+    for role_instance in deployment.role_instance_list:
+        if role_instance.instance_name == role_instance_name:
+            return role_instance.instance_status
+    return None
+
+
 def virtual_machine_get(request, service_name,
                         deployment_name, role_name):
     """Get the detail of an instance."""
@@ -301,18 +327,19 @@ def virtual_machine_create(request,
             network_config=network_config,
             role_size=role_size)
     else:
-        # Add this new vm to the existing cloud-service/deployment
         cs = client.get_hosted_service_properties(
             service_name=service_name,
             embed_detail=True)
-        if enable_port and cs.deployments:
-            public_ports = _get_cloudservice_used_public_ports(cs)
-            # Random a new public port in the existing cloud service
-            for endpoint in network_config.input_endpoints.input_endpoints:
-                new_port = random.randint(int(public_ports[-1]),
-                                          int(public_ports[-1]) + 10)
-                endpoint.port = str(new_port)
-                public_ports.append(str(new_port))
+        if cs.deployments:
+            # Add this new vm to the existing cloud-service/deployment
+            if enable_port:
+                public_ports = _get_cloudservice_used_public_ports(cs)
+                # Random new public ports in the existing cloud service
+                for ep in network_config.input_endpoints.input_endpoints:
+                    new_port = random.randint(int(public_ports[-1]),
+                                              int(public_ports[-1]) + 10)
+                    ep.port = str(new_port)
+                    public_ports.append(str(new_port))
             return client.add_role(
                 service_name=service_name,
                 deployment_name=deployment_name,
@@ -322,6 +349,7 @@ def virtual_machine_create(request,
                 network_config=network_config,
                 role_size=role_size)
         else:
+            # Cloud Service is existing but no deployment
             return client.create_virtual_machine_deployment(
                 service_name=service_name,
                 deployment_name=deployment_name,
@@ -389,6 +417,101 @@ def virtual_machine_resize(request, service_name,
         role_size=role_size)
 
 
+def virtual_machine_add_endpoint(request, service_name,
+                                 deployment_name, role_name,
+                                 endpoint_name, protocol,
+                                 local_port):
+    """Add endpoint to an azure virtual machine."""
+    client = azureclient(request)
+
+    cs = client.get_hosted_service_properties(
+        service_name=service_name,
+        embed_detail=True)
+    vm = client.get_role(service_name, deployment_name, role_name)
+
+    if cs and vm:
+        if RESERVED_ENDPOINT_NAME.get(endpoint_name.upper()):
+            endpoint_name = RESERVED_ENDPOINT_NAME[endpoint_name.upper()]
+        network_config = None
+        for cf in vm.configuration_sets:
+            network_config = cf if (cf.configuration_set_type ==
+                                    'NetworkConfiguration') else None
+        if network_config and network_config.input_endpoints is not None:
+            for end in network_config.input_endpoints.input_endpoints:
+                if end.load_balancer_probe is None:
+                    end.load_balancer_probe = LoadBalancerProbe()
+            endpoint = ConfigurationSetInputEndpoint(
+                name=endpoint_name,
+                protocol=protocol,
+                port='N/A',
+                local_port=local_port)
+
+            public_ports = _get_cloudservice_used_public_ports(cs)
+            # Random a new public port in the existing cloud service
+            new_port = random.randint(int(public_ports[-1]),
+                                      int(public_ports[-1]) + 10)
+            endpoint.port = str(new_port)
+
+            network_config.input_endpoints.input_endpoints.append(endpoint)
+            if (network_config.subnet_names is None and
+                    network_config.public_ips is None):
+                new_conf = ConfigurationSet()
+                new_conf.input_endpoints.input_endpoints = \
+                    network_config.input_endpoints.input_endpoints
+                network_config = new_conf
+        else:
+            network_config = ConfigurationSet()
+            endpoint = ConfigurationSetInputEndpoint(
+                name=endpoint_name,
+                protocol=protocol,
+                port=str(random.randint(10000, 10010)),
+                local_port=local_port)
+            network_config.input_endpoints.input_endpoints.append(endpoint)
+
+        return azureclient(request).update_role(
+            service_name, deployment_name,
+            role_name,
+            network_config=network_config)
+
+
+def virtual_machine_remove_endpoint(request, service_name,
+                                    deployment_name, role_name,
+                                    endpoint_name):
+    """Remove endpoint from an azure virtual machine."""
+    client = azureclient(request)
+
+    cs = client.get_hosted_service_properties(
+        service_name=service_name,
+        embed_detail=True)
+    vm = client.get_role(service_name, deployment_name, role_name)
+
+    if cs and vm:
+        network_config = None
+        for cf in vm.configuration_sets:
+            network_config = cf if (cf.configuration_set_type ==
+                                    'NetworkConfiguration') else None
+
+        if network_config and network_config.input_endpoints is not None:
+            value = None
+            for end in network_config.input_endpoints.input_endpoints:
+                if end.load_balancer_probe is None:
+                    end.load_balancer_probe = LoadBalancerProbe()
+                if end.name.lower() == endpoint_name.lower():
+                    value = end
+
+            network_config.input_endpoints.input_endpoints.remove(value)
+            if (network_config.subnet_names is None and
+                    network_config.public_ips is None):
+                new_conf = ConfigurationSet()
+                new_conf.input_endpoints.input_endpoints = \
+                    network_config.input_endpoints.input_endpoints
+                network_config = new_conf
+            return azureclient(request).update_role(
+                service_name, deployment_name,
+                role_name,
+                network_config=network_config)
+
+
 def virtual_machine_update(request, service_name, deployment_name, role_name,
                            os_virtual_hard_disk=None, network_config=None,
                            availability_set_name=None,
@@ -404,3 +527,38 @@ def virtual_machine_update(request, service_name, deployment_name, role_name,
         role_size, role_type,
         resource_extension_references,
         provision_guest_agent)
+
+
+def disk_list(request):
+    """List all this subscription disks."""
+    return azureclient(request).list_disks()
+
+
+def disk_get(request, disk_name):
+    '''Retrieves a disk from your image repository.'''
+    return azureclient(request).get_disk(disk_name)
+
+
+def disk_delete(request, disk_name, delete_vhd=False):
+    '''Deletes the specified data or operating system disk
+
+    from your image repository.
+    '''
+    return azureclient(request).delete_disk(disk_name, delete_vhd)
+
+
+def disk_add(request, has_operating_system,
+             label, media_link, name, os):
+    '''Adds a disk to the user image repository.'''
+    return azureclient(request).add_disk(has_operating_system, label,
+                                         media_link, name, os)
+
+
+def update_disk(request, disk_name,
+                has_operating_system,
+                label, media_link,
+                name, os):
+    '''Updates an existing disk in your image repository.'''
+    return azureclient(request).update_disk(disk_name, has_operating_system,
+                                            label, media_link,
+                                            name, os)

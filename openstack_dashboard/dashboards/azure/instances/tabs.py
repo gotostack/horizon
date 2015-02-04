@@ -41,7 +41,8 @@ class EndpointTab(tabs.TableTab):
         instance = self.tab_group.kwargs['instance']
         endpoints = []
         for conf in instance.configuration_sets:
-            endpoints += conf.input_endpoints
+            if getattr(conf, 'input_endpoints') is not None:
+                endpoints += conf.input_endpoints
         return endpoints
 
 

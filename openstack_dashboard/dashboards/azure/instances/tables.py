@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 import logging
 
 from django.core import urlresolvers
@@ -24,6 +23,7 @@ from django.utils.translation import pgettext_lazy
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import ungettext_lazy
 
+from horizon import exceptions
 from horizon import tables
 from horizon.templatetags import sizeformat
 
@@ -131,6 +131,9 @@ class TerminateInstance(tables.BatchAction):
     name = "terminate"
     classes = ("btn-danger",)
     icon = "off"
+    help_text = _("The instance will be deleted, "
+                  "disks associated with the instance"
+                  " are still in the disk repository.")
 
     @staticmethod
     def action_present(count):
@@ -293,7 +296,7 @@ class ResizeLink(tables.LinkAction):
     name = "resize"
     verbose_name = _("Resize Instance")
     url = "horizon:azure:instances:resize"
-    classes = ("ajax-modal", "btn-resize")
+    classes = ("ajax-modal", "btn-danger")
 
     def get_link_url(self, project):
         return self._get_link_url(project, 'flavor_choice')
@@ -346,6 +349,32 @@ class EditInstance(tables.LinkAction):
                 and instance.power_state.lower() != "deleting")
 
 
+class AddEndpoint(tables.LinkAction):
+    name = "addendpoint"
+    verbose_name = _("Add Endpoint")
+    classes = ("btn-rebuild", "ajax-modal")
+    url = "horizon:azure:instances:addendpoint"
+
+    def allowed(self, request, instance):
+        return ((instance.power_state in ("Started",
+                                          "Starting",
+                                          "Suspended"))
+                and instance.power_state.lower() != "deleting")
+
+    def get_link_url(self, datum):
+        return urlresolvers.reverse(
+            self.url,
+            args=[datum.cloud_service_name,
+                  datum.deployment_name,
+                  datum.role_name])
+
+
+class RemoveEndpoint(AddEndpoint):
+    name = "removeendpoint"
+    verbose_name = _("Remove Endpoint")
+    url = "horizon:azure:instances:removeendpoint"
+
+
 STATUS_DISPLAY_CHOICES = (
     ("Started", pgettext_lazy("Current status of an Instance", u"Started")),
     ("Suspended", pgettext_lazy("Current status of an Instance",
@@ -363,12 +392,38 @@ STATUS_DISPLAY_CHOICES = (
 )
 
 
-class InstancesTable(tables.DataTable):
-    TASK_STATUS_CHOICES = (
-        (None, True),
-        ("none", True)
-    )
+class UpdateRow(tables.Row):
+    ajax = True
 
+    def get_data(self, request, instance_id):
+        datum = self.table.get_object_by_id(instance_id)
+        try:
+            instance = api.azure_api.virtual_machine_get(
+                request,
+                datum.cloud_service_name,
+                datum.deployment_name,
+                instance_id)
+            cloudservices = api.azure_api.cloud_service_detail(
+                request,
+                datum.cloud_service_name,
+                True)
+            status = api.azure_api.get_role_instance_status(
+                cloudservices.deployments[0], instance_id)
+            instance.power_state = status
+            instance.role_size = datum.role_size
+            instance.cloud_service_name = datum.cloud_service_name
+            instance.deployment_name = datum.deployment_name
+            instance.role = datum.role
+        except Exception:
+            instance = datum
+            exceptions.handle(request,
+                              _('Unable to retrieve'
+                                ' instance "%s" detail.') % instance_id,
+                              ignore=True)
+        return instance
+
+
+class InstancesTable(tables.DataTable):
     STATUS_CHOICES = (
         ("Started", True),
         ("Suspended", True),
@@ -388,6 +443,9 @@ class InstancesTable(tables.DataTable):
     size = tables.Column(get_size,
                          verbose_name=_("Size"),
                          attrs={'data-type': 'size'})
+    instance_status = tables.Column("instance_status",
+                                    verbose_name=_("Instance Status"),
+                                    status=True)
     power_state = tables.Column("power_state",
                                 status=True,
                                 verbose_name=_("Power State"),
@@ -404,12 +462,14 @@ class InstancesTable(tables.DataTable):
         name = "instances"
         verbose_name = _("Instances")
         status_columns = ["power_state", ]
+        row_class = UpdateRow
         table_actions_menu = (StartInstance, StopInstance)
         table_actions = (FilterAction, LaunchLink, TerminateInstance)
         row_actions = (DetailLink, TerminateInstance,
                        StartInstance, StopInstance,
                        RestartInstance, ResizeLink,
-                       EditInstance)
+                       EditInstance, AddEndpoint,
+                       RemoveEndpoint)
 
 
 class EndpointsTable(tables.DataTable):
@@ -418,7 +478,7 @@ class EndpointsTable(tables.DataTable):
     protocol = tables.Column("protocol",
                              verbose_name=_("Protocol"))
     port = tables.Column("port",
-                         verbose_name=_("Port"))
+                         verbose_name=_("Port (Cloud Service Public)"))
     local_port = tables.Column("local_port",
                                verbose_name=_("Local Port"))
     load_balanced_endpoint_set_name = tables.Column(
@@ -429,6 +489,7 @@ class EndpointsTable(tables.DataTable):
         name = 'instance_endpoints'
         verbose_name = _('Instance Endpoints')
         table_actions = (FilterAction, )
+        multi_select = False
 
     def get_object_id(self, datum):
         return datum.name

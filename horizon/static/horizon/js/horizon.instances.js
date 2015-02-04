@@ -273,7 +273,7 @@ horizon.addInitFunction(horizon.instances.init = function () {
 
     switch(base_type) {
       case "new_cloudservice":
-        $("#id_cloud_service_name").closest(".form-group").show();
+        $("#id_cloud_service_name, #id_location").closest(".form-group").show();
         break;
 
     }

@@ -31,9 +31,10 @@ from openstack_dashboard import api
 LOG = logging.getLogger(__name__)
 
 INSTANCE_NAME_REGEX = re.compile(r"^[a-zA-Z][a-zA-Z0-9\-]*$", re.UNICODE)
-INSTANCE_ERROR_MESSAGES = {
-    'invalid': _('Instance name must begin with letter and only contain'
-                 ' letters, numbers and hyphens.')}
+INSTANCE_NAME_HELP_TEXT = _('Instance name must begin with letter'
+                            ' and only contain'
+                            ' letters, numbers and hyphens.')
+INSTANCE_ERROR_MESSAGES = {'invalid': INSTANCE_NAME_HELP_TEXT}
 
 
 class SelectProjectUserAction(workflows.Action):
@@ -73,19 +74,20 @@ class SetInstanceDetailsAction(workflows.Action):
     name = forms.RegexField(max_length=255,
                             label=_("Instance Name"),
                             regex=INSTANCE_NAME_REGEX,
-                            error_messages=INSTANCE_ERROR_MESSAGES)
+                            error_messages=INSTANCE_ERROR_MESSAGES,
+                            help_text=INSTANCE_NAME_HELP_TEXT)
 
     role_size_type = forms.ChoiceField(
-        label=_("VM Size Basic Spec"),
-        help_text=_("Choose Your Boot Source Type."))
+        label=_("Size Spec"),
+        help_text=_("Basic spec of virtual machine size."))
 
     flavor_basic = forms.ChoiceField(
-        label=_("Flavor"),
+        label=_("Flavor Basic"),
         help_text=_("Size of image to launch."),
         required=False)
 
     flavor_standard = forms.ChoiceField(
-        label=_("Flavor"),
+        label=_("Flavor Standard"),
         help_text=_("Size of image to launch."),
         required=False)
 
@@ -187,8 +189,8 @@ class SetInstanceDetails(workflows.Step):
 
 class SetAzureOSImageAction(workflows.Action):
     azure_source_type = forms.ChoiceField(
-        label=_("Instance Boot Source"),
-        help_text=_("Choose Your Boot Source Type."))
+        label=_("Operating System Type"),
+        help_text=_("Choose operating system type."))
 
     windows_image_id = forms.ChoiceField(
         label=_("Windows Image"),
@@ -289,35 +291,36 @@ class SetAzureOSImageStep(workflows.Step):
 
 class SetAccessControlsAction(workflows.Action):
     access_user_name = forms.CharField(
-        label=_("OS Username"),
-        help_text=_("An OS user name which is"
+        label=_("Username"),
+        help_text=_("An operating system user name which is"
                     " this instance's administrator."))
 
     admin_pass = forms.RegexField(
-        label=_("Admin Password"),
+        label=_("Username Password"),
         widget=forms.PasswordInput(render_value=False),
         regex=validators.password_validator(),
         error_messages={'invalid': validators.password_validator_msg()})
 
     confirm_admin_pass = forms.CharField(
-        label=_("Confirm Admin Password"),
+        label=_("Confirm Username Password"),
         widget=forms.PasswordInput(render_value=False))
-
-    location = forms.ChoiceField(
-        label=_("Location"),
-        help_text=_("The data center to launch the instance."))
 
     enable_port = forms.BooleanField(
         label=_("Enable SSH/Remote Desktop/PowerShell"),
         required=False,
-        help_text=_("Enable SSH/Remote Desktop/PowerShell port."))
+        help_text=_("Linx will enable SSH port."
+                    "Windows will enable Remote Desktop and PowerShell."))
 
     cloud_services = forms.ChoiceField(
         label=_("Cloud Services"),
-        help_text=_("Choose/new a cloud service."))
+        help_text=_("Choose or new a cloud service."))
     cloud_service_name = forms.CharField(
-        label=_("New Cloud Service Name"),
+        label=_("Cloud Service Name"),
         required=False)
+
+    location = forms.ChoiceField(
+        label=_("Location"),
+        help_text=_("The data center to launch the instance(Cloud Service)."))
 
     class Meta:
         name = _("Access & Security")
@@ -430,19 +433,18 @@ class LaunchInstance(workflows.Workflow):
 
     @sensitive_variables('context')
     def handle(self, request, context):
+        vm_name = context.get('name', None)
+        role_size = context.get('rolesize_name', None)
+        os_image_name = context.get('os_image_name', None)
+        access_user = context.get('access_user_name', None)
+        service_name = context["cloud_service_name"]
+        image_type = context['azure_source_type']
+        user_password = context['admin_pass']
+        location = context['location']
+        enable_port = context['enable_port']
+        create_new_cloudservice = True if (context['cloud_services'] ==
+                                           'new_cloudservice') else False
         try:
-            vm_name = context.get('name', None)
-            role_size = context.get('rolesize_name', None)
-            os_image_name = context.get('os_image_name', None)
-            access_user = context.get('access_user_name', None)
-            service_name = context["cloud_service_name"]
-            image_type = context['azure_source_type']
-            user_password = context['admin_pass']
-            location = context['location']
-            enable_port = context['enable_port']
-
-            create_new_cloudservice = True if (context['cloud_services'] ==
-                                               'new_cloudservice') else False
             # do create
             api.azure_api.virtual_machine_create(
                 request,
