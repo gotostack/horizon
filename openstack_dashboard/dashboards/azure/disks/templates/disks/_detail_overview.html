@@ -1,0 +1,46 @@
+{% load i18n sizeformat %}
+{% load url from future %}
+
+<h3>{% trans "Disk Overview" %}</h3>
+
+<div class="status detail">
+  <h4>{% trans "Basic Information" %}</h4>
+  <hr class="header_rule">
+  <dl class="dl-horizontal">
+    <dt>{% trans "Name" %}</dt>
+    <dd>{{ disk.name }}</dd>
+    <dt>{% trans "has_operating_system" %}</dt>
+    <dd>{{ disk.has_operating_system }}</dd>
+    <dt>{% trans "is_corrupted" %}</dt>
+    <dd>{{ disk.is_corrupted }}</dd>
+    <dt>{% trans "label" %}</dt>
+    <dd>{{ disk.label }}</dd>
+    <dt>{% trans "location" %}</dt>
+    <dd>{{ disk.location }}</dd>
+    <dt>{% trans "affinity_group" %}</dt>
+    <dd>{{ disk.affinity_group }}</dd>
+    <dt>{% trans "source_image_name" %}</dt>
+    <dd>{{ disk.source_image_name }}</dd>
+    <dt>{% trans "os" %}</dt>
+    <dd>{{ disk.os }}</dd>
+    <dt>{% trans "media_link" %}</dt>
+    <dd>{{ disk.media_link }}</dd>
+  </dl>
+</div>
+
+{% if disk.attached_to %}
+<div class="status detail">
+    <h4>{% trans "Attach To" %}</h4>
+    <hr class="header_rule">
+    <dl class="dl-horizontal">
+    <dt>{% trans "Cloud Service Name" %}</dt>
+    <dd>{{ disk.attached_to.hosted_service_name }}</dd>
+
+    <dt>{% trans "Role Name" %}</dt>
+    <dd>{{ disk.attached_to.role_name }}</dd>
+
+    <dt>{% trans "Deployment Name" %}</dt>
+    <dd>{{ disk.attached_to.deployment_name }}</dd>
+    </dl>
+</div>
+{% endif %}

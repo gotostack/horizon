@@ -164,7 +164,7 @@ class CreateProjectInfoAction(workflows.Action):
                     " associated with this new project."))
 
     certificate_path = forms.CharField(
-        label=_("Subscription ID"),
+        label=_("Certificate Path"),
         help_text=_("Path to .pem certificate file (httplib),"
                     " or location of the certificate in your"
                     " Personal certificate store (winhttp) in the"

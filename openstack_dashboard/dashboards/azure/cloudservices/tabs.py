@@ -14,25 +14,20 @@
 
 from django.utils.translation import ugettext_lazy as _
 
-import horizon
+from horizon import tabs
 
 
-class BasePanels(horizon.PanelGroup):
-    slug = "compute"
-    name = _("Compute")
-    panels = ('overview',
-              'instances',
-              'cloudservices',
-              'disks')
+class OverviewTab(tabs.Tab):
+    name = _("Overview")
+    slug = "overview"
+    template_name = ("azure/cloudservices/"
+                     "_detail_overview.html")
+
+    def get_context_data(self, request):
+        return {"cloudservice": self.tab_group.kwargs['cloudservice']}
 
 
-class Azure(horizon.Dashboard):
-    name = _("Azure")
-    slug = "azure"
-    panels = (
-        BasePanels,)
-    default_panel = 'overview'
-    supports_tenants = True
-
-
-horizon.register(Azure)
+class CloudServiceTabs(tabs.TabGroup):
+    slug = "cloudservice_details"
+    tabs = (OverviewTab,)
+    sticky = True

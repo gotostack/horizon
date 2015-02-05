@@ -1,0 +1,47 @@
+{% load i18n sizeformat %}
+{% load url from future %}
+
+<h3>{% trans "Cloud Service Overview" %}</h3>
+
+<div class="status detail">
+  <h4>{% trans "Basic Information" %}</h4>
+  <hr class="header_rule">
+  <dl class="dl-horizontal">
+    <dt>{% trans "url" %}</dt>
+    <dd>{{ cloudservice.url }}</dd>
+    <dt>{% trans "service_name" %}</dt>
+    <dd>{{ cloudservice.service_name }}</dd>
+  </dl>
+</div>
+
+<div class="status detail">
+  <h4>{% trans "Properties" %}</h4>
+  <hr class="header_rule">
+  <dl class="dl-horizontal">
+    <dt>{% trans "status" %}</dt>
+    <dd>{{ cloudservice.hosted_service_properties.status }}</dd>
+    <dt>{% trans "description" %}</dt>
+    <dd>{{ cloudservice.hosted_service_properties.description }}</dd>
+    <dt>{% trans "label" %}</dt>
+    <dd>{{ cloudservice.hosted_service_properties.label }}</dd>
+    <dt>{% trans "location" %}</dt>
+    <dd>{{ cloudservice.hosted_service_properties.location }}</dd>
+    <dt>{% trans "affinity_group" %}</dt>
+    <dd>{{ cloudservice.hosted_service_properties.affinity_group }}</dd>
+    <dt>{% trans "date_created" %}</dt>
+    <dd>{{ cloudservice.hosted_service_properties.date_created }}</dd>
+    <dt>{% trans "date_last_modified" %}</dt>
+    <dd>{{ cloudservice.hosted_service_properties.date_last_modified }}</dd>
+  </dl>
+</div>
+
+{% if cloudservice.hosted_service_properties.extended_properties %}
+<div class="status detail">
+  <h4>{% trans "Extended Properties" %}</h4>
+  <hr class="header_rule">
+  <dl class="dl-horizontal">
+    <dt>{% trans "extended_properties" %}</dt>
+    <dd>{{ cloudservice.hosted_service_properties.extended_properties }}</dd>
+  </dl>
+</div>
+{% endif %}

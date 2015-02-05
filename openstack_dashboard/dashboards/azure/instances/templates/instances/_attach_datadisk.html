@@ -2,11 +2,11 @@
 {% load i18n %}
 {% load url from future %}
 
-{% block form_id %}add_endpoint_form{% endblock %}
-{% block form_action %}{% url "horizon:azure:instances:addendpoint" cloud_service_name deployment_name instance_name %}{% endblock %}
+{% block form_id %}attach_datadisk_form{% endblock %}
+{% block form_action %}{% url "horizon:azure:instances:attach" cloud_service_name deployment_name instance_name %}{% endblock %}
 
-{% block modal_id %}add_endpoint_modal{% endblock %}
-{% block modal-header %}{% trans "Add Endpoint" %}{% endblock %}
+{% block modal_id %}attach_datadisk_modal{% endblock %}
+{% block modal-header %}{% trans "Attach Data Disk" %}{% endblock %}
 
 {% block modal-body %}
 <div class="left">
@@ -16,12 +16,12 @@
 </div>
 <div class="right">
   <h3>{% trans "Description:" %}</h3>
-  <p>{% trans "Add an endpoint to the instance." %}</p>
+  <p>{% trans "Attach a data disk to the instance." %}</p>
 </div>
 {% endblock %}
 
 {% block modal-footer %}
-  <input class="btn btn-primary pull-right" type="submit" value="{% trans "Add Endpoint" %}" />
+  <input class="btn btn-primary pull-right" type="submit" value="{% trans "Attach Data Disk" %}" />
   <a href="{% url "horizon:azure:instances:index" %}" class="btn btn-default secondary cancel close">{% trans "Cancel" %}</a>
 {% endblock %}
 

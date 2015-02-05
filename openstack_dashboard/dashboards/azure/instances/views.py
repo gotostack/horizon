@@ -79,13 +79,7 @@ class IndexView(tables.DataTableView):
                                           for r in dep.role_list])
                         for ins in dep.role_instance_list:
                             # set DNS
-                            port = ':'
-                            if ins.instance_endpoints:
-                                endpoints = dict(
-                                    [(p.name, p.public_port)
-                                     for p in ins.instance_endpoints])
-                                port += endpoints.get('SSH', "N/A")
-                            ins.dns_url = dep.url[7:-1] + port
+                            ins.dns_url = dep.url[7:-1]
                             # set cloud service name
                             ins.cloud_service_name = cs.service_name
                             # set deployment name
@@ -303,3 +297,8 @@ class RemoveEndpointView(AddEndpointView):
                  'instance_name': self.kwargs['instance_name'],
                  'endpoints': endpoints})
         return initial
+
+
+class AttachDataDiskView(AddEndpointView):
+    form_class = project_forms.AttatchDatadiskForm
+    template_name = 'azure/instances/attach_datadisk.html'

@@ -30,6 +30,15 @@ from openstack_dashboard import api
 
 LOG = logging.getLogger(__name__)
 
+# Leave this REGEX here for future use.
+PASS_REGEX = re.compile(
+    r"^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])[a-zA-Z\d]{6,72}$",
+    re.UNICODE)
+PASS_ERROR_MESSAGES = {
+    'invalid': _('The supplied password must be 6-72 characters'
+                 'Password must contain uppercase and lowercase'
+                 ' letters and numbers.')}
+
 INSTANCE_NAME_REGEX = re.compile(r"^[a-zA-Z][a-zA-Z0-9\-]*$", re.UNICODE)
 INSTANCE_NAME_HELP_TEXT = _('Instance name must begin with letter'
                             ' and only contain'

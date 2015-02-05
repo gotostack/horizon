@@ -16,12 +16,10 @@
   </dl>
 </div>
 
-
-
 {% if instance.configuration_sets %}
 {% for conf in instance.configuration_sets %}
 <div class="status detail">
-    <h4>{% trans "Configuration" %}</h4>
+    <h4>{% trans "Endpoints" %}</h4>
     <hr class="header_rule">
     <dl class="dl-horizontal">
       {% for item in conf.input_endpoints %}
@@ -55,7 +53,7 @@
     <dl class="dl-horizontal">
     {% for volume in instance.data_virtual_hard_disks %}
         <dt>{% trans "Attached To" %}</dt>
-        <dd>{% trans "Volume Name:" %} {{volume.disk_name}} | {% trans "Size:" %} {{ volume.logical_disk_size_in_gb }}</dd>
+        <dd>{% trans "Volume Name:" %} {{volume.disk_name}} | {% trans "Size:" %} {{ volume.logical_disk_size_in_gb }} GB</dd>
         {% empty %}
         <dt>{% trans "Volume" %}</dt>
         <dd><em>{% trans "No volumes attached." %}</em></dd>

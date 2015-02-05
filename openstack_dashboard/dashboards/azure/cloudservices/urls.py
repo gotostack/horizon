@@ -12,27 +12,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from django.utils.translation import ugettext_lazy as _
+from django.conf.urls import patterns
+from django.conf.urls import url
 
-import horizon
+from openstack_dashboard.dashboards.azure.cloudservices import views
 
+CLOUDSERVICE_MOD = r'^(?P<cloud_service_name>[^/]+)/%s$'
 
-class BasePanels(horizon.PanelGroup):
-    slug = "compute"
-    name = _("Compute")
-    panels = ('overview',
-              'instances',
-              'cloudservices',
-              'disks')
-
-
-class Azure(horizon.Dashboard):
-    name = _("Azure")
-    slug = "azure"
-    panels = (
-        BasePanels,)
-    default_panel = 'overview'
-    supports_tenants = True
-
-
-horizon.register(Azure)
+urlpatterns = patterns(
+    'openstack_dashboard.dashboards.azure.cloudservices.views',
+    url(r'^$', views.IndexView.as_view(), name='index'),
+    url(r'^create$', views.CreateCloudServiceView.as_view(), name='create'),
+    url(CLOUDSERVICE_MOD % 'detail',
+        views.DetailView.as_view(), name='detail'),
+)

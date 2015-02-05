@@ -35,7 +35,7 @@ from openstack_dashboard.dashboards.azure.instances.workflows \
 
 LOG = logging.getLogger(__name__)
 
-ACTIVE_STATES = ("ACTIVE",)
+ACTIVE_STATES = ("Started", "Starting", "Suspended")
 VOLUME_ATTACH_READY_STATES = ("ACTIVE", "SHUTOFF")
 SNAPSHOT_READY_STATES = ("ACTIVE", "SHUTOFF", "PAUSED", "SUSPENDED")
 
@@ -163,7 +163,7 @@ class TerminateInstance(tables.BatchAction):
             # If the instance is the last one of
             # this cloudservice/deployment,
             # just delete the deployment directly.
-            api.azure_api.delete_deployment(
+            api.azure_api.deployment_delete(
                 request,
                 datum.cloud_service_name,
                 # If instance was created from horizon,
@@ -279,9 +279,7 @@ class StopInstance(tables.BatchAction):
 
     def allowed(self, request, instance):
         return ((instance is None)
-                or ((instance.power_state in ("Started",
-                                              "Starting",
-                                              "Suspended"))
+                or ((instance.power_state in ACTIVE_STATES)
                     and instance.power_state.lower() != "deleting"))
 
     def action(self, request, obj_id):
@@ -314,9 +312,7 @@ class ResizeLink(tables.LinkAction):
         return "?".join([base_url, param])
 
     def allowed(self, request, instance):
-        return ((instance.power_state in ("Started",
-                                          "Starting",
-                                          "Suspended"))
+        return ((instance.power_state in ACTIVE_STATES)
                 and instance.power_state.lower() != "deleting")
 
 
@@ -343,9 +339,7 @@ class EditInstance(tables.LinkAction):
         return "?".join([base_url, param])
 
     def allowed(self, request, instance):
-        return ((instance.power_state in ("Started",
-                                          "Starting",
-                                          "Suspended"))
+        return ((instance.power_state in ACTIVE_STATES)
                 and instance.power_state.lower() != "deleting")
 
 
@@ -355,10 +349,8 @@ class AddEndpoint(tables.LinkAction):
     classes = ("btn-rebuild", "ajax-modal")
     url = "horizon:azure:instances:addendpoint"
 
-    def allowed(self, request, instance):
-        return ((instance.power_state in ("Started",
-                                          "Starting",
-                                          "Suspended"))
+    def allowed(self, request, instance=None):
+        return ((instance.power_state in ACTIVE_STATES)
                 and instance.power_state.lower() != "deleting")
 
     def get_link_url(self, datum):
@@ -373,6 +365,51 @@ class RemoveEndpoint(AddEndpoint):
     name = "removeendpoint"
     verbose_name = _("Remove Endpoint")
     url = "horizon:azure:instances:removeendpoint"
+
+
+class AttachDataDisk(AddEndpoint):
+    name = "attachdatadisk"
+    verbose_name = _("Attach Data Disk")
+    url = "horizon:azure:instances:attach"
+
+    def allowed(self, request, instance=None):
+        return ((instance.power_state in ACTIVE_STATES)
+                and instance.power_state.lower() != "deleting"
+                and len(instance.role.data_virtual_hard_disks) == 0)
+
+
+class DeattachDataDisk(tables.BatchAction):
+    name = "de-attach"
+    verbose_name = _("De-attach Data Disk")
+    classes = ('btn-danger',)
+
+    @staticmethod
+    def action_present(count):
+        return ungettext_lazy(
+            u"De-attach Instance",
+            u"De-attach Instances",
+            count
+        )
+
+    @staticmethod
+    def action_past(count):
+        return ungettext_lazy(
+            u"De-attached Instance",
+            u"De-attached Instances",
+            count
+        )
+
+    def allowed(self, request, instance=None):
+        return ((instance.power_state == 'Started')
+                and instance.power_state.lower() != "deleting"
+                and len(instance.role.data_virtual_hard_disks) > 0)
+
+    def action(self, request, obj_id):
+        datum = self.table.get_object_by_id(obj_id)
+        api.azure_api.data_disk_deattach(request,
+                                         datum.cloud_service_name,
+                                         datum.cloud_service_name,
+                                         obj_id)
 
 
 STATUS_DISPLAY_CHOICES = (
@@ -451,8 +488,14 @@ class InstancesTable(tables.DataTable):
                                 verbose_name=_("Power State"),
                                 status_choices=STATUS_CHOICES,
                                 display_choices=STATUS_DISPLAY_CHOICES)
+    cloud_service_name = tables.Column("cloud_service_name",
+                                       verbose_name=_("Cloud Service"))
     dns_url = tables.Column("dns_url",
-                            verbose_name=_("Endpoint"))
+                            verbose_name=_("DNS"))
+
+    def get_object_display(self, datum):
+        return (datum.instance_name
+                if hasattr(datum, 'instance_name') else datum.role_name)
 
     def get_object_id(self, datum):
         return (datum.instance_name
@@ -468,8 +511,9 @@ class InstancesTable(tables.DataTable):
         row_actions = (DetailLink, TerminateInstance,
                        StartInstance, StopInstance,
                        RestartInstance, ResizeLink,
-                       EditInstance, AddEndpoint,
-                       RemoveEndpoint)
+                       EditInstance,
+                       AddEndpoint, RemoveEndpoint,
+                       AttachDataDisk, DeattachDataDisk)
 
 
 class EndpointsTable(tables.DataTable):

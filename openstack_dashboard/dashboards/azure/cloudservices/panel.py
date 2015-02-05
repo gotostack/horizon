@@ -16,23 +16,12 @@ from django.utils.translation import ugettext_lazy as _
 
 import horizon
 
-
-class BasePanels(horizon.PanelGroup):
-    slug = "compute"
-    name = _("Compute")
-    panels = ('overview',
-              'instances',
-              'cloudservices',
-              'disks')
+from openstack_dashboard.dashboards.azure import dashboard
 
 
-class Azure(horizon.Dashboard):
-    name = _("Azure")
-    slug = "azure"
-    panels = (
-        BasePanels,)
-    default_panel = 'overview'
-    supports_tenants = True
+class CloudServices(horizon.Panel):
+    name = _("Cloud Services")
+    slug = 'cloudservices'
 
 
-horizon.register(Azure)
+dashboard.Azure.register(CloudServices)

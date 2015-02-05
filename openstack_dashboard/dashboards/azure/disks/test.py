@@ -12,27 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from django.utils.translation import ugettext_lazy as _
+from django.core.urlresolvers import reverse
 
-import horizon
+from mox import IsA  # noqa
 
-
-class BasePanels(horizon.PanelGroup):
-    slug = "compute"
-    name = _("Compute")
-    panels = ('overview',
-              'instances',
-              'cloudservices',
-              'disks')
+from openstack_dashboard.test import helpers as test
 
 
-class Azure(horizon.Dashboard):
-    name = _("Azure")
-    slug = "azure"
-    panels = (
-        BasePanels,)
-    default_panel = 'overview'
-    supports_tenants = True
+INDEX_URL = reverse('horizon:azure:disks:index')
 
 
-horizon.register(Azure)
+class DisksViewTests(test.TestCase):
+    pass

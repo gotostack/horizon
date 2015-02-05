@@ -40,6 +40,11 @@ AZURE_MANAGEMENT_HOST = getattr(settings,
 
 CN_STORAGE_BASE_URL = 'https://%s.blob.core.chinacloudapi.cn/%s/%s'
 
+STORAGE_ACCOUNTS_SUFFIX = getattr(
+    settings,
+    "STORAGE_ACCOUNTS_SUFFIX",
+    {"China East": "chinaeast", "China North": "chinanorth"})
+
 AZURE_KEY_FILE_FOLDER = getattr(
     settings, 'AZURE_KEY_FILE_FOLDER',
     # getattr(settings, 'ROOT_PATH', ''),
@@ -115,15 +120,49 @@ def cloud_service_list(request):
     return azureclient(request).list_hosted_services()
 
 
+@memoized
+def cloud_service_detail(request, service_name, embed_detail=False):
+    """Get details of one specific cloud service."""
+    return azureclient(request).get_hosted_service_properties(
+        service_name=service_name,
+        embed_detail=embed_detail)
+
+
 def cloud_service_delete(request, service_name):
     """Delete a cloud service."""
     return azureclient(request).delete_hosted_service(service_name)
+
+
+def cloud_service_create(request,
+                         service_name, label, description=None,
+                         location=None, affinity_group=None,
+                         extended_properties=None):
+    """Create a cloud service."""
+    return azureclient(request).create_hosted_service(
+        service_name, label, description,
+        location, affinity_group,
+        extended_properties)
 
 
 @memoized
 def storage_account_list(request):
     """Get all Azure storage accounts of the subscription."""
     return azureclient(request).list_storage_accounts()
+
+
+def storage_account_create(request, service_name, description, label,
+                           affinity_group=None, location=None,
+                           geo_replication_enabled=None,
+                           extended_properties=None,
+                           account_type='Standard_GRS'):
+    """Creates a new storage account in Windows Azure."""
+    return azureclient(request).create_storage_account(
+        service_name,
+        description, label,
+        affinity_group, location,
+        geo_replication_enabled,
+        extended_properties,
+        account_type)
 
 
 @memoized
@@ -133,27 +172,19 @@ def affinity_group_list(request):
 
 
 @memoized
-def cloud_service_detail(request, service_name, embed_detail=False):
-    """Get details of one specific cloud service."""
-    return azureclient(request).get_hosted_service_properties(
-        service_name=service_name,
-        embed_detail=embed_detail)
-
-
-@memoized
 def role_size_list(request):
     """Get the list of available VM sizes (role sizes)."""
     return azureclient(request).list_role_sizes()
 
 
 @memoized
-def get_deployment_by_name(request, service_name, deployment_name):
+def deployment_get_by_name(request, service_name, deployment_name):
     """Get deployment by name."""
     return azureclient(request).get_deployment_by_name(service_name,
                                                        deployment_name)
 
 
-def create_deployment(request,
+def deployment_create(request,
                       service_name, deployment_slot, name,
                       package_url, label, configuration,
                       start_deployment=False,
@@ -169,14 +200,14 @@ def create_deployment(request,
         extended_properties=extended_properties)
 
 
-def delete_deployment(request, service_name, deployment_name):
+def deployment_delete(request, service_name, deployment_name):
     """Delete a azure deployment."""
     return azureclient(request).delete_deployment(service_name,
                                                   deployment_name)
 
 
 @memoized
-def list_operating_systems(request):
+def operating_systems_list(request):
     """Lists the versions of the guest operating system."""
     return azureclient(request).list_operating_systems()
 
@@ -188,7 +219,7 @@ def list_os_images(request):
 
 
 @memoized
-def list_operating_system_families(request):
+def operating_system_families_list(request):
     """Get the list of available images family."""
     return azureclient(request).list_operating_system_families()
 
@@ -230,8 +261,9 @@ def _get_cloudservice_used_public_ports(cloudservice):
     for dep in cloudservice.deployments:
         for role in dep.role_list:
             for conf in role.configuration_sets:
-                for endpoint in conf.input_endpoints:
-                    public_ports.append(endpoint.port)
+                if conf.input_endpoints:
+                    for endpoint in conf.input_endpoints:
+                        public_ports.append(endpoint.port)
     public_ports.sort()
     return public_ports
 
@@ -334,12 +366,13 @@ def virtual_machine_create(request,
             # Add this new vm to the existing cloud-service/deployment
             if enable_port:
                 public_ports = _get_cloudservice_used_public_ports(cs)
-                # Random new public ports in the existing cloud service
-                for ep in network_config.input_endpoints.input_endpoints:
-                    new_port = random.randint(int(public_ports[-1]),
-                                              int(public_ports[-1]) + 10)
-                    ep.port = str(new_port)
-                    public_ports.append(str(new_port))
+                if public_ports:
+                    # Random new public ports in the existing cloud service
+                    for ep in network_config.input_endpoints.input_endpoints:
+                        new_port = random.randint(int(public_ports[-1]),
+                                                  int(public_ports[-1]) + 10)
+                        ep.port = str(new_port)
+                        public_ports.append(str(new_port))
             return client.add_role(
                 service_name=service_name,
                 deployment_name=deployment_name,
@@ -562,3 +595,50 @@ def update_disk(request, disk_name,
     return azureclient(request).update_disk(disk_name, has_operating_system,
                                             label, media_link,
                                             name, os)
+
+
+def data_disk_get(request, service_name, deployment_name, role_name, lun):
+    """Retrieves the specified data disk from a virtual machine."""
+    return azureclient(request).get_data_disk(
+        service_name, deployment_name, role_name, lun)
+
+
+def data_disk_attach(request,
+                     service_name, deployment_name, role_name, lun=0,
+                     host_caching=None, media_link=None, disk_label=None,
+                     disk_name=None, logical_disk_size_in_gb=None,
+                     source_media_link=None):
+    """Adds a data disk to a virtual machine."""
+    disk_blob = '%s-%s-data-disk.vhd' % (deployment_name, role_name)
+    media_link = CN_STORAGE_BASE_URL % ('myvhdsaccount',
+                                        'vhds',
+                                        disk_blob)
+    return azureclient(request).add_data_disk(
+        service_name, deployment_name, role_name, lun,
+        host_caching, media_link, disk_label,
+        disk_name, logical_disk_size_in_gb,
+        source_media_link)
+
+
+def data_disk_reattach(request,
+                       service_name, deployment_name, role_name, lun=0,
+                       host_caching=None, media_link=None, updated_lun=None,
+                       disk_label=None, disk_name=None,
+                       logical_disk_size_in_gb=None):
+    """Updates the specified data disk attached
+
+    to the specified virtual machine.
+    """
+    return azureclient(request).update_data_disk(
+        service_name, deployment_name, role_name, lun,
+        host_caching, media_link, updated_lun,
+        disk_label, disk_name,
+        logical_disk_size_in_gb)
+
+
+def data_disk_deattach(request,
+                       service_name, deployment_name,
+                       role_name, lun=0, delete_vhd=False):
+    """Removes the specified data disk from a virtual machine."""
+    return azureclient(request).delete_data_disk(
+        service_name, deployment_name, role_name, lun, delete_vhd)
