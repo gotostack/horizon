@@ -1,0 +1,7 @@
+{% if instance.instance_endpoints %}
+    <ul>
+    {% for end in instance.instance_endpoints %}
+      <li>{{ end.vip }}:{{ end.public_port }} - {{ end.name }}</li>
+    {% endfor %}
+    </ul>
+{% endif %}

@@ -39,11 +39,14 @@ AZURE_MANAGEMENT_HOST = getattr(settings,
                                 'management.core.chinacloudapi.cn')
 
 CN_STORAGE_BASE_URL = 'https://%s.blob.core.chinacloudapi.cn/%s/%s'
-
 STORAGE_ACCOUNTS_SUFFIX = getattr(
     settings,
     "STORAGE_ACCOUNTS_SUFFIX",
     {"China East": "chinaeast", "China North": "chinanorth"})
+VHDS_CONTAINER = getattr(settings, "VHDS_CONTAINER", "vhds")
+VHD_BLOB_NAME_FORMAT = getattr(settings,
+                               "VHD_BLOB_NAME_FORMAT",
+                               "%s-%s-sys-disk.vhd")
 
 AZURE_KEY_FILE_FOLDER = getattr(
     settings, 'AZURE_KEY_FILE_FOLDER',
@@ -284,6 +287,22 @@ def virtual_machine_get(request, service_name,
                                          role_name)
 
 
+def _get_virtual_machine_vhd_file_link(request, location,
+                                       deployment_name,
+                                       role_name):
+    """Get the request related vm vhd file storage url."""
+    project = next((proj for proj in request.user.authorized_tenants
+                    if proj.id == request.user.project_id), None)
+    if project:
+        storage_account = project.name + STORAGE_ACCOUNTS_SUFFIX[location]
+        vhd_file_blob = VHD_BLOB_NAME_FORMAT % (deployment_name, role_name)
+        return CN_STORAGE_BASE_URL % (storage_account,
+                                      VHDS_CONTAINER,
+                                      vhd_file_blob)
+    else:
+        return ''
+
+
 def virtual_machine_create(request,
                            service_name,
                            create_new_cloudservice,
@@ -332,22 +351,23 @@ def virtual_machine_create(request,
         if enable_port:
             network_config = _create_linux_ssh_endpoint()
 
-    new_os_sys_disk_url = '%s-%s-sys-disk.vhd' % (deployment_name, role_name)
-    osvhd = OSVirtualHardDisk(
-        source_image_name=image_name,
-        media_link=CN_STORAGE_BASE_URL % ('myvhdsaccount',
-                                          'vhds',
-                                          new_os_sys_disk_url),
-        # caching mode of the operating system disk
-        # all default 'ReadOnly'
-        host_caching='ReadOnly')
-
     if create_new_cloudservice:
         # Create a new cloud service and a deployment for this new vm
         client.create_hosted_service(
             service_name=service_name,
             label=service_name,
             location=location)
+        new_os_sys_disk_url = _get_virtual_machine_vhd_file_link(
+            request,
+            location,
+            deployment_name,
+            role_name)
+        osvhd = OSVirtualHardDisk(
+            source_image_name=image_name,
+            media_link=new_os_sys_disk_url,
+            # caching mode of the operating system disk
+            # all default 'ReadOnly'
+            host_caching='ReadOnly')
         return client.create_virtual_machine_deployment(
             service_name=service_name,
             deployment_name=deployment_name,
@@ -362,6 +382,17 @@ def virtual_machine_create(request,
         cs = client.get_hosted_service_properties(
             service_name=service_name,
             embed_detail=True)
+        new_os_sys_disk_url = _get_virtual_machine_vhd_file_link(
+            request,
+            cs.hosted_service_properties.location,
+            deployment_name,
+            role_name)
+        osvhd = OSVirtualHardDisk(
+            source_image_name=image_name,
+            media_link=new_os_sys_disk_url,
+            # caching mode of the operating system disk
+            # all default 'ReadOnly'
+            host_caching='ReadOnly')
         if cs.deployments:
             # Add this new vm to the existing cloud-service/deployment
             if enable_port:

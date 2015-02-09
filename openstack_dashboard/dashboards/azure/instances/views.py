@@ -148,17 +148,10 @@ class LaunchInstanceView(workflows.WorkflowView):
         initial = super(LaunchInstanceView, self).get_initial()
         initial['project_id'] = self.request.user.tenant_id
         initial['user_id'] = self.request.user.id
-        try:
-            tenant = api.keystone.tenant_get(self.request,
-                                             self.request.user.tenant_id)
-        except Exception:
-            tenant = None
-            redirect = reverse("horizon:azure:instances:index")
-            exceptions.handle(self.request,
-                              _('Unable to retrieve project info.'),
-                              redirect=redirect)
-        if tenant:
-            initial['subscription_id'] = tenant.subscription_id
+        project = next((proj for proj in self.request.user.authorized_tenants
+                        if proj.id == self.request.user.project_id), None)
+        if project:
+            initial['subscription_id'] = project.subscription_id
 
         return initial
 

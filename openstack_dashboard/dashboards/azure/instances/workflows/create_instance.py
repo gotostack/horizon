@@ -348,7 +348,9 @@ class SetAccessControlsAction(workflows.Action):
                 self.request,
                 _('Unable to retrieve azure cloud service list.'))
 
-        cs_list = [(cs.service_name, cs.service_name)
+        cs_list = [(cs.service_name,
+                    '%s - %s' % (cs.service_name,
+                                 cs.hosted_service_properties.location))
                    for cs in cloud_services]
         cs_list.sort()
         cs_list.insert(0, ("new_cloudservice", _("Add a new cloud service")))

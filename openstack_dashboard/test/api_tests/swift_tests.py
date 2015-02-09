@@ -181,7 +181,8 @@ class SwiftApiTests(test.APITestCase):
                 self.data = obj.data
                 self.size = len(obj.data)
 
-        headers = {'X-Object-Meta-Orig-Filename': fake_name}
+        headers = {'X-Object-Meta-Orig-Filename': fake_name,
+                   'Content-Length': 9}
 
         swift_api = self.stub_swiftclient()
         swift_api.put_object(container.name,

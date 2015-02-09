@@ -64,6 +64,12 @@ def get_ips(instance):
     return template.loader.render_to_string(template_name, context)
 
 
+def get_endpoints(instance):
+    template_name = 'azure/instances/_instance_endpoints.html'
+    context = {"instance": instance}
+    return template.loader.render_to_string(template_name, context)
+
+
 def get_size(instance):
     if hasattr(instance, "role_size"):
         template_name = 'azure/instances/_instance_flavor.html'
@@ -490,6 +496,8 @@ class InstancesTable(tables.DataTable):
                                 display_choices=STATUS_DISPLAY_CHOICES)
     cloud_service_name = tables.Column("cloud_service_name",
                                        verbose_name=_("Cloud Service"))
+    Endpoints = tables.Column(get_endpoints,
+                              verbose_name=_("Endpoints"))
     dns_url = tables.Column("dns_url",
                             verbose_name=_("DNS"))
 

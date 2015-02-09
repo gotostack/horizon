@@ -10,12 +10,3 @@
     {% endfor %}
     </ul>
 {% endif %}
-
-{% if instance.instance_endpoints %}
-    <h4>Endpoints</h4>
-    <ul>
-    {% for end in instance.instance_endpoints %}
-      <li>{{ end.vip }}:{{ end.public_port }} - {{ end.name }}</li>
-    {% endfor %}
-    </ul>
-{% endif %}
