@@ -67,7 +67,7 @@ class SelectProjectUserAction(workflows.Action):
                          for tenant in request.user.authorized_tenants]
         self.fields['subscription_id'].choices = subscriptions
 
-    class Meta:
+    class Meta(object):
         name = _("Project & User")
         # Unusable permission so this is always hidden. However, we
         # keep this step in the workflow for validation/verification purposes.
@@ -104,7 +104,7 @@ class SetInstanceDetailsAction(workflows.Action):
     # disk_snapshot = forms.ChoiceField
     # disk_as_image = forms.ChoiceField
 
-    class Meta:
+    class Meta(object):
         name = _("Details")
         help_text_template = ("azure/instances/"
                               "_launch_details_help.html")
@@ -276,7 +276,7 @@ class SetAzureOSImageAction(workflows.Action):
 
         return image_list
 
-    class Meta:
+    class Meta(object):
         name = _("OS Image")
         help_text_template = ("azure/instances/"
                               "_launch_images_help.html")
@@ -331,7 +331,7 @@ class SetAccessControlsAction(workflows.Action):
         label=_("Location"),
         help_text=_("The data center to launch the instance(Cloud Service)."))
 
-    class Meta:
+    class Meta(object):
         name = _("Access & Security")
         help_text = _("Control access to your instance via key pairs, "
                       "passwords, and other mechanisms.")

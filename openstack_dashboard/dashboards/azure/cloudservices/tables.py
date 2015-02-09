@@ -153,7 +153,7 @@ class CloudServicesTable(tables.DataTable):
     date_created = tables.Column(get_date_created,
                                  verbose_name=_("Date Created"))
 
-    class Meta:
+    class Meta(object):
         name = 'cloud_services'
         verbose_name = _('Cloud Services')
         table_actions = (FilterAction,

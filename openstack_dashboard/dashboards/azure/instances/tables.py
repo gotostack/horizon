@@ -509,7 +509,7 @@ class InstancesTable(tables.DataTable):
         return (datum.instance_name
                 if hasattr(datum, 'instance_name') else datum.role_name)
 
-    class Meta:
+    class Meta(object):
         name = "instances"
         verbose_name = _("Instances")
         status_columns = ["power_state", ]
@@ -537,7 +537,7 @@ class EndpointsTable(tables.DataTable):
         "load_balanced_endpoint_set_name",
         verbose_name=_("load balanced endpoint set name"))
 
-    class Meta:
+    class Meta(object):
         name = 'instance_endpoints'
         verbose_name = _('Instance Endpoints')
         table_actions = (FilterAction, )

@@ -26,7 +26,7 @@ class UpdateInstanceAvailabilitySetAction(workflows.Action):
         label=_("Availability Set Name"),
         required=False)
 
-    class Meta:
+    class Meta(object):
         name = _("Availability Set")
         slug = 'availability_set'
         help_text = _("Edit the instance availability set.")

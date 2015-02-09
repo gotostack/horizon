@@ -46,7 +46,7 @@ class SetFlavorChoiceAction(workflows.Action):
         help_text=_("Size of image to launch."),
         required=False)
 
-    class Meta:
+    class Meta(object):
         name = _("Flavor Choice")
         slug = 'flavor_choice'
         help_text_template = ("azure/instances/"

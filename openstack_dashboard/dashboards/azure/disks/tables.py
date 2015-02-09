@@ -86,7 +86,7 @@ class DisksTable(tables.DataTable):
     attached_to = tables.Column(get_attached_to,
                                 verbose_name=_("Virtual Machine Attached To"))
 
-    class Meta:
+    class Meta(object):
         name = 'disks'
         verbose_name = _('Disks')
         table_actions = (FilterAction, DeleteDisk)
