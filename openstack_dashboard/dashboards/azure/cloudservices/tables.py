@@ -82,7 +82,7 @@ class DeleteDeployment(tables.BatchAction):
             cs = api.azure_api.cloud_service_detail(request,
                                                     datum.service_name,
                                                     True)
-            if len(cs.deployments) == 0:
+            if cs.deployments is None or len(cs.deployments) == 0:
                 return False
         return True
 
@@ -120,7 +120,7 @@ class DeleteCloudService(tables.DeleteAction):
             cs = api.azure_api.cloud_service_detail(request,
                                                     datum.service_name,
                                                     True)
-            if len(cs.deployments) != 0:
+            if cs.deployments and len(cs.deployments) > 0:
                 return False
         return True
 

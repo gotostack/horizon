@@ -27,6 +27,8 @@ from azure.servicemanagement import OSVirtualHardDisk  # noqa
 from azure.servicemanagement import servicemanagementservice as sms
 from azure.servicemanagement import WindowsConfigurationSet  # noqa
 
+from azure.storage import blobservice
+
 from django.conf import settings
 
 from horizon.utils.memoized import memoized  # noqa
@@ -38,15 +40,19 @@ AZURE_MANAGEMENT_HOST = getattr(settings,
                                 # Default China
                                 'management.core.chinacloudapi.cn')
 
-CN_STORAGE_BASE_URL = 'https://%s.blob.core.chinacloudapi.cn/%s/%s'
+BLOB_SERVICE_HOST_BASE = '.blob.core.chinacloudapi.cn'
+CN_STORAGE_BASE_URL = 'https://%s' + BLOB_SERVICE_HOST_BASE + '/%s/%s'
 STORAGE_ACCOUNTS_SUFFIX = getattr(
     settings,
     "STORAGE_ACCOUNTS_SUFFIX",
     {"China East": "chinaeast", "China North": "chinanorth"})
 VHDS_CONTAINER = getattr(settings, "VHDS_CONTAINER", "vhds")
-VHD_BLOB_NAME_FORMAT = getattr(settings,
-                               "VHD_BLOB_NAME_FORMAT",
-                               "%s-%s-sys-disk.vhd")
+SYS_DISK_BLOB_NAME_FORMAT = getattr(settings,
+                                    "SYS_DISK_BLOB_NAME_FORMAT",
+                                    "%s-%s-sys-disk.vhd")
+DATA_DISK_BLOB_NAME_FORMAT = getattr(settings,
+                                     "DATA_DISK_NAME_FORMAT",
+                                     "%s-%s-data-disk.vhd")
 
 AZURE_KEY_FILE_FOLDER = getattr(
     settings, 'AZURE_KEY_FILE_FOLDER',
@@ -92,6 +98,26 @@ def get_tenant_pem_file_path(project_id):
     """Get the tenant cert pem file absolute path."""
     key_id = uuid.uuid3(uuid.NAMESPACE_X500, str(project_id))
     return "%s/%s.pem" % (AZURE_KEY_FILE_FOLDER, key_id)
+
+
+def create_default_storage_accounts(project):
+    subscription_id = project.subscription_id
+    cert_file = get_tenant_pem_file_path(project.id)
+    client = sms.ServiceManagementService(subscription_id,
+                                          cert_file,
+                                          host=AZURE_MANAGEMENT_HOST)
+    for item in STORAGE_ACCOUNTS_SUFFIX.items():
+        service_name = description = label = project.name + item[1]
+        client.create_storage_account(service_name,
+                                      description,
+                                      label,
+                                      location=item[0],
+                                      geo_replication_enabled=False,
+                                      account_type='Standard_LRS')
+        storage_account = client.get_storage_account_keys(service_name)
+        container_create(service_name,
+                         storage_account.storage_service_keys.primary,
+                         'vhds')
 
 
 @memoized
@@ -295,7 +321,8 @@ def _get_virtual_machine_vhd_file_link(request, location,
                     if proj.id == request.user.project_id), None)
     if project:
         storage_account = project.name + STORAGE_ACCOUNTS_SUFFIX[location]
-        vhd_file_blob = VHD_BLOB_NAME_FORMAT % (deployment_name, role_name)
+        vhd_file_blob = SYS_DISK_BLOB_NAME_FORMAT % (deployment_name,
+                                                     role_name)
         return CN_STORAGE_BASE_URL % (storage_account,
                                       VHDS_CONTAINER,
                                       vhd_file_blob)
@@ -313,7 +340,7 @@ def virtual_machine_create(request,
                            image_name, image_type,
                            admin_username,
                            user_password,
-                           deployment_slot='production',
+                           deployment_slot='Production',
                            network_config=None,
                            availability_set_name=None,
                            data_virtual_hard_disks=None,
@@ -332,7 +359,7 @@ def virtual_machine_create(request,
 
     if image_type == 'windows_image_id':
         conf = WindowsConfigurationSet(
-            computer_name=deployment_name,
+            computer_name=role_name,
             admin_password=user_password,
             admin_username=admin_username)
         conf.domain_join = None
@@ -344,7 +371,7 @@ def virtual_machine_create(request,
 
     if image_type == 'linux_image_id':
         conf = LinuxConfigurationSet(
-            host_name=deployment_name,
+            host_name=role_name,
             user_name=admin_username,
             user_password=user_password,
             disable_ssh_password_authentication=False)
@@ -618,7 +645,7 @@ def disk_add(request, has_operating_system,
                                          media_link, name, os)
 
 
-def update_disk(request, disk_name,
+def disk_update(request, disk_name,
                 has_operating_system,
                 label, media_link,
                 name, os):
@@ -634,21 +661,38 @@ def data_disk_get(request, service_name, deployment_name, role_name, lun):
         service_name, deployment_name, role_name, lun)
 
 
+def _get_data_disk_vhd_file_link(request,
+                                 service_name,
+                                 deployment_name,
+                                 role_name):
+    """Get the request related vm vhd file storage url."""
+    project = next((proj for proj in request.user.authorized_tenants
+                    if proj.id == request.user.project_id), None)
+    if project:
+        cs = azureclient(request).get_hosted_service_properties(service_name)
+        storage_account = project.name + STORAGE_ACCOUNTS_SUFFIX[
+            cs.hosted_service_properties.location]
+        vhd_file_blob = DATA_DISK_BLOB_NAME_FORMAT % (deployment_name,
+                                                      role_name)
+        return CN_STORAGE_BASE_URL % (storage_account,
+                                      VHDS_CONTAINER,
+                                      vhd_file_blob)
+    else:
+        return ''
+
+
 def data_disk_attach(request,
                      service_name, deployment_name, role_name, lun=0,
                      host_caching=None, media_link=None, disk_label=None,
                      disk_name=None, logical_disk_size_in_gb=None,
                      source_media_link=None):
     """Adds a data disk to a virtual machine."""
-    disk_blob = '%s-%s-data-disk.vhd' % (deployment_name, role_name)
-    media_link = CN_STORAGE_BASE_URL % ('myvhdsaccount',
-                                        'vhds',
-                                        disk_blob)
+    media_link = _get_data_disk_vhd_file_link(
+        request, service_name,
+        deployment_name, role_name)
     return azureclient(request).add_data_disk(
         service_name, deployment_name, role_name, lun,
-        host_caching, media_link, disk_label,
-        disk_name, logical_disk_size_in_gb,
-        source_media_link)
+        host_caching, media_link)
 
 
 def data_disk_reattach(request,
@@ -673,3 +717,21 @@ def data_disk_deattach(request,
     """Removes the specified data disk from a virtual machine."""
     return azureclient(request).delete_data_disk(
         service_name, deployment_name, role_name, lun, delete_vhd)
+
+
+"""Windows Azure Blob Storage."""
+
+
+@memoized
+def blobclient(account_name, account_key):
+    """Windows Azure Blob Storage Service Client."""
+    return blobservice.BlobService(account_name=account_name,
+                                   account_key=account_key)
+
+
+def container_create(account_name, account_key, container_name):
+    """Create a container."""
+    return blobclient(account_name,
+                      account_key).create_container(
+                          container_name=container_name,
+                          fail_on_exist=True)

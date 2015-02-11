@@ -22,7 +22,7 @@ from functools import wraps  # noqa
 import json
 import os
 
-
+from azure.servicemanagement import servicemanagementservice
 from ceilometerclient.v2 import client as ceilometer_client
 from cinderclient import client as cinder_client
 from django.conf import settings
@@ -347,6 +347,8 @@ class APITestCase(TestCase):
         self._original_troveclient = api.trove.troveclient
         self._original_saharaclient = api.sahara.client
 
+        self._original_azureclient = api.azure_api.azureclient
+
         # Replace the clients with our stubs.
         api.glance.glanceclient = lambda request: self.stub_glanceclient()
         api.keystone.keystoneclient = fake_keystoneclient
@@ -360,6 +362,8 @@ class APITestCase(TestCase):
         api.trove.troveclient = lambda request: self.stub_troveclient()
         api.sahara.client = lambda request: self.stub_saharaclient()
 
+        api.azure_api.azureclient = lambda request: self.stub_azureclient()
+
     def tearDown(self):
         super(APITestCase, self).tearDown()
         api.glance.glanceclient = self._original_glanceclient
@@ -371,6 +375,7 @@ class APITestCase(TestCase):
         api.ceilometer.ceilometerclient = self._original_ceilometerclient
         api.trove.troveclient = self._original_troveclient
         api.sahara.client = self._original_saharaclient
+        api.azure_api.azureclient = self._original_azureclient
 
     def stub_novaclient(self):
         if not hasattr(self, "novaclient"):
@@ -450,6 +455,14 @@ class APITestCase(TestCase):
             self.mox.StubOutWithMock(sahara_client, 'Client')
             self.saharaclient = self.mox.CreateMock(sahara_client.Client)
         return self.saharaclient
+
+    def stub_azureclient(self):
+        if not hasattr(self, "azureclient"):
+            self.mox.StubOutWithMock(servicemanagementservice,
+                                     'ServiceManagementService')
+            self.azureclient = self.mox.CreateMock(
+                servicemanagementservice.ServiceManagementService)
+        return self.azureclient
 
 
 @unittest.skipUnless(os.environ.get('WITH_SELENIUM', False),

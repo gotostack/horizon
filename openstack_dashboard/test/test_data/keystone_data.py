@@ -312,7 +312,9 @@ def data(TEST):
                    'description': "a test tenant.",
                    'enabled': True,
                    'domain_id': '1',
-                   'domain_name': 'test_domain'}
+                   'domain_name': 'test_domain',
+                   "subscription_name": "subscription-02",
+                   "subscription_id": "1"}
     tenant_dict_2 = {'id': "2",
                      'name': 'disabled_tenant',
                      'description': "a disabled test tenant.",

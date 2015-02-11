@@ -27,6 +27,10 @@ from saharaclient.api import base as saharaclient
 from swiftclient import client as swiftclient
 from troveclient import exceptions as troveclient
 
+# For Azure Test Use
+from openstack_dashboard.test.test_data \
+    import fake_azure_exceptions as azureclient
+
 
 UNAUTHORIZED = (
     keystoneclient.Unauthorized,
@@ -70,4 +74,6 @@ RECOVERABLE = (
     troveclient.ClientException,
     saharaclient.APIException,
     requests.RequestException,
+    # For Azure Test Use
+    azureclient.AzureException,
 )

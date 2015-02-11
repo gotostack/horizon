@@ -21,6 +21,10 @@ from novaclient import exceptions as nova_exceptions
 from swiftclient import client as swift_exceptions
 from troveclient import exceptions as trove_exceptions
 
+# For Azure Test Use
+from openstack_dashboard.test.test_data \
+    import fake_azure_exceptions as azure_excptions
+
 from openstack_dashboard.test.test_data import utils
 
 
@@ -91,3 +95,7 @@ def data(TEST):
     trove_auth = trove_exceptions.Unauthorized
     TEST.exceptions.trove_unauthorized =  \
         create_stubbed_exception(trove_auth)
+
+    # For Azure Test Use Exception
+    azure_exception = azure_excptions.AzureException
+    TEST.exceptions.azure = create_stubbed_exception(azure_exception)

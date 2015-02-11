@@ -17,6 +17,7 @@ import logging
 from django.core import urlresolvers
 from django.http import HttpResponse  # noqa
 from django import template
+from django.template.defaultfilters import title  # noqa
 from django.utils.http import urlencode
 from django.utils.translation import npgettext_lazy
 from django.utils.translation import pgettext_lazy
@@ -26,6 +27,7 @@ from django.utils.translation import ungettext_lazy
 from horizon import exceptions
 from horizon import tables
 from horizon.templatetags import sizeformat
+from horizon.utils import filters
 
 from openstack_dashboard import api
 from openstack_dashboard.dashboards.azure.instances.workflows \
@@ -130,7 +132,7 @@ class FilterAction(tables.FilterAction):
         """Naive case-insensitive search."""
         q = filter_string.lower()
         return [i for i in items
-                if q in i.name.lower()]
+                if q in i.role_name.lower()]
 
 
 class TerminateInstance(tables.BatchAction):
@@ -178,12 +180,11 @@ class TerminateInstance(tables.BatchAction):
             # Can not delete the cloud service here because
             # delete deployment request just return 202 (Accepted).
             # If here delete the cloud service immediately,
-            # it will cause a 409 (Conflict) error.
-            # Why 409 ? Because the delete deployment request was not
+            # it will raise a 409 (Conflict) error,
+            # because the delete deployment request was not
             # completely finished.
-            # TODO(Yulong) delete the cloud service
-            # api.azure_api.cloud_service_delete(request,
-            #                                   datum.cloud_service_name)
+            # User need to delete the cloud service in the cloud
+            # services panel.
         else:
             api.azure_api.virtual_machine_delete(
                 request,
@@ -227,7 +228,7 @@ class StartInstance(tables.BatchAction):
 
 
 class RestartInstance(tables.BatchAction):
-    name = "reboot"
+    name = "restart"
     classes = ('btn-danger', 'btn-reboot')
 
     @staticmethod
@@ -490,6 +491,7 @@ class InstancesTable(tables.DataTable):
                                     verbose_name=_("Instance Status"),
                                     status=True)
     power_state = tables.Column("power_state",
+                                filters=(title, filters.replace_underscores),
                                 status=True,
                                 verbose_name=_("Power State"),
                                 status_choices=STATUS_CHOICES,

@@ -80,7 +80,7 @@ class SelectProjectUser(workflows.Step):
 
 
 class SetInstanceDetailsAction(workflows.Action):
-    name = forms.RegexField(max_length=255,
+    name = forms.RegexField(max_length=15,
                             label=_("Instance Name"),
                             regex=INSTANCE_NAME_REGEX,
                             error_messages=INSTANCE_ERROR_MESSAGES,
