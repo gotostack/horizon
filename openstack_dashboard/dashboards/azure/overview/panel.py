@@ -20,7 +20,7 @@ from openstack_dashboard.dashboards.azure import dashboard
 
 
 class Overview(horizon.Panel):
-    name = _("Overview")
+    name = _("Welcome")
     slug = 'overview'
 
 

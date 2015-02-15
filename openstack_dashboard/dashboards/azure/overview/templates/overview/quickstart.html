@@ -1,0 +1,20 @@
+{% load i18n sizeformat %}
+{% load url from future %}
+
+{% block main %}
+  <div id="s3_user_details__overview" class="tab-pane active">
+    <h3>{% trans "Welcome LeCloud User" %}</h3>
+    <div class="info row-fluid detail">
+    <h4>{% trans "Quick Start" %}</h4>
+    <hr class="header_rule">
+    <dl>
+      <dt>{% trans "Instance" %}</dt>
+      <dd>{% trans "Instance" %}</dd>
+      <dt>{% trans "Cloud Service" %}</dt>
+      <dd>{% trans "Cloud Service" %}</dd>
+      <dt>{% trans "Disk" %}</dt>
+      <dd>{% trans "disk" %}</dd>
+    </dl>
+    </div>
+  </div>
+{% endblock %}

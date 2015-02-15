@@ -12,45 +12,40 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
-from django.template.defaultfilters import capfirst  # noqa
-from django.template.defaultfilters import floatformat  # noqa
 from django.utils.translation import ugettext_lazy as _
-from django.views.generic import TemplateView  # noqa
 
-from horizon.utils import csvbase
-
-from openstack_dashboard import usage
+from horizon import tabs
 
 
-class ProjectUsageCsvRenderer(csvbase.BaseCsvResponse):
-
-    columns = [_("Instance Name"), _("VCPUs"), _("RAM (MB)"),
-               _("Disk (GB)"), _("Usage (Hours)"),
-               _("Uptime (Seconds)"), _("State")]
-
-    def get_row_data(self):
-
-        for inst in self.context['usage'].get_instances():
-            yield (inst['name'],
-                   inst['vcpus'],
-                   inst['memory_mb'],
-                   inst['local_gb'],
-                   floatformat(inst['hours'], 2),
-                   inst['uptime'],
-                   capfirst(inst['state']))
+class WelcomeTab(tabs.Tab):
+    name = _("Quick Start")
+    slug = "quickstart"
+    template_name = "azure/overview/quickstart.html"
 
 
-class ProjectOverview(usage.UsageView):
-    table_class = usage.ProjectUsageTable
-    usage_class = usage.ProjectUsage
-    template_name = 'azure/overview/usage.html'
-    csv_response_class = ProjectUsageCsvRenderer
-
-    def get_data(self):
-        super(ProjectOverview, self).get_data()
-        return self.usage.get_instances()
+class InstanceTab(tabs.Tab):
+    name = _("Instance")
+    slug = "instance"
+    template_name = "azure/overview/instance.html"
 
 
-class WarningView(TemplateView):
-    template_name = "azure/_warning.html"
+class CloudServiceTab(tabs.Tab):
+    name = _("Cloud Service")
+    slug = "cloudservice"
+    template_name = "azure/overview/cloudservice.html"
+
+
+class DiskTab(tabs.Tab):
+    name = _("Disk")
+    slug = "disk"
+    template_name = "azure/overview/disk.html"
+
+
+class WelcomeTabs(tabs.TabGroup):
+    slug = "welcome_tabs"
+    tabs = (WelcomeTab, InstanceTab, CloudServiceTab, DiskTab)
+
+
+class WelcomeView(tabs.TabView):
+    tab_group_class = WelcomeTabs
+    template_name = 'azure/overview/index.html'
