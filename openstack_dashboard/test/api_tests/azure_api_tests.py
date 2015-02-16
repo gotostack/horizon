@@ -84,8 +84,8 @@ class AzureApiTests(test.APITestCase):
             service_name=api_cloudservice.service_name,
             label=api_cloudservice.hosted_service_properties.label,
             location=api_cloudservice.hosted_service_properties.location)
-        # Request Accept 202
-        self.assertIsNone(ret)
+
+        self.assertTrue(ret)
 
     def test_storage_account_list(self):
         api_storages = self.azure_storage_accounts.list()
@@ -175,21 +175,28 @@ class AzureApiTests(test.APITestCase):
         # Request Accept 202
         self.assertIsNone(ret)
 
+    def _get_operation(self, azureclient, result):
+        operation = self.azure_operation_status.first()
+        azureclient.get_operation_status(
+            result.request_id).AndReturn(operation)
+
     def test_deployment_delete(self):
         api_cloudservice = self.azure_cloud_services.first()
         api_deployment = self.azure_deployments.first()
+        result = self.azure_async_results.first()
         azureclient = self.stub_azureclient()
         azureclient.delete_deployment(
             api_cloudservice.service_name,
-            api_deployment.name)
+            api_deployment.name).AndReturn(result)
+        self._get_operation(azureclient, result)
         self.mox.ReplayAll()
 
         ret = api.azure_api.deployment_delete(
             self.request,
             api_cloudservice.service_name,
             api_deployment.name)
-        # Request Accept 202
-        self.assertIsNone(ret)
+
+        self.assertTrue(ret)
 
     def test_list_os_images(self):
         api_os_images = self.azure_os_images.list()
@@ -224,6 +231,7 @@ class AzureApiTests(test.APITestCase):
         api_cloudservice = self.azure_cloud_services.first()
         api_deployment = self.azure_deployments.first()
         api_role = self.azure_roles.first()
+        result = self.azure_async_results.first()
         azureclient = self.stub_azureclient()
         azureclient.create_hosted_service(
             service_name=api_cloudservice.service_name,
@@ -238,7 +246,8 @@ class AzureApiTests(test.APITestCase):
             system_config=IgnoreArg(),
             os_virtual_hard_disk=IgnoreArg(),
             network_config=IgnoreArg(),
-            role_size=api_role.role_size)
+            role_size=api_role.role_size).AndReturn(result)
+        self._get_operation(azureclient, result)
         self.mox.ReplayAll()
 
     def test_virtual_machine_create_new_cloudservce_linux(self):
@@ -272,13 +281,14 @@ class AzureApiTests(test.APITestCase):
             media_location=None,
             dns_servers=None,
             reserved_ip_name=None)
-        # Request Accept 202
-        self.assertIsNone(ret)
+
+        self.assertTrue(ret)
 
     def test_virtual_machine_create_add_role_to_cloudservice_deployment(self):
         api_cloudservice = self.azure_cloud_services_with_deployment.first()
         api_deployment = self.azure_deployments.first()
         api_role = self.azure_roles.first()
+        result = self.azure_async_results.first()
         azureclient = self.stub_azureclient()
         azureclient.get_hosted_service_properties(
             service_name=api_cloudservice.service_name,
@@ -290,7 +300,8 @@ class AzureApiTests(test.APITestCase):
             system_config=IgnoreArg(),
             os_virtual_hard_disk=IgnoreArg(),
             network_config=IgnoreArg(),
-            role_size=api_role.role_size)
+            role_size=api_role.role_size).AndReturn(result)
+        self._get_operation(azureclient, result)
         self.mox.ReplayAll()
 
         ret = api.azure_api.virtual_machine_create(
@@ -319,8 +330,8 @@ class AzureApiTests(test.APITestCase):
             media_location=None,
             dns_servers=None,
             reserved_ip_name=None)
-        # Request Accept 202
-        self.assertIsNone(ret)
+
+        self.assertTrue(ret)
 
     def test_virtual_machine_create_add_role_to_cloudservice_no_deployment(
         self
@@ -328,6 +339,7 @@ class AzureApiTests(test.APITestCase):
         api_cloudservice = self.azure_cloud_services.first()
         api_deployment = self.azure_deployments.first()
         api_role = self.azure_roles.first()
+        result = self.azure_async_results.first()
         azureclient = self.stub_azureclient()
         azureclient.get_hosted_service_properties(
             service_name=api_cloudservice.service_name,
@@ -341,7 +353,8 @@ class AzureApiTests(test.APITestCase):
             system_config=IgnoreArg(),
             os_virtual_hard_disk=IgnoreArg(),
             network_config=IgnoreArg(),
-            role_size=api_role.role_size)
+            role_size=api_role.role_size).AndReturn(result)
+        self._get_operation(azureclient, result)
         self.mox.ReplayAll()
 
         ret = api.azure_api.virtual_machine_create(
@@ -370,18 +383,20 @@ class AzureApiTests(test.APITestCase):
             media_location=None,
             dns_servers=None,
             reserved_ip_name=None)
-        # Request Accept 202
-        self.assertIsNone(ret)
+
+        self.assertTrue(ret)
 
     def test_virtual_machine_delete(self):
         api_cloudservice = self.azure_cloud_services.first()
         api_deployment = self.azure_deployments.first()
         api_role = self.azure_roles.first()
+        result = self.azure_async_results.first()
         azureclient = self.stub_azureclient()
         azureclient.delete_role(
             service_name=api_cloudservice.service_name,
             deployment_name=api_deployment.name,
-            role_name=api_role.role_name)
+            role_name=api_role.role_name).AndReturn(result)
+        self._get_operation(azureclient, result)
         self.mox.ReplayAll()
 
         ret = api.azure_api.virtual_machine_delete(
@@ -389,19 +404,21 @@ class AzureApiTests(test.APITestCase):
             service_name=api_cloudservice.service_name,
             deployment_name=api_deployment.name,
             role_name=api_role.role_name)
-        # Request Accept 202
-        self.assertIsNone(ret)
+
+        self.assertTrue(ret)
 
     def test_virtual_machine_shutdown(self):
         api_cloudservice = self.azure_cloud_services.first()
         api_deployment = self.azure_deployments.first()
         api_role = self.azure_roles.first()
+        result = self.azure_async_results.first()
         azureclient = self.stub_azureclient()
         azureclient.shutdown_role(
             service_name=api_cloudservice.service_name,
             deployment_name=api_deployment.name,
             role_name=api_role.role_name,
-            post_shutdown_action='Stopped')
+            post_shutdown_action='Stopped').AndReturn(result)
+        self._get_operation(azureclient, result)
         self.mox.ReplayAll()
 
         ret = api.azure_api.virtual_machine_shutdown(
@@ -409,18 +426,20 @@ class AzureApiTests(test.APITestCase):
             service_name=api_cloudservice.service_name,
             deployment_name=api_deployment.name,
             role_name=api_role.role_name)
-        # Request Accept 202
-        self.assertIsNone(ret)
+
+        self.assertTrue(ret)
 
     def test_virtual_machine_restart(self):
         api_cloudservice = self.azure_cloud_services.first()
         api_deployment = self.azure_deployments.first()
         api_role = self.azure_roles.first()
+        result = self.azure_async_results.first()
         azureclient = self.stub_azureclient()
         azureclient.restart_role(
             api_cloudservice.service_name,
             api_deployment.name,
-            api_role.role_name)
+            api_role.role_name).AndReturn(result)
+        self._get_operation(azureclient, result)
         self.mox.ReplayAll()
 
         ret = api.azure_api.virtual_machine_restart(
@@ -428,18 +447,20 @@ class AzureApiTests(test.APITestCase):
             service_name=api_cloudservice.service_name,
             deployment_name=api_deployment.name,
             role_name=api_role.role_name)
-        # Request Accept 202
-        self.assertIsNone(ret)
+
+        self.assertTrue(ret)
 
     def test_virtual_machine_start(self):
         api_cloudservice = self.azure_cloud_services.first()
         api_deployment = self.azure_deployments.first()
         api_role = self.azure_roles.first()
+        result = self.azure_async_results.first()
         azureclient = self.stub_azureclient()
         azureclient.start_role(
             api_cloudservice.service_name,
             api_deployment.name,
-            api_role.role_name)
+            api_role.role_name).AndReturn(result)
+        self._get_operation(azureclient, result)
         self.mox.ReplayAll()
 
         ret = api.azure_api.virtual_machine_start(
@@ -447,20 +468,22 @@ class AzureApiTests(test.APITestCase):
             service_name=api_cloudservice.service_name,
             deployment_name=api_deployment.name,
             role_name=api_role.role_name)
-        # Request Accept 202
-        self.assertIsNone(ret)
+
+        self.assertTrue(ret)
 
     def test_virtual_machine_resize(self):
         api_cloudservice = self.azure_cloud_services.first()
         api_deployment = self.azure_deployments.first()
         api_role = self.azure_roles.first()
         new_size = self.azure_rolesizes.list()[1]
+        result = self.azure_async_results.first()
         azureclient = self.stub_azureclient()
         azureclient.update_role(
             api_cloudservice.service_name,
             api_deployment.name,
             api_role.role_name,
-            role_size=new_size.name)
+            role_size=new_size.name).AndReturn(result)
+        self._get_operation(azureclient, result)
         self.mox.ReplayAll()
 
         ret = api.azure_api.virtual_machine_resize(
@@ -469,13 +492,14 @@ class AzureApiTests(test.APITestCase):
             deployment_name=api_deployment.name,
             role_name=api_role.role_name,
             role_size=new_size.name)
-        # Request Accept 202
-        self.assertIsNone(ret)
+
+        self.assertTrue(ret)
 
     def test_virtual_machine_add_endpoint(self):
         api_cloudservice = self.azure_cloud_services_with_deployment.first()
         api_deployment = self.azure_deployments.first()
         api_role = self.azure_roles.first()
+        result = self.azure_async_results.first()
         azureclient = self.stub_azureclient()
         azureclient.get_hosted_service_properties(
             service_name=api_cloudservice.service_name,
@@ -488,7 +512,8 @@ class AzureApiTests(test.APITestCase):
             api_cloudservice.service_name,
             api_deployment.name,
             api_role.role_name,
-            network_config=IgnoreArg())
+            network_config=IgnoreArg()).AndReturn(result)
+        self._get_operation(azureclient, result)
         self.mox.ReplayAll()
 
         ret = api.azure_api.virtual_machine_add_endpoint(
@@ -499,13 +524,14 @@ class AzureApiTests(test.APITestCase):
             'http',
             'TCP',
             8080)
-        # Request Accept 202
-        self.assertIsNone(ret)
+
+        self.assertTrue(ret)
 
     def test_virtual_machine_remove_endpoint(self):
         api_cloudservice = self.azure_cloud_services_with_deployment.first()
         api_deployment = self.azure_deployments.first()
         api_role = self.azure_roles.first()
+        result = self.azure_async_results.first()
         azureclient = self.stub_azureclient()
         azureclient.get_hosted_service_properties(
             service_name=api_cloudservice.service_name,
@@ -518,7 +544,8 @@ class AzureApiTests(test.APITestCase):
             api_cloudservice.service_name,
             api_deployment.name,
             api_role.role_name,
-            network_config=IgnoreArg())
+            network_config=IgnoreArg()).AndReturn(result)
+        self._get_operation(azureclient, result)
         self.mox.ReplayAll()
 
         ret = api.azure_api.virtual_machine_remove_endpoint(
@@ -527,8 +554,8 @@ class AzureApiTests(test.APITestCase):
             api_deployment.name,
             api_role.role_name,
             'ssh')
-        # Request Accept 202
-        self.assertIsNone(ret)
+
+        self.assertTrue(ret)
 
     def test_disk_list(self):
         api_disks = self.azure_disks.list()

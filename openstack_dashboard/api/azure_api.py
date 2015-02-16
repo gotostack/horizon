@@ -12,12 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-import uuid
-
-import random
-
 import logging
+import os
+import random
+import time
+import uuid
 
 from azure.servicemanagement import ConfigurationSet  # noqa
 from azure.servicemanagement import ConfigurationSetInputEndpoint  # noqa
@@ -26,11 +25,14 @@ from azure.servicemanagement import LoadBalancerProbe  # noqa
 from azure.servicemanagement import OSVirtualHardDisk  # noqa
 from azure.servicemanagement import servicemanagementservice as sms
 from azure.servicemanagement import WindowsConfigurationSet  # noqa
+from azure import WindowsAzureConflictError
 
 from azure.storage import blobservice
 
 from django.conf import settings
+from django.utils.translation import ugettext_lazy as _
 
+from horizon import messages
 from horizon.utils.memoized import memoized  # noqa
 
 LOG = logging.getLogger(__name__)
@@ -53,6 +55,13 @@ SYS_DISK_BLOB_NAME_FORMAT = getattr(settings,
 DATA_DISK_BLOB_NAME_FORMAT = getattr(settings,
                                      "DATA_DISK_NAME_FORMAT",
                                      "%s-%s-data-disk.vhd")
+
+STATUS_MAX_RETRY_TIMES = getattr(settings,
+                                 "STATUS_MAX_RETRY_TIMES",
+                                 30)
+STATUS_RETRY_INTERVAL = getattr(settings,
+                                "STATUS_RETRY_INTERVAL",
+                                10)
 
 AZURE_KEY_FILE_FOLDER = getattr(
     settings, 'AZURE_KEY_FILE_FOLDER',
@@ -167,10 +176,17 @@ def cloud_service_create(request,
                          location=None, affinity_group=None,
                          extended_properties=None):
     """Create a cloud service."""
-    return azureclient(request).create_hosted_service(
-        service_name, label, description,
-        location, affinity_group,
-        extended_properties)
+    try:
+        azureclient(request).create_hosted_service(
+            service_name, label, description,
+            location, affinity_group,
+            extended_properties)
+        return True
+    except WindowsAzureConflictError:
+        msg = _('A cloud service with name'
+                ' "%s" is already existed.') % service_name
+        messages.error(request, msg)
+    return False
 
 
 @memoized
@@ -231,8 +247,10 @@ def deployment_create(request,
 
 def deployment_delete(request, service_name, deployment_name):
     """Delete a azure deployment."""
-    return azureclient(request).delete_deployment(service_name,
-                                                  deployment_name)
+    client = azureclient(request)
+    result = client.delete_deployment(service_name,
+                                      deployment_name)
+    return _get_operation_status(client, result.request_id)
 
 
 @memoized
@@ -380,10 +398,16 @@ def virtual_machine_create(request,
 
     if create_new_cloudservice:
         # Create a new cloud service and a deployment for this new vm
-        client.create_hosted_service(
-            service_name=service_name,
-            label=service_name,
-            location=location)
+        try:
+            client.create_hosted_service(
+                service_name=service_name,
+                label=service_name,
+                location=location)
+        except WindowsAzureConflictError:
+            msg = _('A cloud service with name'
+                    ' "%s" is already existed.') % service_name
+            messages.error(request, msg)
+            return False
         new_os_sys_disk_url = _get_virtual_machine_vhd_file_link(
             request,
             location,
@@ -395,7 +419,7 @@ def virtual_machine_create(request,
             # caching mode of the operating system disk
             # all default 'ReadOnly'
             host_caching='ReadOnly')
-        return client.create_virtual_machine_deployment(
+        result = client.create_virtual_machine_deployment(
             service_name=service_name,
             deployment_name=deployment_name,
             deployment_slot=deployment_slot,
@@ -405,6 +429,7 @@ def virtual_machine_create(request,
             os_virtual_hard_disk=osvhd,
             network_config=network_config,
             role_size=role_size)
+        return _get_operation_status(client, result.request_id)
     else:
         cs = client.get_hosted_service_properties(
             service_name=service_name,
@@ -431,7 +456,7 @@ def virtual_machine_create(request,
                                                   int(public_ports[-1]) + 10)
                         ep.port = str(new_port)
                         public_ports.append(str(new_port))
-            return client.add_role(
+            result = client.add_role(
                 service_name=service_name,
                 deployment_name=deployment_name,
                 role_name=role_name,
@@ -439,9 +464,10 @@ def virtual_machine_create(request,
                 os_virtual_hard_disk=osvhd,
                 network_config=network_config,
                 role_size=role_size)
+            return _get_operation_status(client, result.request_id)
         else:
             # Cloud Service is existing but no deployment
-            return client.create_virtual_machine_deployment(
+            result = client.create_virtual_machine_deployment(
                 service_name=service_name,
                 deployment_name=deployment_name,
                 deployment_slot=deployment_slot,
@@ -451,40 +477,78 @@ def virtual_machine_create(request,
                 os_virtual_hard_disk=osvhd,
                 network_config=network_config,
                 role_size=role_size)
+            return _get_operation_status(client, result.request_id)
+
+
+def _get_operation_status(client, requestId):
+    import datetime
+    starttime = datetime.datetime.now()
+    count = 0
+    done = False
+    while not done:
+        operation = client.get_operation_status(requestId)
+        count += 1
+
+        if operation and operation.status == 'InProgress':
+            time.sleep(STATUS_RETRY_INTERVAL)
+        elif operation and operation.status == 'Succeeded':
+            done = True
+        elif operation and operation.status == 'Failed':
+            done = True
+        else:
+            LOG.error("Unable to get request Id %s status." % requestId)
+
+        if not done and count > STATUS_MAX_RETRY_TIMES:
+            LOG.error("Request Id: %s time out." % requestId)
+            done = True
+
+    endtime = datetime.datetime.now()
+    LOG.info("Asynchronous request '%s' "
+             "running time %s(s)." % (requestId,
+                                      (endtime - starttime).seconds))
+    return done
 
 
 def virtual_machine_delete(request, service_name,
                            deployment_name, role_name):
     """Delete an azure virtual of a cloudservice/deployment."""
-    return azureclient(request).delete_role(
+    client = azureclient(request)
+    result = client.delete_role(
         service_name=service_name,
         deployment_name=deployment_name,
         role_name=role_name)
+    return _get_operation_status(client, result.request_id)
 
 
 def virtual_machine_shutdown(request, service_name,
                              deployment_name, role_name,
                              post_shutdown_action='Stopped'):
     """Shutdown an azure vm of a cloudservice/deployment."""
-    return azureclient(request).shutdown_role(
+    client = azureclient(request)
+    result = client.shutdown_role(
         service_name=service_name,
         deployment_name=deployment_name,
         role_name=role_name,
         post_shutdown_action=post_shutdown_action)
+    return _get_operation_status(client, result.request_id)
 
 
 def virtual_machine_restart(request, service_name, deployment_name, role_name):
     """Start an azure vm of a cloudservice/deployment."""
-    return azureclient(request).restart_role(service_name,
-                                             deployment_name,
-                                             role_name)
+    client = azureclient(request)
+    result = client.restart_role(service_name,
+                                 deployment_name,
+                                 role_name)
+    return _get_operation_status(client, result.request_id)
 
 
 def virtual_machine_start(request, service_name, deployment_name, role_name):
     """Start an azure vm of a cloudservice/deployment."""
-    return azureclient(request).start_role(service_name,
-                                           deployment_name,
-                                           role_name)
+    client = azureclient(request)
+    result = client.start_role(service_name,
+                               deployment_name,
+                               role_name)
+    return _get_operation_status(client, result.request_id)
 
 
 def virtual_machine_capture(request, service_name, deployment_name,
@@ -492,20 +556,24 @@ def virtual_machine_capture(request, service_name, deployment_name,
                             target_image_name, target_image_label,
                             provisioning_configuration=None):
     """captures a virtual machine image to your image gallery."""
-    return azureclient(request).capture_role(
+    client = azureclient(request)
+    result = client.azureclient(request).capture_role(
         service_name, deployment_name, role_name,
         post_capture_action, target_image_name, target_image_label,
         provisioning_configuration)
+    return _get_operation_status(client, result.request_id)
 
 
 def virtual_machine_resize(request, service_name,
                            deployment_name, role_name,
                            role_size):
     """Resize an azure virtual machine."""
-    return azureclient(request).update_role(
+    client = azureclient(request)
+    result = client.update_role(
         service_name, deployment_name,
         role_name,
         role_size=role_size)
+    return _get_operation_status(client, result.request_id)
 
 
 def virtual_machine_add_endpoint(request, service_name,
@@ -559,10 +627,11 @@ def virtual_machine_add_endpoint(request, service_name,
                 local_port=local_port)
             network_config.input_endpoints.input_endpoints.append(endpoint)
 
-        return azureclient(request).update_role(
-            service_name, deployment_name,
-            role_name,
-            network_config=network_config)
+    result = client.update_role(
+        service_name, deployment_name,
+        role_name,
+        network_config=network_config)
+    return _get_operation_status(client, result.request_id)
 
 
 def virtual_machine_remove_endpoint(request, service_name,
@@ -597,10 +666,11 @@ def virtual_machine_remove_endpoint(request, service_name,
                 new_conf.input_endpoints.input_endpoints = \
                     network_config.input_endpoints.input_endpoints
                 network_config = new_conf
-            return azureclient(request).update_role(
+            result = client.update_role(
                 service_name, deployment_name,
                 role_name,
                 network_config=network_config)
+            return _get_operation_status(client, result.request_id)
 
 
 def virtual_machine_update(request, service_name, deployment_name, role_name,
@@ -611,13 +681,15 @@ def virtual_machine_update(request, service_name, deployment_name, role_name,
                            resource_extension_references=None,
                            provision_guest_agent=None):
     """Update an azure virtual machine."""
-    return azureclient(request).update_role(
+    client = azureclient(request)
+    result = client.update_role(
         service_name, deployment_name, role_name,
         os_virtual_hard_disk, network_config,
         availability_set_name, data_virtual_hard_disks,
         role_size, role_type,
         resource_extension_references,
         provision_guest_agent)
+    return _get_operation_status(client, result.request_id)
 
 
 def disk_list(request):

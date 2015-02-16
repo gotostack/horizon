@@ -14,6 +14,7 @@
 
 import copy
 
+from azure.servicemanagement import AsynchronousOperationResult
 from azure.servicemanagement import AttachedTo
 from azure.servicemanagement import ComputeCapabilities
 from azure.servicemanagement import ConfigurationSet
@@ -30,6 +31,8 @@ from azure.servicemanagement import HostedServiceProperties
 from azure.servicemanagement import InstanceEndpoint
 from azure.servicemanagement import InstanceEndpoints
 from azure.servicemanagement import Location
+from azure.servicemanagement import Operation
+from azure.servicemanagement import OperationError
 from azure.servicemanagement import OSImage
 from azure.servicemanagement import OSVirtualHardDisk
 from azure.servicemanagement import Role
@@ -63,6 +66,10 @@ def data(TEST):
     TEST.azure_data_disks = utils.TestDataContainer()
 
     TEST.azure_storage_accounts = utils.TestDataContainer()
+
+    TEST.azure_operation_status = utils.TestDataContainer()
+
+    TEST.azure_async_results = utils.TestDataContainer()
 
     # Locations
     location1 = Location()
@@ -622,3 +629,33 @@ def data(TEST):
     storage_account_2.storage_service_properties = s_properties_2
 
     TEST.azure_storage_accounts.add(storage_account_1, storage_account_2)
+
+    operation_success = Operation()
+    operation_success.id = '1'
+    operation_success.status = 'Succeeded'
+    operation_success.http_status_code = '200'
+
+    operation_failed = Operation()
+    operation_failed.id = '2'
+    operation_failed.status = 'Failed'
+    operation_failed.http_status_code = '400'
+    op_error = OperationError()
+    op_error.code = '400'
+    op_error.message = 'Bad Request'
+    operation_failed.error = op_error
+
+    operation_inprogress = Operation()
+    operation_inprogress.id = '3'
+    operation_inprogress.status = 'InProgress'
+    operation_inprogress.http_status_code = '102'
+    op_processing = OperationError()
+    op_processing.code = '102'
+    op_processing.message = 'Processing'
+    operation_inprogress.error = op_processing
+
+    TEST.azure_operation_status.add(operation_success,
+                                    operation_failed,
+                                    operation_inprogress)
+
+    azure_async_results = AsynchronousOperationResult('1')
+    TEST.azure_async_results.add(azure_async_results)

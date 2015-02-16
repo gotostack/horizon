@@ -85,15 +85,14 @@ class IndexView(tables.DataTableView):
                             # set deployment name
                             ins.deployment_name = dep.name
                             ins.role = role_dict.get(ins.role_name)
+                            ins.role_size = rolesize_dict.get(
+                                ins.role.role_size)
                             instances.append(ins)
                 except Exception:
                     exceptions.handle(
                         self.request,
                         _('Unable to retrieve cloud service detail.'))
 
-        for ins in instances:
-            # Set all instance its role(flavor)
-            ins.role_size = rolesize_dict.get(ins.role.role_size)
         return instances
 
 

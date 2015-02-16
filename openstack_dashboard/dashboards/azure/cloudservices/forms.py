@@ -57,17 +57,18 @@ class CreateCloudServiceForm(forms.SelfHandlingForm):
         location = data.get("location")
         description = data.get("description", None)
         try:
-            api.azure_api.cloud_service_create(
-                request,
-                service_name=service_name,
-                label=service_name,
-                description=description,
-                location=location)
-            messages.success(request,
-                             _('Successfully create'
-                               ' cloud service %s.') % service_name)
-        except Exception:
+            if api.azure_api.cloud_service_create(
+                    request,
+                    service_name=service_name,
+                    label=service_name,
+                    description=description,
+                    location=location):
+                messages.success(request,
+                                 _('Successfully create'
+                                   ' cloud service %s.') % service_name)
+        except Exception as e:
             redirect = reverse('horizon:azure:cloudservices:index')
-            exceptions.handle(request, _("Unable to create cloud service."),
+            exceptions.handle(request,
+                              _("Unable to create cloud service: %s") % e,
                               redirect=redirect)
         return True

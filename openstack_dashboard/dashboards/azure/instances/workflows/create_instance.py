@@ -457,7 +457,7 @@ class LaunchInstance(workflows.Workflow):
                                            'new_cloudservice') else False
         try:
             # do create
-            api.azure_api.virtual_machine_create(
+            return api.azure_api.virtual_machine_create(
                 request,
                 service_name=service_name,
                 location=location,
@@ -471,7 +471,6 @@ class LaunchInstance(workflows.Workflow):
                 admin_username=access_user,
                 user_password=user_password,
                 role_size=role_size)
-            return True
         except Exception as e:
             exceptions.handle(request, str(e))
             return False

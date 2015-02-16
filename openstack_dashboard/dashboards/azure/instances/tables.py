@@ -38,26 +38,6 @@ from openstack_dashboard.dashboards.azure.instances.workflows \
 LOG = logging.getLogger(__name__)
 
 ACTIVE_STATES = ("Started", "Starting", "Suspended")
-VOLUME_ATTACH_READY_STATES = ("ACTIVE", "SHUTOFF")
-SNAPSHOT_READY_STATES = ("ACTIVE", "SHUTOFF", "PAUSED", "SUSPENDED")
-
-POWER_STATES = {
-    0: "NO STATE",
-    1: "RUNNING",
-    2: "BLOCKED",
-    3: "PAUSED",
-    4: "SHUTDOWN",
-    5: "SHUTOFF",
-    6: "CRASHED",
-    7: "SUSPENDED",
-    8: "FAILED",
-    9: "BUILDING",
-}
-
-PAUSE = 0
-UNPAUSE = 1
-SUSPEND = 0
-RESUME = 1
 
 
 def get_ips(instance):
@@ -440,30 +420,48 @@ class UpdateRow(tables.Row):
     ajax = True
 
     def get_data(self, request, instance_id):
-        datum = self.table.get_object_by_id(instance_id)
         try:
-            instance = api.azure_api.virtual_machine_get(
-                request,
-                datum.cloud_service_name,
-                datum.deployment_name,
-                instance_id)
-            cloudservices = api.azure_api.cloud_service_detail(
-                request,
-                datum.cloud_service_name,
-                True)
-            status = api.azure_api.get_role_instance_status(
-                cloudservices.deployments[0], instance_id)
-            instance.power_state = status
-            instance.role_size = datum.role_size
-            instance.cloud_service_name = datum.cloud_service_name
-            instance.deployment_name = datum.deployment_name
-            instance.role = datum.role
+            # To this subscription's all cloud service
+            cloud_services = api.azure_api.cloud_service_list(request)
         except Exception:
-            instance = datum
+            cloud_services = []
             exceptions.handle(request,
-                              _('Unable to retrieve'
-                                ' instance "%s" detail.') % instance_id,
-                              ignore=True)
+                              _('Unable to retrieve cloud service list.'))
+
+        try:
+            # To retrieve all vm size
+            role_sizes = api.azure_api.role_size_list(request)
+        except Exception:
+            role_sizes = []
+            exceptions.handle(request,
+                              _('Unable to retrieve role size list.'))
+        rolesize_dict = dict([(item.name, item) for item in role_sizes])
+
+        instance = None
+        if cloud_services and rolesize_dict:
+            for cs in cloud_services:
+                # To get all instances in each cloud service
+                try:
+                    detail = api.azure_api.cloud_service_detail(
+                        request,
+                        cs.service_name,
+                        embed_detail=True)
+                    for dep in detail.deployments:
+                        role_dict = dict([(r.role_name, r)
+                                          for r in dep.role_list])
+                        for ins in dep.role_instance_list:
+                            ins.dns_url = dep.url[7:-1]
+                            ins.cloud_service_name = cs.service_name
+                            ins.deployment_name = dep.name
+                            ins.role = role_dict.get(ins.role_name)
+                            ins.role_size = rolesize_dict.get(
+                                ins.role.role_size)
+                            if instance_id == ins.role_name:
+                                instance = ins
+                except Exception:
+                    exceptions.handle(
+                        request,
+                        _('Unable to retrieve cloud service detail.'))
         return instance
 
 
@@ -471,12 +469,15 @@ class InstancesTable(tables.DataTable):
     STATUS_CHOICES = (
         ("Started", True),
         ("Suspended", True),
-        ("RunningTransitioning", True),
-        ("SuspendedTransitioning", True),
-        ("Starting", True),
-        ("Suspending", True),
-        ("Deploying", True),
-        ("Deleting", True),
+        ("Stopped", True),
+    )
+    NOT_READY_STATUS_CHOICES = (
+        ("RunningTransitioning", False),
+        ("SuspendedTransitioning", False),
+        ("Starting", False),
+        ("Suspending", False),
+        ("Deploying", False),
+        ("Deleting", False),
     )
     name = tables.Column("instance_name",
                          link=get_detail_link,
