@@ -212,3 +212,30 @@ REST_API_SETTING_2 = 'bar'
 REST_API_SECURITY = 'SECURITY'
 REST_API_REQUIRED_SETTINGS = ['REST_API_SETTING_1']
 REST_API_ADDITIONAL_SETTINGS = ['REST_API_SETTING_2']
+
+# Azure china manage host
+# AZURE_MANAGEMENT_HOST='management.core.chinacloudapi.cn'
+
+# Storage account suffix for users instance disk storage account
+# STORAGE_ACCOUNTS_SUFFIX = {"China East": "chinaeast",
+#                            "China North": "chinanorth"}
+
+# Disks storage container name
+# VHDS_CONTAINER = "vhds"
+
+# Instance OS disk name format
+# SYS_DISK_BLOB_NAME_FORMAT = "%s-%s-sys-disk.vhd"
+
+# Data Disk name format
+# DATA_DISK_BLOB_NAME_FORMAT = "%s-%s-data-disk.vhd"
+
+# Async request status query max times
+# STATUS_MAX_RETRY_TIMES = 30
+
+# Async request status query interval
+# STATUS_RETRY_INTERVAL = 10
+
+# Azure Subcription Management Key Storage Folder
+AZURE_KEY_FILE_FOLDER = os.path.join(TEST_DIR, 'subscription_keys')
+if AZURE_KEY_FILE_FOLDER is None or AZURE_KEY_FILE_FOLDER == '':
+    raise Exception("AZURE_KEY_FILE_FOLDER must set to a valid folder.")
