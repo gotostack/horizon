@@ -156,19 +156,14 @@ class CreateProjectInfoAction(workflows.Action):
 
     subscription_name = forms.CharField(
         label=_("Subscription Name"),
+        required=False,
         help_text=_("Azure Subscription Name."))
 
     subscription_id = forms.CharField(
         label=_("Subscription ID"),
+        required=False,
         help_text=_("Azure Subscription ID"
                     " associated with this new project."))
-
-    certificate_path = forms.CharField(
-        label=_("Certificate Path"),
-        help_text=_("Path to .pem certificate file (httplib),"
-                    " or location of the certificate in your"
-                    " Personal certificate store (winhttp) in the"
-                    " CURRENT_USER\my\CertificateName format."))
 
     def __init__(self, request, *args, **kwargs):
         super(CreateProjectInfoAction, self).__init__(request,
@@ -195,8 +190,7 @@ class CreateProjectInfo(workflows.Step):
                    "description",
                    "enabled",
                    "subscription_name",
-                   "subscription_id",
-                   "certificate_path")
+                   "subscription_id")
 
 
 class UpdateProjectMembersAction(workflows.MembershipAction):
@@ -454,8 +448,7 @@ class CreateProject(CommonQuotaWorkflow):
         try:
             desc = data['description']
             kw = {"subscription_name": data['subscription_name'],
-                  "subscription_id": data['subscription_id'],
-                  "certificate_path": data['certificate_path']}
+                  "subscription_id": data['subscription_id']}
             self.object = api.keystone.tenant_create(request,
                                                      name=data['name'],
                                                      description=desc,
@@ -545,6 +538,8 @@ class CreateProject(CommonQuotaWorkflow):
         if not project:
             return False
         project_id = project.id
+        # create access key for azure sdk
+        api.azure_api.create_new_key_for_subscription(project_id)
         self._update_project_members(request, data, project_id)
         if PROJECT_GROUP_ENABLED:
             self._update_project_groups(request, data, project_id)
@@ -589,7 +584,9 @@ class UpdateProjectInfo(workflows.Step):
                    "domain_name",
                    "name",
                    "description",
-                   "enabled")
+                   "enabled",
+                   "subscription_name",
+                   "subscription_id")
 
 
 class UpdateProject(CommonQuotaWorkflow):
@@ -629,8 +626,7 @@ class UpdateProject(CommonQuotaWorkflow):
         try:
             project_id = data['project_id']
             kw = {"subscription_name": data['subscription_name'],
-                  "subscription_id": data['subscription_id'],
-                  "certificate_path": data['certificate_path']}
+                  "subscription_id": data['subscription_id']}
             return api.keystone.tenant_update(
                 request,
                 project_id,

@@ -14,6 +14,10 @@
     <dd>{{ project.enabled }}</dd>
     <dt>{% trans "Description" %}</dt>
     <dd>{{ project.description|default:_("None") }}</dd>
+    <dt>{% trans "Subscription Name" %}</dt>
+    <dd>{{ project.subscription_name|default:_("None") }}</dd>
+    <dt>{% trans "Subscription ID" %}</dt>
+    <dd>{{ project.subscription_id|default:_("None") }}</dd>
   </dl>
 </div>
 

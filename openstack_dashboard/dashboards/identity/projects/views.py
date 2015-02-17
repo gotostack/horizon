@@ -43,7 +43,9 @@ PROJECT_INFO_FIELDS = ("domain_id",
                        "domain_name",
                        "name",
                        "description",
-                       "enabled")
+                       "enabled",
+                       "subscription_name",
+                       "subscription_id")
 
 INDEX_URL = "horizon:identity:projects:index"
 

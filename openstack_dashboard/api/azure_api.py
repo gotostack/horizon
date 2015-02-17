@@ -16,7 +16,6 @@ import logging
 import os
 import random
 import time
-import uuid
 
 from azure.servicemanagement import ConfigurationSet  # noqa
 from azure.servicemanagement import ConfigurationSetInputEndpoint  # noqa
@@ -91,10 +90,8 @@ RESERVED_ENDPOINT_NAME = {
 
 def create_new_key_for_subscription(project_id):
     """Create a new rsa key file for a tenant/subscription."""
-    # use namespace to make sure each tenant_name has a constant uuid
-    key_id = uuid.uuid3(uuid.NAMESPACE_X500, project_id)
-    KEY_PEM = "%s/%s.pem" % (AZURE_KEY_FILE_FOLDER, key_id)
-    KEY_CER = "%s/%s.cer" % (AZURE_KEY_FILE_FOLDER, key_id)
+    KEY_PEM = "%s/%s.pem" % (AZURE_KEY_FILE_FOLDER, project_id)
+    KEY_CER = "%s/%s.cer" % (AZURE_KEY_FILE_FOLDER, project_id)
     os.system('openssl req -x509 -nodes'
               ' -days 365 -newkey rsa:1024'
               ' -keyout %s -out %s'
@@ -104,9 +101,13 @@ def create_new_key_for_subscription(project_id):
 
 
 def get_tenant_pem_file_path(project_id):
-    """Get the tenant cert pem file absolute path."""
-    key_id = uuid.uuid3(uuid.NAMESPACE_X500, str(project_id))
-    return "%s/%s.pem" % (AZURE_KEY_FILE_FOLDER, key_id)
+    """Get the tenant pem file absolute path."""
+    return "%s/%s.pem" % (AZURE_KEY_FILE_FOLDER, project_id)
+
+
+def get_tenant_cer_file_path(project_id):
+    """Get the tenant cert file absolute path."""
+    return "%s/%s.cer" % (AZURE_KEY_FILE_FOLDER, project_id)
 
 
 def create_default_storage_accounts(project):
