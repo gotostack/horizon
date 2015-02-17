@@ -1,1 +1,29 @@
-instance
+{% load i18n sizeformat %}
+{% load url from future %}
+
+<div class="info row detail">
+  <h4>{% trans "Instance" %}</h4>
+  <hr class="header_rule">
+  <div>
+    <p>{% trans "How to launch an instance?" %}</p>
+    <p>{% trans "Launch." %}</p>
+
+    <p>{% trans "How to connect an instance?" %}</p>
+    <p>{% trans "connect." %}</p>
+
+    <p>{% trans "How to attach a data disk to instance?" %}</p>
+    <p>{% trans "attach" %}</p>
+
+    <p>{% trans "How to stop/restart an instance?" %}</p>
+    <p>{% trans "stop/restart" %}</p>
+
+    <p>{% trans "How to resize an instance?" %}</p>
+    <p>{% trans "resize" %}</p>
+
+    <p>{% trans "How to add endpoint an instance?" %}</p>
+    <p>{% trans "add endpoint" %}</p>
+
+    <p>{% trans "How to delete/terminal an instance?" %}</p>
+    <p>{% trans "delete/terminal" %}</p>
+  </div>
+</div>

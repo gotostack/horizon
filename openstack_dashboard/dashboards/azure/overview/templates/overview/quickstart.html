@@ -1,20 +1,17 @@
 {% load i18n sizeformat %}
 {% load url from future %}
 
-{% block main %}
-  <div id="s3_user_details__overview" class="tab-pane active">
-    <h3>{% trans "Welcome LeCloud User" %}</h3>
-    <div class="info row-fluid detail">
-    <h4>{% trans "Quick Start" %}</h4>
-    <hr class="header_rule">
-    <dl>
-      <dt>{% trans "Instance" %}</dt>
-      <dd>{% trans "Instance" %}</dd>
-      <dt>{% trans "Cloud Service" %}</dt>
-      <dd>{% trans "Cloud Service" %}</dd>
-      <dt>{% trans "Disk" %}</dt>
-      <dd>{% trans "disk" %}</dd>
-    </dl>
-    </div>
+<div class="info row detail">
+  <h4>{% trans "Quick Start" %}</h4>
+  <hr class="header_rule">
+  <div>
+    <p>{% trans "Instance" %}</p>
+    <p>{% trans "An instance is a server in the cloud that you can control and manage. After you create a virtual machine, you can delete and re-create it whenever you need to, and you can access the virtual machine just as you do with a server in your office." %}</p>
+
+    <p>{% trans "Cloud Service" %}</p>
+    <p>{% trans "A Cloud Service is a set of roles(instances) and their configurations." %}</p>
+
+    <p>{% trans "Disk" %}</p>
+    <p>{% trans "Disk for instance OS and data storage." %}</p>
   </div>
-{% endblock %}
+</div>

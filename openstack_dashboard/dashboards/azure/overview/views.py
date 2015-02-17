@@ -49,3 +49,5 @@ class WelcomeTabs(tabs.TabGroup):
 class WelcomeView(tabs.TabView):
     tab_group_class = WelcomeTabs
     template_name = 'azure/overview/index.html'
+    redirect_url = 'horizon:azure:overview:index'
+    page_title = _("Welcome")
