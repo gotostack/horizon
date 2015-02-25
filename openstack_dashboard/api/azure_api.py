@@ -404,6 +404,9 @@ def virtual_machine_create(request,
                 service_name=service_name,
                 label=service_name,
                 location=location)
+            msg = _('Cloud service'
+                    ' "%s" was successfully created.') % service_name
+            messages.success(request, msg)
         except WindowsAzureConflictError:
             msg = _('A cloud service with name'
                     ' "%s" is already existed.') % service_name
