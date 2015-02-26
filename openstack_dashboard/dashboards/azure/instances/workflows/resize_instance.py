@@ -34,7 +34,7 @@ class SetFlavorChoiceAction(workflows.Action):
     )
     role_size_type = forms.ChoiceField(
         label=_("Size Spec"),
-        help_text=_("Choose Your Boot Source Type."))
+        help_text=_("Basic spec of virtual machine size."))
 
     flavor_basic = forms.ChoiceField(
         label=_("Flavor Basic"),

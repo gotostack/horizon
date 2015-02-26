@@ -27,7 +27,7 @@ class BasePanels(horizon.PanelGroup):
 
 
 class Azure(horizon.Dashboard):
-    name = _("Azure")
+    name = _("LeCloud")
     slug = "azure"
     panels = (
         BasePanels,)

@@ -5,25 +5,55 @@
   <h4>{% trans "Instance" %}</h4>
   <hr class="header_rule">
   <div>
-    <p>{% trans "How to launch an instance?" %}</p>
-    <p>{% trans "Launch." %}</p>
+    <h3 id="to_launch">&bull;&nbsp;{% trans "How to launch an instance?" %}</h3>
+    <p>{% blocktrans %}1. Go to 'Instances' panel{% endblocktrans %}</p>
+    <p>{% blocktrans %}2. Click 'Launch Instance' button{% endblocktrans %}</p>
+    <p><img src="/static/lecloud/img/launch_instance_step_1.png" /></p>
 
-    <p>{% trans "How to connect an instance?" %}</p>
-    <p>{% trans "connect." %}</p>
+    <p>{% blocktrans %}3. Set the instance name(hostname), choose a flavor for the instance.{% endblocktrans %}</p>
+    <p><img src="/static/lecloud/img/launch_instance_step_3.png" /></p>
 
-    <p>{% trans "How to attach a data disk to instance?" %}</p>
-    <p>{% trans "attach" %}</p>
+    <p>{% blocktrans %}4. Choose a Windows or Linux OS image for the instance to boot.{% endblocktrans %}</p>
+    <p><img src="/static/lecloud/img/launch_instance_step_4.png" /></p>
 
-    <p>{% trans "How to stop/restart an instance?" %}</p>
-    <p>{% trans "stop/restart" %}</p>
+    <p>{% blocktrans %}5. Set the instance administrator(Linux sudoer user)'s username and password.{% endblocktrans %}</p>
+    <p>{% blocktrans %}6. Set the default endpoint for the instance, e.g. to enable Linux SSH endpoint will let you can access the instance via SSH tools.{% endblocktrans %}</p>
+    <p>{% blocktrans %}7. Create a cloud service or choose one for the instance to join in.{% endblocktrans %}</p>
+    <p><img src="/static/lecloud/img/launch_instance_step_5.png" /></p>
 
-    <p>{% trans "How to resize an instance?" %}</p>
-    <p>{% trans "resize" %}</p>
+    <h3 id="to_connect">&bull;&nbsp;{% trans "How to connect an instance?" %}</h3>
+    <p>{% blocktrans %}Check the instance's endpoint information.{% endblocktrans %}</p>
+    <p><img src="/static/lecloud/img/connect_instance_step_1.png" /></p>
+    <p>{% blocktrans %}Use putty to connect to a Linux instance.{% endblocktrans %}</p>
+    <p><img src="/static/lecloud/img/connect_instance_step_2.png" /></p>
+    <p>{% blocktrans %}Connected, and then you can manage the instance as your own server.{% endblocktrans %}</p>
+    <p><img src="/static/lecloud/img/connect_instance_step_3.png" /></p>
 
-    <p>{% trans "How to add endpoint an instance?" %}</p>
-    <p>{% trans "add endpoint" %}</p>
+    <h3 id="instance_actions">&bull;&nbsp;{% trans "Instance Actions" %}</h3>
+    <p><img src="/static/lecloud/img/instance_actions.png" /></p>
 
-    <p>{% trans "How to delete/terminal an instance?" %}</p>
-    <p>{% trans "delete/terminal" %}</p>
+    <h3 id="to_attach">&bull;&nbsp;{% trans "How to attach a data disk to instance?" %}</h3>
+    <p>{% blocktrans %}Click 'Attach Data Disk' button{% endblocktrans %}</p>
+    <p><img src="/static/lecloud/img/attach_data_disk.png" /></p>
+
+    <h3 id="to_add_endpoint">&bull;&nbsp;{% trans "How to add an endpoint to an instance?" %}</h3>
+    <p>{% blocktrans %}Click 'Add Endpoint' button{% endblocktrans %}</p>
+    <p><img src="/static/lecloud/img/add_endpoint.png" /></p>
+
+    <h3 id="to_resize">&bull;&nbsp;{% trans "How to resize an instance?" %}</h3>
+    <p>{% blocktrans %}Click 'Resize Instance' button{% endblocktrans %}</p>
+    <p>{% blocktrans %}No data input, but need to confirm the operation which will cause the data loss (memory or disk).{% endblocktrans %}</p>
+    <p><img src="/static/lecloud/img/resize_instance.png" /></p>
+
+    <h3 id="to_stop">&bull;&nbsp;{% trans "How to stop/restart an instance?" %}</h3>
+    <p>{% blocktrans %}Click 'Shut Off Instance/Restart Instance' button{% endblocktrans %}</p>
+    <p>{% blocktrans %}No data input, but need to confirm the operation which will cause the data loss (memory or disk).{% endblocktrans %}</p>
+    <p><img src="/static/lecloud/img/stop_instance.png" /></p>
+    <p><img src="/static/lecloud/img/restart_instance.png" /></p>
+
+    <h3 id="to_delete">&bull;&nbsp;{% trans "How to delete/terminal an instance?" %}</h3>
+    <p>{% blocktrans %}Click 'Terminate Instance' button{% endblocktrans %}</p>
+    <p>{% blocktrans %}No data input, but need to confirm the operation which will cause the data loss (memory or disk).{% endblocktrans %}</p>
+    <p><img src="/static/lecloud/img/delete_instance.png" /></p>
   </div>
 </div>

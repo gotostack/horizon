@@ -53,7 +53,7 @@ class AddEndpointForm(InstanceBaseOperationForm):
         label=_("Endpoint Name"),
         help_text=_("The name of the endpoint."))
     protocol = forms.ChoiceField(
-        label=_("Select Protocol"),
+        label=_("Protocol"),
         help_text=_("The protocol of the endpoint."))
     port = forms.IntegerField(
         label=_("Local Port"),
@@ -130,13 +130,13 @@ class RemoveEndpointForm(InstanceBaseOperationForm):
 
 class AttatchDatadiskForm(InstanceBaseOperationForm):
     disk_name = forms.RegexField(max_length=255,
-                                 label=_("Disk Name"),
+                                 label=_("Data Disk Name"),
                                  regex=DISK_NAME_REGEX,
                                  error_messages=DISK_ERROR_MESSAGES,
                                  help_text=DISK_NAME_HELP_TEXT)
 
     size = forms.IntegerField(
-        label=_("Size"),
+        label=_("Data Disk Size(GB)"),
         max_value=1023,
         min_value=1,
         help_text=_("Size in 1 - 1023 GB."))

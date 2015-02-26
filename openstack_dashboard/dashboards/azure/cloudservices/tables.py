@@ -143,7 +143,7 @@ def get_detail_link(datum):
 class CloudServicesTable(tables.DataTable):
     service_name = tables.Column("service_name",
                                  link=get_detail_link,
-                                 verbose_name=_("Cloud Service Name"))
+                                 verbose_name=_("Name"))
     location = tables.Column(get_location,
                              verbose_name=_("Location"))
     status = tables.Column(get_status,

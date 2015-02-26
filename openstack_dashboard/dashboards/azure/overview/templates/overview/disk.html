@@ -5,7 +5,11 @@
   <h4>{% trans "Disk" %}</h4>
   <hr class="header_rule">
   <div>
-    <p>{% trans "Delete the free disks" %}</p>
-    <p>{% trans "Delete." %}</p>
+
+    <h3 id="to_launch">&bull;&nbsp;{% trans "How to delete the free disks?" %}</h3>
+    <p>{% blocktrans %}Only the disks which is not attached to any instance can be removed.{% endblocktrans %}</p>
+    <p>{% blocktrans %}Deleted disk are not recoverable, please backup your important data before deleting.{% endblocktrans %}</p>
+    <p><img src="/static/lecloud/img/delete_data_disk.png" /></p>
+
   </div>
 </div>

@@ -624,7 +624,8 @@ class AzureApiTests(test.APITestCase):
             None,
             'https://test_tenantchinanorth.blob.core.chinacloudapi.cn'
             '/vhds/letvcloudservicetest02-testvm02win-data-disk.'
-            'vhd')
+            'vhd',
+            None, None, 1, None)
         self.mox.ReplayAll()
 
         ret = api.azure_api.data_disk_attach(
@@ -632,7 +633,8 @@ class AzureApiTests(test.APITestCase):
             api_cloudservice.service_name,
             api_deployment.name,
             api_role.role_name,
-            0)
+            0,
+            logical_disk_size_in_gb=1)
         # Request Accept 202
         self.assertIsNone(ret)
 

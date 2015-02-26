@@ -210,6 +210,8 @@ class StartInstance(tables.BatchAction):
 class RestartInstance(tables.BatchAction):
     name = "restart"
     classes = ('btn-danger', 'btn-reboot')
+    help_text = _("Restarted instances will lose"
+                  " any data not saved in persistent storage.")
 
     @staticmethod
     def action_present(count):
@@ -245,6 +247,8 @@ class RestartInstance(tables.BatchAction):
 class StopInstance(tables.BatchAction):
     name = "stop"
     classes = ('btn-danger',)
+    help_text = _("Stopped instances will lose"
+                  " any data not saved in persistent storage.")
 
     @staticmethod
     def action_present(count):
@@ -369,20 +373,23 @@ class DeattachDataDisk(tables.BatchAction):
     name = "de-attach"
     verbose_name = _("De-attach Data Disk")
     classes = ('btn-danger',)
+    help_text = _("Please confirm data stored on data disk has made a backup."
+                  " De-attach action will make the data on the data disk"
+                  " be completely removed. And the data cannot be recovered.")
 
     @staticmethod
     def action_present(count):
         return ungettext_lazy(
-            u"De-attach Instance",
-            u"De-attach Instances",
+            u"De-attach Data Disk",
+            u"De-attach Data Disks",
             count
         )
 
     @staticmethod
     def action_past(count):
         return ungettext_lazy(
-            u"De-attached Instance",
-            u"De-attached Instances",
+            u"De-attached Data Disk",
+            u"De-attached Data Disks",
             count
         )
 

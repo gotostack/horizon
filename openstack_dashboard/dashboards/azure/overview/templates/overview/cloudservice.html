@@ -5,13 +5,20 @@
   <h4>{% trans "Cloud Service" %}</h4>
   <hr class="header_rule">
   <div>
-    <p>{% trans "Create the cloud service" %}</p>
-    <p>{% trans "Create." %}</p>
+    <h3 id="to_launch">&bull;&nbsp;{% trans "How to create a cloud service?" %}</h3>
+    <p>{% blocktrans %}Cloud service name is global only, you need to choose a unique name.{% endblocktrans %}</p>
+    <p>{% blocktrans %}And it's better to choose the location closer to the user will get better user experience.{% endblocktrans %}</p>
+    <p><img src="/static/lecloud/img/create_cloud_service.png" /></p>
 
-    <p>{% trans "Delete the deployment" %}</p>
-    <p>{% trans "Delete." %}</p>
+    <h3 id="to_launch">&bull;&nbsp;{% trans "How to delete the deployment of a cloud service?" %}</h3>
+    <p>{% blocktrans %}To delete deployment will delete all the instance in the cloud service.{% endblocktrans %}</p>
+    <p>{% blocktrans %}Deleted deployment is not recoverable. All resources in the deployment will be deleted.{% endblocktrans %}</p>
+    <p>{% blocktrans %}But you can reuse the cloud service to add new instance to it.{% endblocktrans %}</p>
+    <p><img src="/static/lecloud/img/delete_deployment.png" /></p>
 
-    <p>{% trans "Delete the cloud service" %}</p>
-    <p>{% trans "Delete." %}</p>
+    <h3 id="to_launch">&bull;&nbsp;{% trans "How to delete the cloud service?" %}</h3>
+    <p>{% blocktrans %}If you want to delete a cloud service you must delete the deployment first.{% endblocktrans %}</p>
+    <p><img src="/static/lecloud/img/delete_cloud_service.png" /></p>
+
   </div>
 </div>

@@ -404,9 +404,10 @@ def virtual_machine_create(request,
                 service_name=service_name,
                 label=service_name,
                 location=location)
-            msg = _('Cloud service'
-                    ' "%s" was successfully created.') % service_name
-            messages.success(request, msg)
+            # TODO(Yulong) remove to azure_api.cloud_service_create
+            # msg = _('Cloud service'
+            #         ' "%s" was successfully created.') % service_name
+            # messages.success(request, msg)
         except WindowsAzureConflictError:
             msg = _('A cloud service with name'
                     ' "%s" is already existed.') % service_name
@@ -686,13 +687,46 @@ def virtual_machine_update(request, service_name, deployment_name, role_name,
                            provision_guest_agent=None):
     """Update an azure virtual machine."""
     client = azureclient(request)
-    result = client.update_role(
-        service_name, deployment_name, role_name,
-        os_virtual_hard_disk, network_config,
-        availability_set_name, data_virtual_hard_disks,
-        role_size, role_type,
-        resource_extension_references,
-        provision_guest_agent)
+
+    cs = client.get_hosted_service_properties(
+        service_name=service_name,
+        embed_detail=True)
+    vm = client.get_role(service_name, deployment_name, role_name)
+
+    if cs and vm:
+        old_network_config = None
+        for cf in vm.configuration_sets:
+            old_network_config = cf if (cf.configuration_set_type ==
+                                        'NetworkConfiguration') else None
+        if (old_network_config
+                and old_network_config.input_endpoints is not None):
+            for end in old_network_config.input_endpoints.input_endpoints:
+                if end.load_balancer_probe is None:
+                    end.load_balancer_probe = LoadBalancerProbe()
+
+            if (old_network_config.subnet_names is None and
+                    old_network_config.public_ips is None):
+                new_conf = ConfigurationSet()
+                new_conf.input_endpoints.input_endpoints = \
+                    old_network_config.input_endpoints.input_endpoints
+                old_network_config = new_conf
+
+        if old_network_config is not None:
+            result = client.update_role(
+                service_name, deployment_name, role_name,
+                os_virtual_hard_disk, old_network_config,
+                availability_set_name, data_virtual_hard_disks,
+                role_size, role_type,
+                resource_extension_references,
+                provision_guest_agent)
+        else:
+            result = client.update_role(
+                service_name, deployment_name, role_name,
+                os_virtual_hard_disk, network_config,
+                availability_set_name, data_virtual_hard_disks,
+                role_size, role_type,
+                resource_extension_references,
+                provision_guest_agent)
     return _get_operation_status(client, result.request_id)
 
 
@@ -768,7 +802,9 @@ def data_disk_attach(request,
         deployment_name, role_name)
     return azureclient(request).add_data_disk(
         service_name, deployment_name, role_name, lun,
-        host_caching, media_link)
+        host_caching, media_link, disk_label,
+        disk_name, logical_disk_size_in_gb,
+        source_media_link)
 
 
 def data_disk_reattach(request,

@@ -5,13 +5,18 @@
   <h4>{% trans "Quick Start" %}</h4>
   <hr class="header_rule">
   <div>
-    <p>{% trans "Instance" %}</p>
-    <p>{% trans "An instance is a server in the cloud that you can control and manage. After you create a virtual machine, you can delete and re-create it whenever you need to, and you can access the virtual machine just as you do with a server in your office." %}</p>
+    <h3>{% trans "Instance" %}</h3>
+    <p>{% blocktrans %}An instance is a server in the cloud that you can control and manage.{% endblocktrans %}</p>
+    <p>{% blocktrans %}After you create a virtual machine, you can delete and re-create it whenever you need to, and you can access the virtual machine just as you do with a server in your office.{% endblocktrans %}</p>
 
-    <p>{% trans "Cloud Service" %}</p>
-    <p>{% trans "A Cloud Service is a set of roles(instances) and their configurations." %}</p>
+    <h3>{% trans "Cloud Service" %}</h3>
+    <p>{% blocktrans %}A Cloud Service is a set of roles(instances) and their configurations.{% endblocktrans %}</p>
 
-    <p>{% trans "Disk" %}</p>
-    <p>{% trans "Disk for instance OS and data storage." %}</p>
+    <h3>{% trans "Cloud Service Basic Architecture" %}</h3>
+    <p><img src="/static/lecloud/img/cloudservice_basic_architecture.png" /></p>
+
+    <h3>{% trans "Disk" %}</h3>
+    <p>{% blocktrans %}Disk for instance OS and data storage.{% endblocktrans %}</p>
+
   </div>
 </div>

@@ -15,6 +15,7 @@
 import logging
 import re
 
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.debug import sensitive_variables  # noqa
@@ -35,8 +36,8 @@ PASS_REGEX = re.compile(
     r"^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])[a-zA-Z\d]{6,72}$",
     re.UNICODE)
 PASS_ERROR_MESSAGES = {
-    'invalid': _('The supplied password must be 6-72 characters'
-                 'Password must contain uppercase and lowercase'
+    'invalid': _('The supplied password must be 6-72 characters.'
+                 ' Password must contain uppercase and lowercase'
                  ' letters and numbers.')}
 
 INSTANCE_NAME_REGEX = re.compile(r"^[a-zA-Z][a-zA-Z0-9\-]*$", re.UNICODE)
@@ -44,6 +45,33 @@ INSTANCE_NAME_HELP_TEXT = _('Instance name must begin with letter'
                             ' and only contain'
                             ' letters, numbers and hyphens.')
 INSTANCE_ERROR_MESSAGES = {'invalid': INSTANCE_NAME_HELP_TEXT}
+
+RESERVED_USERNAME = getattr(settings,
+                            "RESERVED_USERNAME",
+                            ('admin', 'administrator', 'root', 'a'))
+
+FLAVOR_DISPLAY_CHOICE = {
+    'A5': _('A5 (2 cores, 14336 MB)'),
+    'A6': _('A6 (4 cores, 28672 MB)'),
+    'A7': _('A7 (8 cores, 57344 MB)'),
+    'Basic_A0': _('Basic_A0 (1 cores, 768 MB)'),
+    'Basic_A1': _('Basic_A1 (1 cores, 1792 MB)'),
+    'Basic_A2': _('Basic_A2 (2 cores, 3584 MB)'),
+    'Basic_A3': _('Basic_A3 (4 cores, 7168 MB)'),
+    'Basic_A4': _('Basic_A4 (8 cores, 14336 MB)'),
+    'ExtraLarge': _('ExtraLarge (8 cores, 14336 MB)'),
+    'ExtraSmall': _('ExtraSmall (1 cores, 768 MB)'),
+    'Large': _('Large (4 cores, 7168 MB)'),
+    'Medium': _('Medium (2 cores, 3584 MB)'),
+    'Small': _('Small (1 cores, 1792 MB)'),
+    'Standard_D1': _('Standard_D1 (1 cores, 3584 MB)'),
+    'Standard_D11': _('Standard_D11 (2 cores, 14336 MB)'),
+    'Standard_D12': _('Standard_D12 (4 cores, 28672 MB)'),
+    'Standard_D13': _('Standard_D13 (8 cores, 57344 MB)'),
+    'Standard_D14': _('Standard_D14 (16 cores, 114688 MB)'),
+    'Standard_D2': _('Standard_D2 (2 cores, 7168 MB)'),
+    'Standard_D3': _('Standard_D3 (4 cores), 14336 MB)'),
+    'Standard_D4': _('Standard_D4 (8 cores), 28672 MB)')}
 
 
 class SelectProjectUserAction(workflows.Action):
@@ -128,7 +156,7 @@ class SetInstanceDetailsAction(workflows.Action):
         except Exception:
             flavors = []
             exceptions.handle(self.request,
-                              _('Unable to retrieve azure role size list.'))
+                              _('Unable to retrieve role size list.'))
         return flavors
 
     def _check_flavor_basic(self, cleaned_data):
@@ -170,12 +198,17 @@ class SetInstanceDetailsAction(workflows.Action):
 
     def populate_flavor_standard_choices(self, request, context):
         rolesizes = self._get_role_size_list()
-        rolesize_list = [(r.name, r.label) for r in sorted(
+        a_types = [(r.name, r.label) for r in sorted(
             rolesizes,
-            key=lambda x: x.cores,
-            reverse=False) if r.name[:6] != 'Basic_']
+            key=lambda x: x.memory_in_mb,
+            reverse=False) if (r.name[:6] != 'Basic_'
+                               and r.name[0:9] != 'Standard_')]
+        d_types = [(r.name, r.label) for r in sorted(
+            rolesizes,
+            key=lambda x: x.memory_in_mb,
+            reverse=False) if r.name[0:9] == 'Standard_']
 
-        return rolesize_list
+        return a_types + d_types
 
 
 class SetInstanceDetails(workflows.Step):
@@ -199,7 +232,7 @@ class SetInstanceDetails(workflows.Step):
 class SetAzureOSImageAction(workflows.Action):
     azure_source_type = forms.ChoiceField(
         label=_("Operating System Type"),
-        help_text=_("Choose operating system type."))
+        help_text=_("Choose an operating system type."))
 
     windows_image_id = forms.ChoiceField(
         label=_("Windows Image"),
@@ -305,24 +338,24 @@ class SetAccessControlsAction(workflows.Action):
                     " this instance's administrator."))
 
     admin_pass = forms.RegexField(
-        label=_("Username Password"),
+        label=_("Password"),
         widget=forms.PasswordInput(render_value=False),
         regex=validators.password_validator(),
         error_messages={'invalid': validators.password_validator_msg()})
 
     confirm_admin_pass = forms.CharField(
-        label=_("Confirm Username Password"),
+        label=_("Confirm Password"),
         widget=forms.PasswordInput(render_value=False))
 
     enable_port = forms.BooleanField(
         label=_("Enable SSH/Remote Desktop/PowerShell"),
         required=False,
-        help_text=_("Linx will enable SSH port."
-                    "Windows will enable Remote Desktop and PowerShell."))
+        help_text=_("Linux will enable SSH port."
+                    " Windows will enable Remote Desktop and PowerShell."))
 
     cloud_services = forms.ChoiceField(
         label=_("Cloud Services"),
-        help_text=_("Choose or new a cloud service."))
+        help_text=_("Choose or create a cloud service."))
     cloud_service_name = forms.CharField(
         label=_("Cloud Service Name"),
         required=False)
@@ -333,8 +366,8 @@ class SetAccessControlsAction(workflows.Action):
 
     class Meta(object):
         name = _("Access & Security")
-        help_text = _("Control access to your instance via key pairs, "
-                      "passwords, and other mechanisms.")
+        help_text_template = ("azure/instances/"
+                              "_launch_security_help.html")
 
     def __init__(self, request, *args, **kwargs):
         super(SetAccessControlsAction, self).__init__(request, *args, **kwargs)
@@ -392,6 +425,12 @@ class SetAccessControlsAction(workflows.Action):
             if cleaned_data['location'] == "":
                 msg = _("No availability locations found")
                 self._errors['location'] = self.error_class([msg])
+
+        if (cleaned_data.get('access_user_name')
+                and cleaned_data.get('access_user_name').lower()
+                in RESERVED_USERNAME):
+            msg = _("You cannot use the reserved os username.")
+            self._errors['access_user_name'] = self.error_class([msg])
 
         return cleaned_data
 

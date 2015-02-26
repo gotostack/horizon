@@ -11642,3 +11642,514 @@ msgstr "时间增量必须以天数间隔表示"
 #, python-format
 msgid "Failed to get the resource name: %s"
 msgstr "获取资源名为：%s 失败"
+
+# ------------------- Azure dashboard ---------------
+# ------------------- Welcome Panel -----------------
+msgid "Welcome"
+msgstr "欢迎"
+
+msgid "Quick Start"
+msgstr "快速开始"
+
+msgid "An instance is a server in the cloud that you can control and manage."
+msgstr "云主机是一台服务器(虚拟机)运行在云端，你可以像管理私有数据中心中的服务器一样，完全控制和管理云主机。"
+
+msgid "After you create a virtual machine, you can delete and re-create it whenever you need to, and you can access the virtual machine just as you do with a server in your office."
+msgstr "创建云主机后，你可以根据需求随时删除和重新再创建云主机，当你拥有一台或多台云主机时，你可以在办公室使用管理工具登录和管理云主机，甚至你可以使用手机中的APP来远程管理你的云主机。"
+
+msgid "A Cloud Service is a set of roles(instances) and their configurations."
+msgstr "云服务是一系列云主机的集合，云服务也可以被看作是一层防火墙设备，每个云服务都有一个公网IP，每个云服务同时具有一个全球唯一的DNS，当某个云主机加入云服务时，你就可以通过这个云服务的公网IP+端口号，访问运行在该云主机的特定服务(或应用)。"
+
+msgid "Disk for instance OS and data storage."
+msgstr "磁盘包括系统盘和数据盘，你可以在'磁盘'面板查看和管理你拥有的磁盘。"
+
+msgid "Cloud Service"
+msgstr "云服务"
+
+msgid "Cloud Service Basic Architecture"
+msgstr "云服务基本框图"
+
+msgid "Cloud Services"
+msgstr "云服务"
+
+msgid "How to launch an instance?"
+msgstr "怎么创建一个云主机?"
+
+msgid "1. Go to 'Instances' panel"
+msgstr "1. 进入'实例'面板"
+
+msgid "2. Click 'Launch Instance' button"
+msgstr "2. 点击'启动云主机'按钮"
+
+msgid "3. Set the instance name(hostname), choose a flavor for the instance."
+msgstr "3. 设置云主机名称(主机名), 选择一个适合应用场景的实例规格"
+
+msgid "4. Choose a Windows or Linux OS image for the instance to boot."
+msgstr "4. 选择一个Window或者Linux镜像作为云主机的操作系统"
+
+msgid "5. Set the instance administrator(Linux sudoer user)'s username and password."
+msgstr "5. 设置云主机操作系统的管理员(Linux为有sudo权限的用户)的用户名和密码。"
+
+msgid "6. Set the default endpoint for the instance, e.g. to enable Linux SSH endpoint will let you can access the instance via SSH tools."
+msgstr "6. 设置默认的云主机访问端口，例如，勾选了打开端点SSH，你将可以使用SSH工具来登录你的Linux云主机。"
+
+msgid "7. Create a cloud service or choose one for the instance to join in."
+msgstr "7. 创建或者加入一个云服务，新账户没有默认云服务，所以第一次启动云主机，都需要创建云服务，请根据你的应用需要，选择北京(China North)或者上海(China East)的数据中心。"
+
+msgid "How to connect an instance?"
+msgstr "怎么连接并管理一个云主机?"
+
+msgid "How to attach a data disk to instance?"
+msgstr "怎么挂载一个数据盘到云主机?"
+
+msgid "How to stop/restart an instance?"
+msgstr "怎么关机或者重启一个云主机?"
+
+msgid "No data input, but need to confirm the operation which will cause the data loss (memory or disk)."
+msgstr "无需数据输入，但要确认操作，会造成内存或（磁盘）数据丢失。"
+
+msgid "Check the instance's endpoint information."
+msgstr "查看云主机的开放端口信息"
+
+msgid "Use putty to connect to a Linux instance."
+msgstr "使用putty连接Linux云主机"
+
+msgid "Connected, and then you can manage the instance as your own server."
+msgstr "已连接，你可以管理你的云主机了。"
+
+msgid "Instance Actions"
+msgstr "云主机可用操作"
+
+msgid "Click 'Attach Data Disk' button"
+msgstr "点击'挂载数据盘'按钮"
+
+msgid "Click 'Add Endpoint' button"
+msgstr "点击'增加访问端口'按钮"
+
+msgid "Click 'Resize Instance' button"
+msgstr "点击'调整云主机大小'按钮"
+
+msgid "Click 'Shut Off Instance/Restart Instance' button"
+msgstr "点击'关闭/重启实例'按钮"
+
+msgid "Click 'Terminate Instance' button"
+msgstr "点击'终止实例'按钮"
+
+msgid "How to resize an instance?"
+msgstr "怎么调整云主机的大小?"
+
+msgid "How to add an endpoint to an instance?"
+msgstr "怎么增加一个端点到云主机?"
+
+msgid "How to delete/terminal an instance?"
+msgstr "怎么删除一个云主机?"
+
+msgid "How to delete the free disks?"
+msgstr "怎么删除空闲的磁盘?"
+
+msgid "Only the disks which is not attached to any instance can be removed."
+msgstr "只能删除没有附加到任何云主机的磁盘。"
+
+msgid "Deleted disk are not recoverable, please backup your important data before deleting."
+msgstr "被删除的磁盘将永久无法恢复，请在做删除操作前，备份你的重要数据。"
+
+msgid "How to create a cloud service?"
+msgstr "怎么创建一个云服务?"
+
+msgid "Cloud service name is global only, you need to choose a unique name."
+msgstr "云服务名称具有全球唯一性，你必须为你的云服务选择一个特殊的名称。"
+
+msgid "And it's better to choose the location closer to the user will get better user experience."
+msgstr "并且，云服务是有地域性的，最好根据你的应用和业务需要，选择合适的数据中心，将会提高你云服务(应用)的访问速度。"
+
+msgid "How to delete the deployment of a cloud service?"
+msgstr "如何删除云服务中部署的云主机和资源?"
+
+msgid "To delete deployment will delete all the instance in the cloud service."
+msgstr "删除部署将会删除云服务中的所有云主机。"
+
+msgid "Deleted deployment is not recoverable. All resources in the deployment will be deleted."
+msgstr "删除的部署是无法恢复的，所有部署中的资源都将被删除。"
+
+msgid "But you can reuse the cloud service to add new instance to it."
+msgstr "但是，云服务还没有被删除，你还可以继续利用这个云服务，将新的云主机加入该云服务。"
+
+msgid "How to delete the cloud service?"
+msgstr "怎么删除云服务?"
+
+msgid "If you want to delete a cloud service you must delete the deployment first."
+msgstr "要删除云服务，你必须确保云服务中没有部署任何云主机，即你必须先删除云服务的部署。"
+
+# ------------------- Azure Instance Panel -----------
+msgid "Instance Status"
+msgstr "云主机状态"
+
+msgid "Endpoints"
+msgstr "开放协议与公共端口"
+
+msgid "Affinity Group"
+msgstr "地缘组"
+
+msgid "Endpoint"
+msgstr "端点"
+
+msgid "Protocol:"
+msgstr "协议:"
+
+msgid "Public Port:"
+msgstr "公共端口:"
+
+msgid "Local Port:"
+msgstr "本地端口:"
+
+msgid "System Disk"
+msgstr "系统磁盘信息"
+
+msgid "OS"
+msgstr "操作系统类型"
+
+msgid "Disk Name(Blob Name)"
+msgstr "系统盘名称"
+
+msgid "Source Image Name"
+msgstr "操作系统镜像"
+
+msgid "Data Volumes Attached"
+msgstr "数据磁盘挂载信息"
+
+msgid "Instance Details: %(instance_name)s"
+msgstr "云主机详情: %(instance_name)s"
+
+msgid "Instance Endpoints"
+msgstr "云主机端点信息"
+
+msgid "Port (Cloud Service Public)"
+msgstr "云服务公共端口"
+
+msgid "load balanced endpoint set name"
+msgstr "负载均衡集名称"
+
+msgid "Actions"
+msgstr "操作"
+
+msgid "DNS"
+msgstr "DNS"
+
+msgid "Instance name must begin with letter and only contain letters, numbers and hyphens."
+msgstr "云主机名称必须以字母开头，并且只能包含字母、数字和连字符。"
+
+msgid "Size Spec"
+msgstr "规格"
+
+msgid "Basic"
+msgstr "基本型"
+
+msgid "Flavor Basic"
+msgstr "基本型"
+
+msgid "Standard"
+msgstr "标准型"
+
+msgid "Flavor Standard"
+msgstr "标准型"
+
+msgid "Basic spec of virtual machine size."
+msgstr "云主机规格的基本分类"
+
+msgid "ExtraSmall (1 cores, 768 MB)"
+msgstr "超小型  (共享内核, 768 MB内存)"
+
+msgid "D-series virtual machines feature solid state drives (SSDs) and 60％ faster processors than the A-series. This series is ideal for applications that demand faster CPUs, better local disk performance, or higher memories."
+msgstr "D系列云主机比其他标准类型的云主机提高了60％的处理器速度，其数据盘将会使用固态硬盘(SSD)，并且，D系列通常都具有更大的内存。"
+
+msgid "Basic type instance is an economical option for development workloads, test servers, and other applications that don't require load balancing, auto-scaling, or memory-intensive virtual machines."
+msgstr "基本类型的云主机适合应用在开发或测试机。"
+
+msgid "Standard type instance offers the most flexibility. Supports all virtual machine configurations and features."
+msgstr "标准类型的云主机提供更高的灵活性，支持云主机所有的配置和功能。"
+
+msgid "OS Image"
+msgstr "操作系统与镜像"
+
+msgid "Operating System Type"
+msgstr "操作系统类型"
+
+msgid "Choose an operating system type."
+msgstr "选择一种云主机镜像"
+
+msgid "Boot from windows image"
+msgstr "启动一个Windows镜像"
+
+msgid "Boot from linux image"
+msgstr "启动一个Linux镜像"
+
+msgid "Windows Image"
+msgstr "Windows镜像"
+
+msgid "Linux Image"
+msgstr "Linux镜像"
+
+msgid "Choose version of your windows instance operating system."
+msgstr "选择一种Windows镜像类型来启动云主机。"
+
+msgid "Choose version of your linux instance operating system."
+msgstr "选择一种Linux镜像类型来启动云主机。"
+
+msgid "Choose a Windows® or Linux® image."
+msgstr "选择一个Windows® 或 Linux® 镜像."
+
+msgid "An operating system user name which is this instance's administrator."
+msgstr "具有管理员权限的云主机操作系统用户名，例如：developer"
+
+msgid "The OS system disk will be stored in your storage account."
+msgstr "云主机系统盘将存储到默认的存储账户."
+
+msgid "Enable SSH/Remote Desktop/PowerShell"
+msgstr "打开端点 SSH/Remote Desktop/PowerShell"
+
+msgid "The supplied password must be 6-72 characters. Password must contain uppercase and lowercase letters and numbers."
+msgstr "密码长度范围6-72位，并且必须包含大小写字母和数字。"
+
+msgid "Linux will enable SSH port. Windows will enable Remote Desktop and PowerShell."
+msgstr "Linux云主机将打开SSH，Windows云主机将打开远程桌面和PowerShell。"
+
+msgid "Control access to your instance via username/passwords."
+msgstr "使用用户名和密码管理和访问你的云主机。"
+
+msgid "And you can set the default endpoint of the instance."
+msgstr "你还可以在这里打开默认的云主机访问协议和端口。"
+
+msgid "Choose or create a cloud service."
+msgstr "让云主机加入一个新的云服务或者一个已存在的云服务"
+
+msgid "Add a new cloud service"
+msgstr "创建新的云服务"
+
+msgid "The instance must belong to one specific 'cloud service', so you can create one cloud service or choose one existed."
+msgstr "云主机必须属于某个特定的'云服务'，你可以在这里直接创建或者选择一个已存在的云服务。"
+
+msgid "View Detail"
+msgstr "详情"
+
+msgid "Add Endpoint"
+msgstr "增加访问端口"
+
+msgid "Remove Endpoint"
+msgstr "移除访问端口"
+
+msgid "Attach a data disk to the instance."
+msgstr "增加一个数据盘到云主机。"
+
+msgid "The instance can only have one data disk."
+msgstr "一个云主机最多只能挂载一个数据磁盘。"
+
+msgid "Attach Data Disk"
+msgstr "挂载数据盘"
+
+msgid "De-attach Data Disk"
+msgid_plural "De-attach Data Disks"
+msgstr[0] "卸载数据盘"
+
+msgid "De-attached Data Disk"
+msgid_plural "De-attached Data Disks"
+msgstr[0] "已卸载的数据盘"
+
+msgid "Remove an endpoint from the instance."
+msgstr "从云主机移除一个选定的端点。移除之后，你将不能通过原来的配置或端口来访问云主机，例如，如果你移除了SSH-22端点，那么你将不能使用ssh登录你的linux云主机。"
+
+msgid "Select an endpoint to remove."
+msgstr "选择一个端点从云主机移除。"
+
+msgid "Add an endpoint to the instance."
+msgstr "增加一个端点到云主机。这样你就可以通过云服务的公网IP+公共端口，或者DNS+公共端口来访问云主机。"
+
+msgid "Endpoint Name"
+msgstr "端点名称"
+
+msgid "Local Port"
+msgstr "本地端口"
+
+msgid "The name of the endpoint."
+msgstr "端点的名称，名称通常有特定含义，例如: HTTP 通常会为你开放云服务的公共80端口。"
+
+msgid "The protocol of the endpoint."
+msgstr "端点的协议。"
+
+msgid "The port of the instance. Available range(1-65535)"
+msgstr "云主机操作系统开放的端口，可用范围(1-65535)。"
+
+msgid "Availability Set"
+msgstr "可用性集"
+
+msgid "Availability Set Name"
+msgstr "可用性集名称"
+
+msgid "Edit the instance availability set."
+msgstr "编辑云主机的可用性集"
+
+msgid "Old Flavor Type"
+msgstr "原始云主机规格"
+
+msgid "Choose a new size for the instance."
+msgstr "选择一个新的规格来调整云主机大小"
+
+msgid "Resize action will restart the instance."
+msgstr "调整云主机大小将会使云主机重新启动，请注意保存云主机中的数据，特别是内存里的数据。"
+
+msgid "The instance will be deleted, disks associated with the instance are still in the disk repository."
+msgstr "终止实例将会使云主机被删除，其内存数据和数据盘的数据都将无法恢复。云主机被删除后，你需要手动删除其系统盘。"
+
+msgid "Restarted instances will lose any data not saved in persistent storage."
+msgstr "重启云主机将会导致所有未保存数据丢失。"
+
+msgid "Stopped instances will lose any data not saved in persistent storage."
+msgstr "停止云主机将会导致所有未保存数据丢失。"
+
+# ------------------- Azure Cloud Service Panel -----------
+msgid "Location"
+msgstr "地域"
+
+msgid "Date Last Modified"
+msgstr "最后修改时间"
+
+msgid "Date Created"
+msgstr "创建时间"
+
+msgid "Create Cloud Servcie"
+msgstr "创建云服务"
+
+msgid "Delete Cloud Service"
+msgid_plural "Delete Cloud Services"
+msgstr[0] "删除云服务"
+
+msgid "Deleted Cloud Service"
+msgid_plural "Deleted Cloud Services"
+msgstr[0] "已删除的云服务"
+
+msgid "Deleted cloud service are not recoverable. All resources in this cloud service will be deleted."
+msgstr "删除的云服务无法恢复，云服务中的资源将被删除。"
+
+msgid "Delete Deployment"
+msgid_plural "Delete Deployments"
+msgstr[0] "删除部署"
+
+msgid "Deleted Deployment"
+msgid_plural "Deleted Deployments"
+msgstr[0] "已删除的部署"
+
+msgid "To perform this action you must confirm the cloud service has deployment. Deleted deployment is not recoverable. All resources in the deployment will be deleted."
+msgstr "删除云服务的部署，将会删除所有云服务下的云主机，所有被删除的资源都将无法恢复。"
+
+msgid "Cloud Service Name"
+msgstr "云服务名称"
+
+msgid "From here you can create a cloud service."
+msgstr "在这里你可以创建一个云服务。创建云服务需要指定地域，云主机可以加入已经创建的云服务。"
+
+msgid "Cloud Service Details: %(service_name)s"
+msgstr "云服务详细信息: %(service_name)s"
+
+msgid "Cloud Service Overview"
+msgstr "云服务信息概览"
+
+msgid "Basic Information"
+msgstr "基本信息"
+
+msgid "url"
+msgstr "URL"
+
+msgid "service_name"
+msgstr "云服务名称"
+
+msgid "status"
+msgstr "状态"
+
+msgid "description"
+msgstr "描述"
+
+msgid "label"
+msgstr "标签"
+
+msgid "location"
+msgstr "地域"
+
+msgid "affinity_group"
+msgstr "可用性集"
+
+msgid "date_created"
+msgstr "创建时间"
+
+msgid "date_last_modified"
+msgstr "最后修改时间"
+
+msgid "Create Cloud Service"
+msgstr "创建云服务"
+
+msgid "Cloud service name must begin with letter and only contain letters, numbers and hyphens."
+msgstr "云服务名称必须以字母开头，并且只能包含字母、数字和连字符。"
+
+msgid "The data center to deploy the cloud service."
+msgstr "选择云服务部署的物理地域，目前可以选择的有北京和上海。"
+
+# ------------------- Azure Disk Panel -----------
+msgid "Disks"
+msgstr "磁盘"
+
+msgid "Data Disk Name"
+msgstr "数据盘名称"
+
+msgid "Disk name must begin with letter and only contain letters, numbers and hyphens."
+msgstr "磁盘名称必须以字母开头，并且只能包含字母、数字和连字符。"
+
+msgid "Size in 1 - 1023 GB."
+msgstr "磁盘大小范围  1 - 1023 GB"
+
+msgid "Data Disk Size(GB)"
+msgstr "数据盘大小(GB)"
+
+msgid "Operating System"
+msgstr "操作系统"
+
+msgid "Virtual Machine Attached To"
+msgstr "挂载云主机"
+
+msgid "Disk Details: %(name)s"
+msgstr "磁盘详细信息: %(name)s"
+
+msgid "Disk Overview"
+msgstr "磁盘信息概览"
+
+msgid "has_operating_system"
+msgstr "包含操作系统"
+
+msgid "is_corrupted"
+msgstr "已损坏"
+
+msgid "source_image_name"
+msgstr "原始镜像名称"
+
+msgid "os"
+msgstr "操作系统类型"
+
+msgid "media_link"
+msgstr "磁盘对象URL"
+
+msgid "Role(Instance) Name"
+msgstr "实例名称"
+
+msgid "Deployment Name"
+msgstr "部署名称"
+
+msgid "Attach To"
+msgstr "挂载信息"
+
+msgid "Delete Disk"
+msgid_plural "Delete Disks"
+msgstr[0] "删除磁盘"
+
+msgid "Deleted Disk"
+msgid_plural "Deleted Disks"
+msgstr[0] "已删除的磁盘"
+
+msgid "Deleted disks are not recoverable."
+msgstr "磁盘被删除将永久无法恢复，请备份你的数据。"

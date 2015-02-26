@@ -80,7 +80,7 @@ class DisksTable(tables.DataTable):
     logical_disk_size_in_gb = tables.Column("logical_disk_size_in_gb",
                                             verbose_name=_("Size (GB)"))
     os = tables.Column("os",
-                       verbose_name=_("Operating system"))
+                       verbose_name=_("Operating System"))
     location = tables.Column("location",
                              verbose_name=_("Location"))
     attached_to = tables.Column(get_attached_to,
