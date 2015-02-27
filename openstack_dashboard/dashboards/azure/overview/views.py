@@ -14,13 +14,27 @@
 
 from django.utils.translation import ugettext_lazy as _
 
+from horizon import exceptions
 from horizon import tabs
+
+from openstack_dashboard import api
 
 
 class WelcomeTab(tabs.Tab):
     name = _("Quick Start")
     slug = "quickstart"
     template_name = "azure/overview/quickstart.html"
+
+    def get_context_data(self, request, **kwargs):
+        context = super(WelcomeTab, self).get_context_data(request, **kwargs)
+        try:
+            self.usage = api.azure_api.subscription_get(request)
+        except Exception:
+            self.usage = None
+            exceptions.handle(self.request,
+                              _('Unable to get subscription info.'))
+        context['usage'] = self.usage
+        return context
 
 
 class InstanceTab(tabs.Tab):

@@ -11651,6 +11651,9 @@ msgstr "欢迎"
 msgid "Quick Start"
 msgstr "快速开始"
 
+msgid "Storage Accounts"
+msgstr "存储账户"
+
 msgid "An instance is a server in the cloud that you can control and manage."
 msgstr "云主机是一台服务器(虚拟机)运行在云端，你可以像管理私有数据中心中的服务器一样，完全控制和管理云主机。"
 
@@ -11835,6 +11838,9 @@ msgstr "操作"
 msgid "DNS"
 msgstr "DNS"
 
+msgid "Unable to launch instance named \"%s\"."
+msgstr "无法创建云主机: \"%s\""
+
 msgid "Instance name must begin with letter and only contain letters, numbers and hyphens."
 msgstr "云主机名称必须以字母开头，并且只能包含字母、数字和连字符。"
 
@@ -11925,6 +11931,15 @@ msgstr "让云主机加入一个新的云服务或者一个已存在的云服务
 msgid "Add a new cloud service"
 msgstr "创建新的云服务"
 
+msgid "You check the 'new cloud service', so you need to set a cloud service name."
+msgstr "你选择了'创建新的云服务'，因此你必须输入一个云服务名称"
+
+msgid "You cannot use the reserved os username '%s'."
+msgstr "你不能使用系统预留的用户名 '%s'"
+
+msgid "The data center to launch the instance(Cloud Service)."
+msgstr "云主机(云服务)将被部署的数据中心。"
+
 msgid "The instance must belong to one specific 'cloud service', so you can create one cloud service or choose one existed."
 msgstr "云主机必须属于某个特定的'云服务'，你可以在这里直接创建或者选择一个已存在的云服务。"
 
@@ -11934,8 +11949,29 @@ msgstr "详情"
 msgid "Add Endpoint"
 msgstr "增加访问端口"
 
+msgid "Endpoint name must begin with letter and only contain letters, numbers and hyphens."
+msgstr "端点名称必须以字母开头，并且只能包含字母、数字和连字符。"
+
+msgid "Public Port"
+msgstr "公共端口"
+
+msgid "The public port of the cloud service. You need to input an unused port."
+msgstr "云服务的公共端口，你需要输入一个未使用的公共端口号。"
+
+msgid "Endpoint name is in use."
+msgstr "端点名称已使用"
+
+msgid "Local port is in use."
+msgstr "本地端口号已使用"
+
+msgid "Public port is in use."
+msgstr "公共端口号已使用"
+
 msgid "Remove Endpoint"
 msgstr "移除访问端口"
+
+msgid "Unable to add endpoint to instance: %s"
+msgstr "无法增加端点到云主机: %s"
 
 msgid "Attach a data disk to the instance."
 msgstr "增加一个数据盘到云主机。"
@@ -11957,8 +11993,8 @@ msgstr[0] "已卸载的数据盘"
 msgid "Remove an endpoint from the instance."
 msgstr "从云主机移除一个选定的端点。移除之后，你将不能通过原来的配置或端口来访问云主机，例如，如果你移除了SSH-22端点，那么你将不能使用ssh登录你的linux云主机。"
 
-msgid "Select an endpoint to remove."
-msgstr "选择一个端点从云主机移除。"
+msgid "Select an endpoint to remove. Choice format 'endpoint name' - 'local port'"
+msgstr "选择一个端点从云主机移除。 选项显示的格式为'端点名称'-'本地端口'"
 
 msgid "Add an endpoint to the instance."
 msgstr "增加一个端点到云主机。这样你就可以通过云服务的公网IP+公共端口，或者DNS+公共端口来访问云主机。"
@@ -12017,6 +12053,9 @@ msgstr "创建时间"
 
 msgid "Create Cloud Servcie"
 msgstr "创建云服务"
+
+msgid "A cloud service with name \"%s\" is already existed."
+msgstr "已经存在一个名称为\"%s\"的云服务。"
 
 msgid "Delete Cloud Service"
 msgid_plural "Delete Cloud Services"

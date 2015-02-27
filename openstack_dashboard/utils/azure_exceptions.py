@@ -14,7 +14,7 @@
 
 
 class AzureException(Exception):
-    """The Azure exception class for test use."""
+    """The Azure exception base class."""
     message = 'Unknown Error'
 
     def __init__(self, code, message=None, details=None, request_id=None,

@@ -25,6 +25,7 @@ from azure.servicemanagement import OSVirtualHardDisk  # noqa
 from azure.servicemanagement import servicemanagementservice as sms
 from azure.servicemanagement import WindowsConfigurationSet  # noqa
 from azure import WindowsAzureConflictError
+from azure import WindowsAzureMissingResourceError
 
 from azure.storage import blobservice
 
@@ -33,6 +34,8 @@ from django.utils.translation import ugettext_lazy as _
 
 from horizon import messages
 from horizon.utils.memoized import memoized  # noqa
+
+from openstack_dashboard.utils import azure_exceptions
 
 LOG = logging.getLogger(__name__)
 
@@ -148,6 +151,12 @@ def azureclient(request):
 
 
 @memoized
+def subscription_get(request):
+    """Azure location geographic domain."""
+    return azureclient(request).get_subscription()
+
+
+@memoized
 def location_list(request):
     """Azure location geographic domain."""
     return azureclient(request).list_locations()
@@ -162,9 +171,12 @@ def cloud_service_list(request):
 @memoized
 def cloud_service_detail(request, service_name, embed_detail=False):
     """Get details of one specific cloud service."""
-    return azureclient(request).get_hosted_service_properties(
-        service_name=service_name,
-        embed_detail=embed_detail)
+    try:
+        return azureclient(request).get_hosted_service_properties(
+            service_name=service_name,
+            embed_detail=embed_detail)
+    except WindowsAzureMissingResourceError:
+        raise azure_exceptions.AzureException(404, _("Not Found"))
 
 
 def cloud_service_delete(request, service_name):
@@ -327,9 +339,12 @@ def get_role_instance_status(deployment, role_instance_name):
 def virtual_machine_get(request, service_name,
                         deployment_name, role_name):
     """Get the detail of an instance."""
-    return azureclient(request).get_role(service_name,
-                                         deployment_name,
-                                         role_name)
+    try:
+        return azureclient(request).get_role(service_name,
+                                             deployment_name,
+                                             role_name)
+    except WindowsAzureMissingResourceError:
+        raise azure_exceptions.AzureException(404, _("Not Found"))
 
 
 def _get_virtual_machine_vhd_file_link(request, location,
@@ -581,10 +596,33 @@ def virtual_machine_resize(request, service_name,
     return _get_operation_status(client, result.request_id)
 
 
+def _get_instance_used_local_ports(instance):
+    """Get all used endpoint names of an instance."""
+    local_ports = []
+    for cs in instance.configuration_sets:
+        if cs.input_endpoints:
+            for en in cs.input_endpoints:
+                local_ports.append(en.local_port.lower())
+    local_ports.sort()
+    return local_ports
+
+
+def _get_instance_used_endpoint_name(instance):
+    """Get all used endpoint names of an instance."""
+    endpoint_names = []
+    for cs in instance.configuration_sets:
+        if cs.input_endpoints:
+            for en in cs.input_endpoints:
+                endpoint_names.append(en.name.lower())
+    endpoint_names.sort()
+    return endpoint_names
+
+
 def virtual_machine_add_endpoint(request, service_name,
                                  deployment_name, role_name,
                                  endpoint_name, protocol,
-                                 local_port):
+                                 local_port,
+                                 public_port=None):
     """Add endpoint to an azure virtual machine."""
     client = azureclient(request)
 
@@ -592,6 +630,27 @@ def virtual_machine_add_endpoint(request, service_name,
         service_name=service_name,
         embed_detail=True)
     vm = client.get_role(service_name, deployment_name, role_name)
+
+    endpoint_names = _get_instance_used_endpoint_name(vm)
+    if endpoint_name.lower() in endpoint_names:
+        raise azure_exceptions.AzureException(409,
+                                              _("Endpoint name is in use."))
+
+    local_ports = _get_instance_used_local_ports(vm)
+    if str(local_port).lower() in local_ports:
+        raise azure_exceptions.AzureException(409,
+                                              _("Local port is in use."))
+
+    public_ports = _get_cloudservice_used_public_ports(cs)
+    if public_port and str(public_port) not in public_ports:
+        new_port = str(public_port)
+    elif public_port and str(public_port) in public_ports:
+        raise azure_exceptions.AzureException(409,
+                                              _("Public port is in use."))
+    else:
+        # Random a new public port in the existing cloud service
+        new_port = random.randint(int(public_ports[-1]),
+                                  int(public_ports[-1]) + 10)
 
     if cs and vm:
         if RESERVED_ENDPOINT_NAME.get(endpoint_name.upper()):
@@ -607,14 +666,8 @@ def virtual_machine_add_endpoint(request, service_name,
             endpoint = ConfigurationSetInputEndpoint(
                 name=endpoint_name,
                 protocol=protocol,
-                port='N/A',
+                port=str(new_port),
                 local_port=local_port)
-
-            public_ports = _get_cloudservice_used_public_ports(cs)
-            # Random a new public port in the existing cloud service
-            new_port = random.randint(int(public_ports[-1]),
-                                      int(public_ports[-1]) + 10)
-            endpoint.port = str(new_port)
 
             network_config.input_endpoints.input_endpoints.append(endpoint)
             if (network_config.subnet_names is None and
@@ -737,7 +790,10 @@ def disk_list(request):
 
 def disk_get(request, disk_name):
     '''Retrieves a disk from your image repository.'''
-    return azureclient(request).get_disk(disk_name)
+    try:
+        return azureclient(request).get_disk(disk_name)
+    except WindowsAzureMissingResourceError:
+        raise azure_exceptions.AzureException(404, _("Not Found"))
 
 
 def disk_delete(request, disk_name, delete_vhd=False):

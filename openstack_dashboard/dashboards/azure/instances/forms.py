@@ -24,7 +24,13 @@ from horizon import messages
 
 from openstack_dashboard import api
 
-DISK_NAME_REGEX = re.compile(r"^[a-zA-Z][a-zA-Z0-9\-]*$", re.UNICODE)
+NAME_REGEX = re.compile(r"^[a-zA-Z][a-zA-Z0-9\-]*$", re.UNICODE)
+
+ENDPOINT_NAME_HELP_TEXT = _('Endpoint name must begin with letter'
+                            ' and only contain'
+                            ' letters, numbers and hyphens.')
+ENDPOINT_ERROR_MESSAGES = {'invalid': ENDPOINT_NAME_HELP_TEXT}
+
 DISK_NAME_HELP_TEXT = _('Disk name must begin with letter'
                         ' and only contain'
                         ' letters, numbers and hyphens.')
@@ -49,15 +55,27 @@ class InstanceBaseOperationForm(forms.SelfHandlingForm):
 
 
 class AddEndpointForm(InstanceBaseOperationForm):
-    endpoint_name = forms.CharField(
+    endpoint_name = forms.RegexField(
+        max_length=255,
         label=_("Endpoint Name"),
-        help_text=_("The name of the endpoint."))
+        regex=NAME_REGEX,
+        error_messages=ENDPOINT_ERROR_MESSAGES,
+        help_text=ENDPOINT_NAME_HELP_TEXT)
+
     protocol = forms.ChoiceField(
         label=_("Protocol"),
         help_text=_("The protocol of the endpoint."))
+
     port = forms.IntegerField(
         label=_("Local Port"),
         help_text=_("The port of the instance. Available range(1-65535)"),
+        max_value=65535,
+        min_value=1)
+
+    public_port = forms.IntegerField(
+        label=_("Public Port"),
+        help_text=_("The public port of the cloud service."
+                    " You need to input an unused port."),
         max_value=65535,
         min_value=1)
 
@@ -75,33 +93,37 @@ class AddEndpointForm(InstanceBaseOperationForm):
 
         endpoint_name = data.get("endpoint_name")
         protocol = data.get("protocol")
-        port = data.get("port")
+        local_port = data.get("port")
+        public_port = data.get("public_port", None)
         try:
             api.azure_api.virtual_machine_add_endpoint(
                 request,
                 cloud_service_name, deployment_name,
                 instance_name,
-                endpoint_name, protocol, port)
+                endpoint_name, protocol,
+                local_port, public_port)
             messages.success(request,
                              _('Successfully add'
                                ' endpoint for instance %s.') % instance_name)
-        except Exception:
+        except Exception as e:
             redirect = reverse('horizon:azure:instances:index')
-            exceptions.handle(request, _("Unable to add instance endpoint."),
-                              redirect=redirect)
+            msg = _("Unable to add endpoint to instance: %s") % e.message
+            exceptions.handle(request, msg, redirect=redirect)
         return True
 
 
 class RemoveEndpointForm(InstanceBaseOperationForm):
     endpoints = forms.ChoiceField(
         label=_("Endpoint"),
-        help_text=_("Select an endpoint to remove."))
+        help_text=_("Select an endpoint to remove. "
+                    "Choice format 'endpoint name' - 'local port'"))
 
     def __init__(self, request, *args, **kwargs):
         super(RemoveEndpointForm, self).__init__(request, *args, **kwargs)
 
         endpoints = kwargs.get('initial', []).get('endpoints')
-        choices = [(i.name, i.name) for i in endpoints]
+        choices = [(i.name, "%s - %s" % (i.name,
+                                         i.local_port)) for i in endpoints]
         self.fields['endpoints'].choices = choices
 
     @sensitive_variables('data')
@@ -131,7 +153,7 @@ class RemoveEndpointForm(InstanceBaseOperationForm):
 class AttatchDatadiskForm(InstanceBaseOperationForm):
     disk_name = forms.RegexField(max_length=255,
                                  label=_("Data Disk Name"),
-                                 regex=DISK_NAME_REGEX,
+                                 regex=NAME_REGEX,
                                  error_messages=DISK_ERROR_MESSAGES,
                                  help_text=DISK_NAME_HELP_TEXT)
 

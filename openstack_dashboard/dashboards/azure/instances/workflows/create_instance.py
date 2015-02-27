@@ -40,7 +40,8 @@ PASS_ERROR_MESSAGES = {
                  ' Password must contain uppercase and lowercase'
                  ' letters and numbers.')}
 
-INSTANCE_NAME_REGEX = re.compile(r"^[a-zA-Z][a-zA-Z0-9\-]*$", re.UNICODE)
+NAME_REGEX = re.compile(r"^[a-zA-Z][a-zA-Z0-9\-]*$", re.UNICODE)
+
 INSTANCE_NAME_HELP_TEXT = _('Instance name must begin with letter'
                             ' and only contain'
                             ' letters, numbers and hyphens.')
@@ -50,6 +51,12 @@ RESERVED_USERNAME = getattr(settings,
                             "RESERVED_USERNAME",
                             ('admin', 'administrator', 'root', 'a'))
 
+CLOUD_SERVICE_NAME_HELP_TEXT = _(
+    'Cloud service name must begin with letter'
+    ' and only contain letters, numbers and hyphens.')
+CLOUD_SERVICE_ERROR_MESSAGES = {'invalid': CLOUD_SERVICE_NAME_HELP_TEXT}
+
+# reserved for future use
 FLAVOR_DISPLAY_CHOICE = {
     'A5': _('A5 (2 cores, 14336 MB)'),
     'A6': _('A6 (4 cores, 28672 MB)'),
@@ -110,7 +117,7 @@ class SelectProjectUser(workflows.Step):
 class SetInstanceDetailsAction(workflows.Action):
     name = forms.RegexField(max_length=15,
                             label=_("Instance Name"),
-                            regex=INSTANCE_NAME_REGEX,
+                            regex=NAME_REGEX,
                             error_messages=INSTANCE_ERROR_MESSAGES,
                             help_text=INSTANCE_NAME_HELP_TEXT)
 
@@ -295,16 +302,32 @@ class SetAzureOSImageAction(workflows.Action):
 
     def populate_windows_image_id_choices(self, request, context):
         images = self._get_avaiable_os_images()
-        image_list = [(i.name, i.label)
-                      for i in images if i.os == 'Windows']
+        image_list = []
+        for i in images:
+            if i.os == 'Windows':
+                if i.published_date is None or i.published_date == '':
+                    display = i.label
+                else:
+                    display = "%(label)s - %(date)s" % {
+                        "label": i.label, "date": i.published_date[0:10]}
+                image_list.append((i.name, display))
+
         image_list.sort()
 
         return image_list
 
     def populate_linux_image_id_choices(self, request, context):
         images = self._get_avaiable_os_images()
-        image_list = [(i.name, i.label)
-                      for i in images if i.os == 'Linux']
+        image_list = []
+        for i in images:
+            if i.os == 'Linux':
+                if i.published_date is None or i.published_date == '':
+                    display = i.label
+                else:
+                    display = "%(label)s - %(date)s" % {
+                        "label": i.label, "date": i.published_date[0:10]}
+                image_list.append((i.name, display))
+
         image_list.sort()
 
         return image_list
@@ -332,19 +355,24 @@ class SetAzureOSImageStep(workflows.Step):
 
 
 class SetAccessControlsAction(workflows.Action):
-    access_user_name = forms.CharField(
+    access_user_name = forms.RegexField(
         label=_("Username"),
         help_text=_("An operating system user name which is"
-                    " this instance's administrator."))
+                    " this instance's administrator."),
+        max_length=255,
+        regex=NAME_REGEX,
+        error_messages=CLOUD_SERVICE_ERROR_MESSAGES)
 
     admin_pass = forms.RegexField(
         label=_("Password"),
+        max_length=72,
         widget=forms.PasswordInput(render_value=False),
         regex=validators.password_validator(),
         error_messages={'invalid': validators.password_validator_msg()})
 
     confirm_admin_pass = forms.CharField(
         label=_("Confirm Password"),
+        max_length=72,
         widget=forms.PasswordInput(render_value=False))
 
     enable_port = forms.BooleanField(
@@ -356,8 +384,13 @@ class SetAccessControlsAction(workflows.Action):
     cloud_services = forms.ChoiceField(
         label=_("Cloud Services"),
         help_text=_("Choose or create a cloud service."))
-    cloud_service_name = forms.CharField(
+
+    cloud_service_name = forms.RegexField(
+        max_length=255,
         label=_("Cloud Service Name"),
+        regex=NAME_REGEX,
+        error_messages=CLOUD_SERVICE_ERROR_MESSAGES,
+        help_text=CLOUD_SERVICE_NAME_HELP_TEXT,
         required=False)
 
     location = forms.ChoiceField(
@@ -417,8 +450,9 @@ class SetAccessControlsAction(workflows.Action):
 
         if 'cloud_services' in cleaned_data:
             if (cleaned_data['cloud_services'] == 'new_cloudservice'
-                    and cleaned_data.get('cloud_service_name', '') == ''):
-                msg = _("You must set a cloud service name.")
+                    and cleaned_data.get('cloud_service_name', None) == ''):
+                msg = _("You check the 'new cloud service',"
+                        " so you need to set a cloud service name.")
                 self._errors['cloud_service_name'] = self.error_class([msg])
 
         if 'location' in cleaned_data:
@@ -429,7 +463,8 @@ class SetAccessControlsAction(workflows.Action):
         if (cleaned_data.get('access_user_name')
                 and cleaned_data.get('access_user_name').lower()
                 in RESERVED_USERNAME):
-            msg = _("You cannot use the reserved os username.")
+            msg = _("You cannot use the reserved os username '%s'.") % \
+                cleaned_data.get('access_user_name')
             self._errors['access_user_name'] = self.error_class([msg])
 
         return cleaned_data

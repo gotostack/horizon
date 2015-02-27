@@ -100,15 +100,13 @@ class DetailView(tabs.TabView):
     tab_group_class = project_tabs.InstanceDetailTabs
     template_name = 'azure/instances/detail.html'
     redirect_url = 'horizon:azure:instances:index'
+    page_title = _("Instance Details: {{ instance.name }}")
 
     def get_context_data(self, **kwargs):
         context = super(DetailView, self).get_context_data(**kwargs)
         instance = self.get_data()
         context["instance"] = instance
         context["url"] = reverse(self.redirect_url)
-        context["page_title"] = _(
-            "Instance Details: %(instance_name)s") % {
-                'instance_name': instance.role_name}
         return context
 
     @memoized.memoized_method
@@ -123,11 +121,15 @@ class DetailView(tabs.TabView):
                 deployment_name,
                 instance_name)
         except Exception:
-            instance = None
-            redirect = reverse("horizon:azure:instances:index")
+            redirect = reverse(self.redirect_url)
             exceptions.handle(self.request,
-                              _('Unable to retrieve instance detail info.'),
+                              _('Unable to retrieve details for '
+                                'instance "%s".') % instance_name,
                               redirect=redirect)
+            # Not all exception types handled above will result in a redirect.
+            # Need to raise here just in case.
+            raise exceptions.Http302(redirect)
+
         if instance:
             instance.cloud_service_name = cloud_service_name
             instance.deployment_name = deployment_name

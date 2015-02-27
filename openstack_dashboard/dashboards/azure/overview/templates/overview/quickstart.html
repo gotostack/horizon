@@ -1,5 +1,23 @@
 {% load i18n sizeformat %}
 {% load url from future %}
+{% load i18n horizon humanize sizeformat %}
+
+<div class="quota-dynamic">
+  <h3 class="quota-heading">{% trans "Limit Summary" %}</h3>
+    <div class="d3_quota_bar">
+      <div class="d3_pie_chart_usage" data-used="{% widthratio usage.current_core_count usage.max_core_count 100 %}"></div>
+      <strong>{% trans "VCPUs" %} <br />
+        {% blocktrans with used=usage.current_core_count|intcomma available=usage.max_core_count|quotainf|intcomma %}Used <span> {{ used }} </span> of <span> {{ available }} </span>{% endblocktrans %}
+      </strong>
+    </div>
+
+    <div class="d3_quota_bar">
+      <div class="d3_pie_chart_usage" data-used="{% widthratio usage.current_hosted_services usage.max_hosted_services 100 %}"></div>
+      <strong>{% trans "Cloud Services" %} <br />
+        {% blocktrans with used=usage.current_hosted_services|intcomma available=usage.max_hosted_services|quotainf|intcomma %}Used <span> {{ used }} </span> of <span> {{ available }} </span>{% endblocktrans %}
+      </strong>
+    </div>
+</div>
 
 <div class="info row detail">
   <h4>{% trans "Quick Start" %}</h4>

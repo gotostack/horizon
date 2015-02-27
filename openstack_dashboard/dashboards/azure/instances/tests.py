@@ -910,7 +910,8 @@ class InstanceTests(helpers.TestCase):
             server.role_name,
             endpoint.name,
             endpoint.protocol,
-            endpoint.local_port)
+            endpoint.local_port,
+            endpoint.public_port)
 
         self.mox.ReplayAll()
 
@@ -924,7 +925,8 @@ class InstanceTests(helpers.TestCase):
             'instance_name': server.role_name,
             'endpoint_name': endpoint.name,
             'protocol': endpoint.protocol,
-            'port': endpoint.local_port}
+            'port': endpoint.local_port,
+            'public_port': endpoint.public_port}
         res = self.client.post(url, form_data)
 
         self.assertNoFormErrors(res)
@@ -943,7 +945,8 @@ class InstanceTests(helpers.TestCase):
             server.role_name,
             endpoint.name,
             endpoint.protocol,
-            endpoint.local_port).AndRaise(self.exceptions.azure)
+            endpoint.local_port,
+            endpoint.public_port).AndRaise(self.exceptions.azure)
 
         self.mox.ReplayAll()
 
@@ -957,7 +960,8 @@ class InstanceTests(helpers.TestCase):
             'instance_name': server.role_name,
             'endpoint_name': endpoint.name,
             'protocol': endpoint.protocol,
-            'port': endpoint.local_port}
+            'port': endpoint.local_port,
+            'public_port': endpoint.public_port}
         res = self.client.post(url, form_data)
 
         self.assertNoFormErrors(res)
