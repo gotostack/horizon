@@ -602,7 +602,7 @@ def _get_instance_used_local_ports(instance):
     for cs in instance.configuration_sets:
         if cs.input_endpoints:
             for en in cs.input_endpoints:
-                local_ports.append(en.local_port.lower())
+                local_ports.append(str(en.local_port).lower())
     local_ports.sort()
     return local_ports
 

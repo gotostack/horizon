@@ -10,6 +10,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from django.conf import settings
 from django.core.exceptions import ValidationError  # noqa
 from django.core.urlresolvers import reverse
 from django.template import defaultfilters as filters
@@ -26,6 +27,9 @@ from keystoneclient.exceptions import Conflict  # noqa
 
 from openstack_dashboard import api
 from openstack_dashboard import policy
+
+DISABLE_OPENSTACK_QUOTA = getattr(settings,
+                                  "DISABLE_OPENSTACK_QUOTA", True)
 
 
 class RescopeTokenToProject(tables.LinkAction):
@@ -245,9 +249,13 @@ class TenantsTable(tables.DataTable):
         name = "tenants"
         verbose_name = _("Projects")
         row_class = UpdateRow
-        row_actions = (UpdateMembersLink, UpdateGroupsLink, UpdateProject,
-                       UsageLink, ModifyQuotas, DeleteTenantsAction,
-                       RescopeTokenToProject)
+        actions_list = [UpdateMembersLink, UpdateGroupsLink, UpdateProject,
+                        DeleteTenantsAction,
+                        RescopeTokenToProject]
+        if not DISABLE_OPENSTACK_QUOTA:
+            actions_list.append(UsageLink)
+            actions_list.append(ModifyQuotas)
+        row_actions = tuple(actions_list)
         table_actions = (TenantFilterAction, CreateProject,
                          DeleteTenantsAction)
         pagination_param = "tenant_marker"

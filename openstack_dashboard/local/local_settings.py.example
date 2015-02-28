@@ -665,3 +665,7 @@ REST_API_REQUIRED_SETTINGS = ['OPENSTACK_HYPERVISOR_FEATURES']
 AZURE_KEY_FILE_FOLDER = None
 if AZURE_KEY_FILE_FOLDER is None or AZURE_KEY_FILE_FOLDER == '':
     raise Exception("AZURE_KEY_FILE_FOLDER must set to a valid folder.")
+
+# Disable the openstack quota settings
+# in project create and update workflow
+DISABLE_OPENSTACK_QUOTA = False

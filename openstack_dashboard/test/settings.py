@@ -239,3 +239,5 @@ REST_API_ADDITIONAL_SETTINGS = ['REST_API_SETTING_2']
 AZURE_KEY_FILE_FOLDER = os.path.join(TEST_DIR, 'subscription_keys')
 if AZURE_KEY_FILE_FOLDER is None or AZURE_KEY_FILE_FOLDER == '':
     raise Exception("AZURE_KEY_FILE_FOLDER must set to a valid folder.")
+
+DISABLE_OPENSTACK_QUOTA = False
