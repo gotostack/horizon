@@ -37,7 +37,7 @@ class InstanceTests(helpers.TestCase):
     def test_index(self):
         cloud_services = self.azure_cloud_services.list()
         role_sizes = self.azure_rolesizes.list()
-        detail_1 = self.azure_cloud_services_with_deployment.list()[0]
+        detail_1 = self.azure_cloud_services_with_deployment.first()
         detail_2 = self.azure_cloud_services_with_deployment.list()[1]
 
         api.azure_api.cloud_service_list(
@@ -137,7 +137,7 @@ class InstanceTests(helpers.TestCase):
     def _terminate_instance_base(self):
         cloud_services = self.azure_cloud_services.list()
         role_sizes = self.azure_rolesizes.list()
-        detail_1 = self.azure_cloud_services_with_deployment.list()[0]
+        detail_1 = self.azure_cloud_services_with_deployment.first()
         detail_2 = self.azure_cloud_services_with_deployment.list()[1]
 
         # Add a role to the deployment in order to make sure
@@ -181,7 +181,8 @@ class InstanceTests(helpers.TestCase):
         self.mox.ReplayAll()
 
         formData = {
-            'action': 'instances__terminate__%s' % server.instance_name}
+            'action': 'instances__terminate__%s==%s' % (
+                detail_1.service_name, server.instance_name)}
         res = self.client.post(INDEX_URL, formData)
 
         self.assertRedirectsNoFollow(res, INDEX_URL)
@@ -204,7 +205,8 @@ class InstanceTests(helpers.TestCase):
         self.mox.ReplayAll()
 
         formData = {
-            'action': 'instances__terminate__%s' % server.instance_name}
+            'action': 'instances__terminate__%s==%s' % (
+                detail_1.service_name, server.instance_name)}
         res = self.client.post(INDEX_URL, formData)
 
         self.assertRedirectsNoFollow(res, INDEX_URL)
@@ -212,7 +214,7 @@ class InstanceTests(helpers.TestCase):
     def _get_instances_actions_base(self):
         cloud_services = self.azure_cloud_services.list()
         role_sizes = self.azure_rolesizes.list()
-        detail_1 = self.azure_cloud_services_with_deployment.list()[0]
+        detail_1 = self.azure_cloud_services_with_deployment.first()
         detail_2 = self.azure_cloud_services_with_deployment.list()[1]
 
         api.azure_api.cloud_service_list(
@@ -235,7 +237,7 @@ class InstanceTests(helpers.TestCase):
                                            'deployment_delete')})
     def test_terminate_instance_last_role(self):
         self._get_instances_actions_base()
-        detail_1 = self.azure_cloud_services_with_deployment.list()[0]
+        detail_1 = self.azure_cloud_services_with_deployment.first()
         server = self.azure_role_instances.first()
 
         api.azure_api.cloud_service_detail(
@@ -249,7 +251,8 @@ class InstanceTests(helpers.TestCase):
         self.mox.ReplayAll()
 
         formData = {
-            'action': 'instances__terminate__%s' % server.instance_name}
+            'action': 'instances__terminate__%s==%s' % (
+                detail_1.service_name, server.instance_name)}
         res = self.client.post(INDEX_URL, formData)
 
         self.assertRedirectsNoFollow(res, INDEX_URL)
@@ -260,7 +263,7 @@ class InstanceTests(helpers.TestCase):
                                            'deployment_delete')})
     def test_terminate_instance_last_role_exception(self):
         self._get_instances_actions_base()
-        detail_1 = self.azure_cloud_services_with_deployment.list()[0]
+        detail_1 = self.azure_cloud_services_with_deployment.first()
         server = self.azure_role_instances.first()
 
         api.azure_api.cloud_service_detail(
@@ -274,7 +277,8 @@ class InstanceTests(helpers.TestCase):
         self.mox.ReplayAll()
 
         formData = {
-            'action': 'instances__terminate__%s' % server.instance_name}
+            'action': 'instances__terminate__%s==%s' % (
+                detail_1.service_name, server.instance_name)}
         res = self.client.post(INDEX_URL, formData)
 
         self.assertRedirectsNoFollow(res, INDEX_URL)
@@ -572,7 +576,8 @@ class InstanceTests(helpers.TestCase):
         self.mox.ReplayAll()
 
         formData = {
-            'action': 'instances__stop__%s' % server.instance_name}
+            'action': 'instances__stop__%s==%s' % (
+                detail_1.service_name, server.instance_name)}
         res = self.client.post(INDEX_URL, formData)
 
         self.assertRedirectsNoFollow(res, INDEX_URL)
@@ -594,7 +599,8 @@ class InstanceTests(helpers.TestCase):
         self.mox.ReplayAll()
 
         formData = {
-            'action': 'instances__stop__%s' % server.instance_name}
+            'action': 'instances__stop__%s==%s' % (
+                detail_1.service_name, server.instance_name)}
         res = self.client.post(INDEX_URL, formData)
 
         self.assertRedirectsNoFollow(res, INDEX_URL)
@@ -617,7 +623,8 @@ class InstanceTests(helpers.TestCase):
         self.mox.ReplayAll()
 
         formData = {
-            'action': 'instances__restart__%s' % server.instance_name}
+            'action': 'instances__restart__%s==%s' % (
+                detail_1.service_name, server.instance_name)}
         res = self.client.post(INDEX_URL, formData)
 
         self.assertRedirectsNoFollow(res, INDEX_URL)
@@ -639,7 +646,8 @@ class InstanceTests(helpers.TestCase):
         self.mox.ReplayAll()
 
         formData = {
-            'action': 'instances__restart__%s' % server.instance_name}
+            'action': 'instances__restart__%s==%s' % (
+                detail_1.service_name, server.instance_name)}
         res = self.client.post(INDEX_URL, formData)
 
         self.assertRedirectsNoFollow(res, INDEX_URL)
@@ -738,7 +746,7 @@ class InstanceTests(helpers.TestCase):
         server = self.azure_role_instances.first()
         cloud_service = self.azure_cloud_services.first()
         deployment = self.azure_deployments.first()
-        old_size = self.azure_rolesizes.list()[0]
+        old_size = self.azure_rolesizes.first()
         new_size = self.azure_rolesizes.list()[1]
         self._resize_post_base()
 
@@ -772,7 +780,7 @@ class InstanceTests(helpers.TestCase):
         server = self.azure_role_instances.first()
         cloud_service = self.azure_cloud_services.first()
         deployment = self.azure_deployments.first()
-        old_size = self.azure_rolesizes.list()[0]
+        old_size = self.azure_rolesizes.first()
         new_size = self.azure_rolesizes.list()[1]
         self._resize_post_base()
 
@@ -1148,7 +1156,8 @@ class InstanceTests(helpers.TestCase):
         self.mox.ReplayAll()
 
         formData = {
-            'action': 'instances__de-attach__%s' % server.instance_name}
+            'action': 'instances__de-attach__%s==%s' % (
+                detail_1.service_name, server.instance_name)}
         res = self.client.post(INDEX_URL, formData)
 
         self.assertRedirectsNoFollow(res, INDEX_URL)
@@ -1171,7 +1180,8 @@ class InstanceTests(helpers.TestCase):
         self.mox.ReplayAll()
 
         formData = {
-            'action': 'instances__de-attach__%s' % server.instance_name}
+            'action': 'instances__de-attach__%s==%s' % (
+                detail_1.service_name, server.instance_name)}
         res = self.client.post(INDEX_URL, formData)
 
         self.assertRedirectsNoFollow(res, INDEX_URL)

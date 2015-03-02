@@ -78,7 +78,7 @@ class DetailLink(tables.LinkAction):
         return urlresolvers.reverse(self.url,
                                     args=(datum.cloud_service_name,
                                           datum.deployment_name,
-                                          datum.role_name))
+                                          datum.instance_name))
 
 
 def get_detail_link(datum):
@@ -172,7 +172,7 @@ class TerminateInstance(tables.BatchAction):
                 # If instance was created from horizon,
                 # the deployment name was same as cloud_service_name.
                 datum.cloud_service_name,
-                obj_id)
+                datum.instance_name)
 
 
 class StartInstance(tables.BatchAction):
@@ -204,7 +204,7 @@ class StartInstance(tables.BatchAction):
         api.azure_api.virtual_machine_start(request,
                                             datum.cloud_service_name,
                                             datum.cloud_service_name,
-                                            obj_id)
+                                            datum.instance_name)
 
 
 class RestartInstance(tables.BatchAction):
@@ -241,7 +241,7 @@ class RestartInstance(tables.BatchAction):
         api.azure_api.virtual_machine_restart(request,
                                               datum.cloud_service_name,
                                               datum.cloud_service_name,
-                                              obj_id)
+                                              datum.instance_name)
 
 
 class StopInstance(tables.BatchAction):
@@ -278,7 +278,7 @@ class StopInstance(tables.BatchAction):
         api.azure_api.virtual_machine_shutdown(request,
                                                datum.cloud_service_name,
                                                datum.cloud_service_name,
-                                               obj_id)
+                                               datum.instance_name)
 
 
 class ResizeLink(tables.LinkAction):
@@ -349,7 +349,7 @@ class AddEndpoint(tables.LinkAction):
             self.url,
             args=[datum.cloud_service_name,
                   datum.deployment_name,
-                  datum.role_name])
+                  datum.instance_name])
 
 
 class RemoveEndpoint(AddEndpoint):
@@ -403,7 +403,7 @@ class DeattachDataDisk(tables.BatchAction):
         api.azure_api.data_disk_deattach(request,
                                          datum.cloud_service_name,
                                          datum.cloud_service_name,
-                                         obj_id)
+                                         datum.instance_name)
 
 
 STATUS_DISPLAY_CHOICES = (
@@ -426,15 +426,7 @@ STATUS_DISPLAY_CHOICES = (
 class UpdateRow(tables.Row):
     ajax = True
 
-    def get_data(self, request, instance_id):
-        try:
-            # To this subscription's all cloud service
-            cloud_services = api.azure_api.cloud_service_list(request)
-        except Exception:
-            cloud_services = []
-            exceptions.handle(request,
-                              _('Unable to retrieve cloud service list.'))
-
+    def get_data(self, request, obj_id):
         try:
             # To retrieve all vm size
             role_sizes = api.azure_api.role_size_list(request)
@@ -444,31 +436,33 @@ class UpdateRow(tables.Row):
                               _('Unable to retrieve role size list.'))
         rolesize_dict = dict([(item.name, item) for item in role_sizes])
 
+        cloudservice_name = obj_id[:obj_id.find("==")]
+        instance_name = obj_id[obj_id.find("==") + 2:]
+
         instance = None
-        if cloud_services and rolesize_dict:
-            for cs in cloud_services:
-                # To get all instances in each cloud service
-                try:
-                    detail = api.azure_api.cloud_service_detail(
-                        request,
-                        cs.service_name,
-                        embed_detail=True)
-                    for dep in detail.deployments:
-                        role_dict = dict([(r.role_name, r)
-                                          for r in dep.role_list])
-                        for ins in dep.role_instance_list:
-                            ins.dns_url = dep.url[7:-1]
-                            ins.cloud_service_name = cs.service_name
-                            ins.deployment_name = dep.name
-                            ins.role = role_dict.get(ins.role_name)
-                            ins.role_size = rolesize_dict.get(
-                                ins.role.role_size)
-                            if instance_id == ins.role_name:
-                                instance = ins
-                except Exception:
-                    exceptions.handle(
-                        request,
-                        _('Unable to retrieve cloud service detail.'))
+        if rolesize_dict:
+            try:
+                detail = api.azure_api.cloud_service_detail(
+                    request,
+                    cloudservice_name,
+                    embed_detail=True)
+                for dep in detail.deployments:
+                    role_dict = dict([(r.role_name, r)
+                                      for r in dep.role_list])
+                    for ins in dep.role_instance_list:
+                        ins.dns_url = dep.url[7:-1]
+                        ins.cloud_service_name = cloudservice_name
+                        ins.deployment_name = dep.name
+                        ins.role = role_dict.get(ins.role_name)
+                        ins.role_size = rolesize_dict.get(
+                            ins.role.role_size)
+                        if instance_name == ins.role_name:
+                            instance = ins
+                            break
+            except Exception:
+                exceptions.handle(
+                    request,
+                    _('Unable to retrieve cloud service detail.'))
         return instance
 
 
@@ -512,12 +506,11 @@ class InstancesTable(tables.DataTable):
                             verbose_name=_("DNS"))
 
     def get_object_display(self, datum):
-        return (datum.instance_name
-                if hasattr(datum, 'instance_name') else datum.role_name)
+        return datum.role_name
 
     def get_object_id(self, datum):
-        return (datum.instance_name
-                if hasattr(datum, 'instance_name') else datum.role_name)
+        return '%s==%s' % (datum.cloud_service_name,
+                           datum.role_name)
 
     class Meta(object):
         name = "instances"

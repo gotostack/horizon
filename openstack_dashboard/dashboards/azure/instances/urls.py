@@ -19,8 +19,8 @@ from openstack_dashboard.dashboards.azure.instances import views
 
 
 INSTANCES = r'^(?P<instance_id>[^/]+)/%s$'
-AZURE_MOD = r'^(?P<cloud_service_name>[^/]+)/(?P<deployment_name>[^/]+)' \
-    '/(?P<instance_name>[^/]+)/%s$'
+AZURE_MOD = r'^(?P<cloud_service_name>[^/]+)_(?P<deployment_name>[^/]+)' \
+    '_(?P<instance_name>[^/]+)/%s$'
 VIEW_MOD = 'openstack_dashboard.dashboards.azure.instances.views'
 
 
