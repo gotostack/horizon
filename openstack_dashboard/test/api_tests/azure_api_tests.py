@@ -417,7 +417,7 @@ class AzureApiTests(test.APITestCase):
             service_name=api_cloudservice.service_name,
             deployment_name=api_deployment.name,
             role_name=api_role.role_name,
-            post_shutdown_action='Stopped').AndReturn(result)
+            post_shutdown_action='StoppedDeallocated').AndReturn(result)
         self._get_operation(azureclient, result)
         self.mox.ReplayAll()
 

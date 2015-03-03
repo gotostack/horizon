@@ -19,6 +19,7 @@ import time
 
 from azure.servicemanagement import ConfigurationSet  # noqa
 from azure.servicemanagement import ConfigurationSetInputEndpoint  # noqa
+from azure.servicemanagement import ConfigurationSetInputEndpoints
 from azure.servicemanagement import LinuxConfigurationSet  # noqa
 from azure.servicemanagement import LoadBalancerProbe  # noqa
 from azure.servicemanagement import OSVirtualHardDisk  # noqa
@@ -154,6 +155,14 @@ def azureclient(request):
 def subscription_get(request):
     """Azure location geographic domain."""
     return azureclient(request).get_subscription()
+
+
+def subscription_quota_check(request, resource):
+    sub = subscription_get(request)
+    if resource == 'cores':
+        return sub.max_core_count - sub.current_core_count > 0
+    if resource == 'cloudservice':
+        return sub.max_hosted_services - sub.current_hosted_services > 0
 
 
 @memoized
@@ -542,7 +551,7 @@ def virtual_machine_delete(request, service_name,
 
 def virtual_machine_shutdown(request, service_name,
                              deployment_name, role_name,
-                             post_shutdown_action='Stopped'):
+                             post_shutdown_action='StoppedDeallocated'):
     """Shutdown an azure vm of a cloudservice/deployment."""
     client = azureclient(request)
     result = client.shutdown_role(
@@ -589,11 +598,39 @@ def virtual_machine_resize(request, service_name,
                            role_size):
     """Resize an azure virtual machine."""
     client = azureclient(request)
-    result = client.update_role(
-        service_name, deployment_name,
-        role_name,
-        role_size=role_size)
-    return _get_operation_status(client, result.request_id)
+
+    cs = client.get_hosted_service_properties(
+        service_name=service_name,
+        embed_detail=True)
+    vm = client.get_role(service_name, deployment_name, role_name)
+
+    if cs and vm:
+        old_network_config = None
+        for cf in vm.configuration_sets:
+            old_network_config = cf if (cf.configuration_set_type ==
+                                        'NetworkConfiguration') else None
+        if old_network_config.input_endpoints is not None:
+            for end in old_network_config.input_endpoints.input_endpoints:
+                if end.load_balancer_probe is None:
+                    end.load_balancer_probe = LoadBalancerProbe()
+
+            if (old_network_config.subnet_names is None and
+                    old_network_config.public_ips is None):
+                new_conf = ConfigurationSet()
+                new_conf.input_endpoints.input_endpoints = \
+                    old_network_config.input_endpoints.input_endpoints
+                old_network_config = new_conf
+        else:
+            old_network_config.input_endpoints = ConfigurationSetInputEndpoints()
+            old_network_config.input_endpoints.input_endpoints = []
+            old_network_config.subnet_names = []
+
+        result = client.update_role(
+                service_name, deployment_name,
+                role_name,
+                network_config=old_network_config,
+                role_size=role_size)
+        return _get_operation_status(client, result.request_id)
 
 
 def _get_instance_used_local_ports(instance):
@@ -751,8 +788,7 @@ def virtual_machine_update(request, service_name, deployment_name, role_name,
         for cf in vm.configuration_sets:
             old_network_config = cf if (cf.configuration_set_type ==
                                         'NetworkConfiguration') else None
-        if (old_network_config
-                and old_network_config.input_endpoints is not None):
+        if old_network_config.input_endpoints is not None:
             for end in old_network_config.input_endpoints.input_endpoints:
                 if end.load_balancer_probe is None:
                     end.load_balancer_probe = LoadBalancerProbe()
@@ -763,24 +799,19 @@ def virtual_machine_update(request, service_name, deployment_name, role_name,
                 new_conf.input_endpoints.input_endpoints = \
                     old_network_config.input_endpoints.input_endpoints
                 old_network_config = new_conf
-
-        if old_network_config is not None:
-            result = client.update_role(
-                service_name, deployment_name, role_name,
-                os_virtual_hard_disk, old_network_config,
-                availability_set_name, data_virtual_hard_disks,
-                role_size, role_type,
-                resource_extension_references,
-                provision_guest_agent)
         else:
-            result = client.update_role(
-                service_name, deployment_name, role_name,
-                os_virtual_hard_disk, network_config,
-                availability_set_name, data_virtual_hard_disks,
-                role_size, role_type,
-                resource_extension_references,
-                provision_guest_agent)
-    return _get_operation_status(client, result.request_id)
+            old_network_config.input_endpoints = ConfigurationSetInputEndpoints()
+            old_network_config.input_endpoints.input_endpoints = []
+            old_network_config.subnet_names = []
+
+        result = client.update_role(
+            service_name, deployment_name, role_name,
+            os_virtual_hard_disk, old_network_config,
+            availability_set_name, data_virtual_hard_disks,
+            role_size, role_type,
+            resource_extension_references,
+            provision_guest_agent)
+        return _get_operation_status(client, result.request_id)
 
 
 def disk_list(request):

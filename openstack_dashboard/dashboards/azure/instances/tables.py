@@ -450,7 +450,6 @@ class UpdateRow(tables.Row):
                     role_dict = dict([(r.role_name, r)
                                       for r in dep.role_list])
                     for ins in dep.role_instance_list:
-                        ins.dns_url = dep.url[7:-1]
                         ins.cloud_service_name = cloudservice_name
                         ins.deployment_name = dep.name
                         ins.role = role_dict.get(ins.role_name)
@@ -502,8 +501,6 @@ class InstancesTable(tables.DataTable):
                                        verbose_name=_("Cloud Service"))
     Endpoints = tables.Column(get_endpoints,
                               verbose_name=_("Endpoints"))
-    dns_url = tables.Column("dns_url",
-                            verbose_name=_("DNS"))
 
     def get_object_display(self, datum):
         return datum.role_name

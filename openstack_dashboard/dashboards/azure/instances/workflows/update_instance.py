@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import re
+
 from django.utils.translation import ugettext_lazy as _
 
 from horizon import exceptions
@@ -20,16 +22,28 @@ from horizon import workflows
 
 from openstack_dashboard import api
 
+NAME_REGEX = re.compile(r"^[a-zA-Z][a-zA-Z0-9\-]*$", re.UNICODE)
+
+NAME_HELP_TEXT = _('Availability set name must begin with letter'
+                   ' and only contain'
+                   ' letters, numbers and hyphens.')
+ERROR_MESSAGES = {'invalid': NAME_HELP_TEXT}
+
 
 class UpdateInstanceAvailabilitySetAction(workflows.Action):
-    availability_set_name = forms.CharField(
+    availability_set_name = forms.RegexField(
         label=_("Availability Set Name"),
+        max_length=255,
+        regex=NAME_REGEX,
+        error_messages=ERROR_MESSAGES,
+        help_text=NAME_HELP_TEXT,
         required=False)
 
     class Meta(object):
         name = _("Availability Set")
         slug = 'availability_set'
-        help_text = _("Edit the instance availability set.")
+        help_text_template = ("azure/instances/"
+                              "_update_instance_help.html")
 
 
 class UpdateInstanceAvailabilitySet(workflows.Step):

@@ -78,8 +78,6 @@ class IndexView(tables.DataTableView):
                         role_dict = dict([(r.role_name, r)
                                           for r in dep.role_list])
                         for ins in dep.role_instance_list:
-                            # set DNS
-                            ins.dns_url = dep.url[7:-1]
                             # set cloud service name
                             ins.cloud_service_name = cs.service_name
                             # set deployment name
@@ -100,13 +98,15 @@ class DetailView(tabs.TabView):
     tab_group_class = project_tabs.InstanceDetailTabs
     template_name = 'azure/instances/detail.html'
     redirect_url = 'horizon:azure:instances:index'
-    page_title = _("Instance Details: {{ instance.name }}")
 
     def get_context_data(self, **kwargs):
         context = super(DetailView, self).get_context_data(**kwargs)
         instance = self.get_data()
         context["instance"] = instance
         context["url"] = reverse(self.redirect_url)
+        context["page_title"] = _(
+            "Instance Details: %(instance_name)s") % {
+                'instance_name': instance.role_name}
         return context
 
     @memoized.memoized_method
