@@ -294,3 +294,38 @@ class RemoveEndpointView(AddEndpointView):
 class AttachDataDiskView(AddEndpointView):
     form_class = project_forms.AttatchDatadiskForm
     template_name = 'azure/instances/attach_datadisk.html'
+
+
+class DeattachDataDiskView(AddEndpointView):
+    form_class = project_forms.DeattatchDatadiskForm
+    template_name = 'azure/instances/deattach_datadisk.html'
+
+    @memoized.memoized_method
+    def get_object(self, *args, **kwargs):
+        cloud_service_name = self.kwargs['cloud_service_name']
+        deployment_name = self.kwargs['deployment_name']
+        instance_name = self.kwargs['instance_name']
+        try:
+            instance = api.azure_api.virtual_machine_get(
+                self.request,
+                cloud_service_name,
+                deployment_name,
+                instance_name)
+            instance.cloud_service_name = cloud_service_name
+            instance.deployment_name = deployment_name
+        except Exception:
+            redirect = reverse("horizon:azure:instances:index")
+            msg = _('Unable to retrieve instance details.')
+            exceptions.handle(self.request, msg, redirect=redirect)
+        return instance
+
+    def get_initial(self):
+        initial = super(DeattachDataDiskView, self).get_initial()
+        _object = self.get_object()
+        if _object:
+            initial.update(
+                {'cloud_service_name': self.kwargs['cloud_service_name'],
+                 'deployment_name': self.kwargs['deployment_name'],
+                 'instance_name': self.kwargs['instance_name'],
+                 'data_disks': _object.data_virtual_hard_disks})
+        return initial

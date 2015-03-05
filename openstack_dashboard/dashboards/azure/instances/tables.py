@@ -56,14 +56,15 @@ def get_size(instance):
     if hasattr(instance, "role_size"):
         template_name = 'azure/instances/_instance_flavor.html'
         size_ram = sizeformat.mb_float_format(instance.role_size.memory_in_mb)
-        size_disk = sizeformat.diskgbformat(
+        size_disk = sizeformat.mb_float_format(
             instance.role_size.virtual_machine_resource_disk_size_in_mb)
         context = {
             "name": instance.role_size.name,
             "id": instance.role_name,
             "size_disk": size_disk,
             "size_ram": size_ram,
-            "vcpus": instance.role_size.cores
+            "vcpus": instance.role_size.cores,
+            "max_data_disk_count": instance.role_size.max_data_disk_count
         }
         return template.loader.render_to_string(template_name, context)
     return _("Not available")
@@ -366,44 +367,20 @@ class AttachDataDisk(AddEndpoint):
     def allowed(self, request, instance=None):
         return ((instance.power_state in ACTIVE_STATES)
                 and instance.power_state.lower() != "deleting"
-                and len(instance.role.data_virtual_hard_disks) == 0)
+                and (instance.role_size.max_data_disk_count -
+                     len(instance.role.data_virtual_hard_disks) > 0))
 
 
-class DeattachDataDisk(tables.BatchAction):
+class DeattachDataDisk(AddEndpoint):
     name = "de-attach"
     verbose_name = _("De-attach Data Disk")
-    classes = ('btn-danger',)
-    help_text = _("Please confirm data stored on data disk has made a backup."
-                  " De-attach action will make the data on the data disk"
-                  " be completely removed. And the data cannot be recovered.")
-
-    @staticmethod
-    def action_present(count):
-        return ungettext_lazy(
-            u"De-attach Data Disk",
-            u"De-attach Data Disks",
-            count
-        )
-
-    @staticmethod
-    def action_past(count):
-        return ungettext_lazy(
-            u"De-attached Data Disk",
-            u"De-attached Data Disks",
-            count
-        )
+    classes = ('btn-danger', "ajax-modal")
+    url = "horizon:azure:instances:deattach"
 
     def allowed(self, request, instance=None):
         return ((instance.power_state == 'Started')
                 and instance.power_state.lower() != "deleting"
                 and len(instance.role.data_virtual_hard_disks) > 0)
-
-    def action(self, request, obj_id):
-        datum = self.table.get_object_by_id(obj_id)
-        api.azure_api.data_disk_deattach(request,
-                                         datum.cloud_service_name,
-                                         datum.cloud_service_name,
-                                         datum.instance_name)
 
 
 STATUS_DISPLAY_CHOICES = (

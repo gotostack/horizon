@@ -51,7 +51,6 @@ class CreateCloudServiceForm(forms.SelfHandlingForm):
         choices = [(l.name, l.display_name) for l in locations]
         self.fields['location'].choices = choices
 
-    @sensitive_variables('data')
     def handle(self, request, data):
         service_name = data.get("service_name")
         location = data.get("location")

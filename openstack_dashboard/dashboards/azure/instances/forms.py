@@ -85,7 +85,6 @@ class AddEndpointForm(InstanceBaseOperationForm):
                    ("udp", _("UDP"))]
         self.fields['protocol'].choices = choices
 
-    @sensitive_variables('data')
     def handle(self, request, data):
         cloud_service_name = data.get("cloud_service_name")
         deployment_name = data.get("deployment_name")
@@ -102,9 +101,9 @@ class AddEndpointForm(InstanceBaseOperationForm):
                 instance_name,
                 endpoint_name, protocol,
                 local_port, public_port)
-            messages.success(request,
-                             _('Successfully add'
-                               ' endpoint for instance %s.') % instance_name)
+            messages.success(
+                request, _('Successfully add'
+                           ' endpoint for instance "%s".') % instance_name)
         except Exception as e:
             redirect = reverse('horizon:azure:instances:index')
             msg = _("Unable to add endpoint to instance: %s") % e.message
@@ -126,7 +125,6 @@ class RemoveEndpointForm(InstanceBaseOperationForm):
                                          i.local_port)) for i in endpoints]
         self.fields['endpoints'].choices = choices
 
-    @sensitive_variables('data')
     def handle(self, request, data):
         cloud_service_name = data.get("cloud_service_name")
         deployment_name = data.get("deployment_name")
@@ -139,9 +137,9 @@ class RemoveEndpointForm(InstanceBaseOperationForm):
                 cloud_service_name, deployment_name,
                 instance_name,
                 endpoint_name)
-            messages.success(request,
-                             _('Successfully remove'
-                               ' endpoint for instance %s.') % instance_name)
+            messages.success(
+                request, _('Successfully remove'
+                           ' endpoint from instance "%s".') % instance_name)
         except Exception:
             redirect = reverse('horizon:azure:instances:index')
             exceptions.handle(request,
@@ -166,7 +164,6 @@ class AttatchDatadiskForm(InstanceBaseOperationForm):
     def __init__(self, request, *args, **kwargs):
         super(AttatchDatadiskForm, self).__init__(request, *args, **kwargs)
 
-    @sensitive_variables('data')
     def handle(self, request, data):
         cloud_service_name = data.get("cloud_service_name")
         deployment_name = data.get("deployment_name")
@@ -180,6 +177,7 @@ class AttatchDatadiskForm(InstanceBaseOperationForm):
                 service_name=cloud_service_name,
                 deployment_name=deployment_name,
                 role_name=instance_name,
+                disk_name=disk_name,
                 logical_disk_size_in_gb=size)
             messages.success(
                 request,
@@ -191,5 +189,45 @@ class AttatchDatadiskForm(InstanceBaseOperationForm):
             redirect = reverse('horizon:azure:instances:index')
             exceptions.handle(request, _("Unable to attach disk"
                                          " for instance."),
+                              redirect=redirect)
+        return True
+
+
+class DeattatchDatadiskForm(InstanceBaseOperationForm):
+    data_disks = forms.ChoiceField(
+        label=_("Data Disk"),
+        help_text=_("Select an data disk to remove. "
+                    "Choice format 'Disk name' - 'Size'"))
+
+    def __init__(self, request, *args, **kwargs):
+        super(DeattatchDatadiskForm, self).__init__(request, *args, **kwargs)
+
+        data_disks = kwargs.get('initial', []).get('data_disks')
+        choices = [(i.lun,
+                    "%s - %s GB" % (
+                        i.disk_name,
+                        i.logical_disk_size_in_gb)) for i in data_disks]
+        self.fields['data_disks'].choices = choices
+
+    def handle(self, request, data):
+        cloud_service_name = data.get("cloud_service_name")
+        deployment_name = data.get("deployment_name")
+        instance_name = data.get("instance_name")
+
+        lun = data.get("data_disks")
+        try:
+            api.azure_api.data_disk_deattach(
+                request,
+                service_name=cloud_service_name,
+                deployment_name=deployment_name,
+                role_name=instance_name,
+                lun=lun)
+            messages.success(
+                request,
+                _('Successfully deattach data disk from instance.'))
+        except Exception:
+            redirect = reverse('horizon:azure:instances:index')
+            exceptions.handle(request, _("Unable to deattach disk"
+                                         " from instance."),
                               redirect=redirect)
         return True

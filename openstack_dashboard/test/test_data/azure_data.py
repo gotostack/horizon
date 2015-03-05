@@ -322,7 +322,7 @@ def data(TEST):
     role_2.default_win_rm_certificate_thumbprint = \
         '25B0A0DF6C5A911957B6670B5E68F0894335703C'
     role_2.availability_set_name = ''
-    role_2.role_size = 'Basic_A0'
+    role_2.role_size = 'A5'
     role_2.os_version = ''
     role_2.role_name = 'testvm02win'
     role_2.role_type = 'PersistentVMRole'
@@ -379,7 +379,7 @@ def data(TEST):
     deployment_2.role_instance_list = RoleInstanceList()
     role_instance_2 = RoleInstance()
     role_instance_2.instance_upgrade_domain = 0
-    role_instance_2.instance_size = 'Basic_A0'
+    role_instance_2.instance_size = 'A5'
     role_instance_2.fqdn = ''
     role_instance_2.instance_fault_domain = 0
     role_instance_2.instance_name = 'testvm02win'

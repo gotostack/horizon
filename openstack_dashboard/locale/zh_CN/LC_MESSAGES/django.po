@@ -11796,6 +11796,12 @@ msgstr "地缘组"
 msgid "Endpoint"
 msgstr "端点"
 
+msgid "Total Data Disk Size"
+msgstr "最大数据盘容量"
+
+msgid "Max Data Disk Count"
+msgstr "最大数据盘数量"
+
 msgid "Protocol:"
 msgstr "协议:"
 
@@ -11943,6 +11949,9 @@ msgstr "云主机(云服务)将被部署的数据中心。"
 msgid "The instance must belong to one specific 'cloud service', so you can create one cloud service or choose one existed."
 msgstr "云主机必须属于某个特定的'云服务'，你可以在这里直接创建或者选择一个已存在的云服务。"
 
+msgid "An instance with name \"%s\" in the cloud service \"%s\" is already existed."
+msgstr "已经存在一个名为\"%s\"的云主机在云服务\"%s\"中。"
+
 msgid "View Detail"
 msgstr "详情"
 
@@ -11973,22 +11982,41 @@ msgstr "移除访问端口"
 msgid "Unable to add endpoint to instance: %s"
 msgstr "无法增加端点到云主机: %s"
 
+msgid "Successfully add endpoint for instance \"%s\"."
+msgstr "成功增加端点到云主机: \"%s\""
+
+msgid "Successfully remove endpoint from instance \"%s\"."
+msgstr "端点成功从云主机: \"%s\" 移除"
+
+msgid "Unable to remove instance endpoint."
+msgstr "无法移除云主机的端点"
+
 msgid "Attach a data disk to the instance."
 msgstr "增加一个数据盘到云主机。"
 
 msgid "The instance can only have one data disk."
 msgstr "一个云主机最多只能挂载一个数据磁盘。"
 
+msgid "Successfully attach disk %(disk_name)s for instance %(instance_name)s."
+msgstr "成功增加磁盘 %(disk_name)s 到云主机 %(instance_name)s "
+
+msgid "Unable to attach disk for instance."
+msgstr "无法为云主机增加数据盘"
+
 msgid "Attach Data Disk"
 msgstr "挂载数据盘"
 
 msgid "De-attach Data Disk"
-msgid_plural "De-attach Data Disks"
-msgstr[0] "卸载数据盘"
+msgstr "卸载数据盘"
 
-msgid "De-attached Data Disk"
-msgid_plural "De-attached Data Disks"
-msgstr[0] "已卸载的数据盘"
+msgid "Data Disk"
+msgstr "数据盘"
+
+msgid "Select an data disk to remove. Choice format 'Disk name' - 'Size'"
+msgstr "选择卸载一个数据盘，选项格式 '磁盘名称' - '大小'"
+
+msgid "Please confirm data stored on data disk has made a backup. De-attach action will remove the data on the data disk completely. And the data cannot be recovered."
+msgstr "在卸载数据盘之前，请检查数据盘是否存有需要备份的数据，如果有请及时备份，卸载的数据盘数据是无法恢复的。"
 
 msgid "Remove an endpoint from the instance."
 msgstr "从云主机移除一个选定的端点。移除之后，你将不能通过原来的配置或端口来访问云主机，例如，如果你移除了SSH-22端点，那么你将不能使用ssh登录你的linux云主机。"
@@ -12034,9 +12062,6 @@ msgstr "调整云主机大小将会使云主机重新启动，请注意保存云
 
 msgid "The instance will be deleted, disks associated with the instance are still in the disk repository."
 msgstr "终止实例将会使云主机被删除，其内存数据和数据盘的数据都将无法恢复。云主机被删除后，你需要手动删除其系统盘。"
-
-msgid "Restarted instances will lose any data not saved in persistent storage."
-msgstr "重启云主机将会导致所有未保存数据丢失。"
 
 msgid "Stopped instances will lose any data not saved in persistent storage."
 msgstr "停止云主机将会导致所有未保存数据丢失。"

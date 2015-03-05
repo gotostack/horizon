@@ -1090,6 +1090,7 @@ class InstanceTests(helpers.TestCase):
             service_name=cloud_service.service_name,
             deployment_name=deployment.name,
             role_name=server.role_name,
+            disk_name=data_disk.name,
             logical_disk_size_in_gb=data_disk.logical_disk_size_in_gb
         ).AndRaise(self.exceptions.azure)
         self.mox.ReplayAll()
@@ -1120,6 +1121,7 @@ class InstanceTests(helpers.TestCase):
             service_name=cloud_service.service_name,
             deployment_name=deployment.name,
             role_name=server.role_name,
+            disk_name=data_disk.name,
             logical_disk_size_in_gb=data_disk.logical_disk_size_in_gb)
         self.mox.ReplayAll()
 
@@ -1138,52 +1140,76 @@ class InstanceTests(helpers.TestCase):
         self.assertNoFormErrors(res)
         self.assertRedirectsNoFollow(res, INDEX_URL)
 
-    @helpers.create_stubs({api.azure_api: ('cloud_service_list',
-                                           'role_size_list',
-                                           'cloud_service_detail',
-                                           'data_disk_deattach')})
+    @helpers.create_stubs({api.azure_api: ('virtual_machine_get',
+                                           'data_disk_deattach',)})
     def test_deattach_datadisk_instance(self):
-        self._get_instances_actions_base()
+        cloud_service = self.azure_cloud_services.first()
+        deployment = self.azure_deployments.first()
         detail_1 = self.azure_cloud_services_with_deployment.first()
         server = self.azure_role_instances.first()
-
+        role = self.azure_roles.first()
+        api.azure_api.virtual_machine_get(
+            IsA(http.HttpRequest),
+            cloud_service.service_name,
+            deployment.name,
+            server.role_name).AndReturn(role)
         api.azure_api.data_disk_deattach(
             IsA(http.HttpRequest),
-            detail_1.service_name,
-            detail_1.service_name,
-            server.instance_name)
+            service_name=detail_1.service_name,
+            deployment_name=detail_1.service_name,
+            role_name=server.instance_name,
+            lun='0')
 
         self.mox.ReplayAll()
 
-        formData = {
-            'action': 'instances__de-attach__%s==%s' % (
-                detail_1.service_name, server.instance_name)}
-        res = self.client.post(INDEX_URL, formData)
+        url = reverse('horizon:azure:instances:deattach',
+                      args=[cloud_service.service_name,
+                            deployment.name,
+                            server.role_name])
+        form_data = {
+            'cloud_service_name': cloud_service.service_name,
+            'deployment_name': deployment.name,
+            'instance_name': server.role_name,
+            'data_disks': 0}
+        res = self.client.post(url, form_data)
 
+        self.assertNoFormErrors(res)
         self.assertRedirectsNoFollow(res, INDEX_URL)
 
-    @helpers.create_stubs({api.azure_api: ('cloud_service_list',
-                                           'role_size_list',
-                                           'cloud_service_detail',
-                                           'data_disk_deattach')})
+    @helpers.create_stubs({api.azure_api: ('virtual_machine_get',
+                                           'data_disk_deattach',)})
     def test_deattach_datadisk_instance_exception(self):
-        self._get_instances_actions_base()
         detail_1 = self.azure_cloud_services_with_deployment.first()
+        cloud_service = self.azure_cloud_services.first()
+        deployment = self.azure_deployments.first()
         server = self.azure_role_instances.first()
-
+        role = self.azure_roles.first()
+        api.azure_api.virtual_machine_get(
+            IsA(http.HttpRequest),
+            cloud_service.service_name,
+            deployment.name,
+            server.role_name).AndReturn(role)
         api.azure_api.data_disk_deattach(
             IsA(http.HttpRequest),
-            detail_1.service_name,
-            detail_1.service_name,
-            server.instance_name).AndRaise(self.exceptions.azure)
+            service_name=detail_1.service_name,
+            deployment_name=detail_1.service_name,
+            role_name=server.instance_name,
+            lun='0').AndRaise(self.exceptions.azure)
 
         self.mox.ReplayAll()
 
-        formData = {
-            'action': 'instances__de-attach__%s==%s' % (
-                detail_1.service_name, server.instance_name)}
-        res = self.client.post(INDEX_URL, formData)
+        url = reverse('horizon:azure:instances:deattach',
+                      args=[cloud_service.service_name,
+                            deployment.name,
+                            server.role_name])
+        form_data = {
+            'cloud_service_name': cloud_service.service_name,
+            'deployment_name': deployment.name,
+            'instance_name': server.role_name,
+            'data_disks': 0}
+        res = self.client.post(url, form_data)
 
+        self.assertNoFormErrors(res)
         self.assertRedirectsNoFollow(res, INDEX_URL)
 
     @helpers.create_stubs({api.azure_api: ('virtual_machine_get',)})

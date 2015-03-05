@@ -37,4 +37,6 @@ urlpatterns = patterns(
         views.RemoveEndpointView.as_view(), name='removeendpoint'),
     url(AZURE_MOD % 'attach',
         views.AttachDataDiskView.as_view(), name='attach'),
+    url(AZURE_MOD % 'deattach',
+        views.DeattachDataDiskView.as_view(), name='deattach'),
 )

@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 import logging
 import os
 import random
@@ -55,9 +56,9 @@ VHDS_CONTAINER = getattr(settings, "VHDS_CONTAINER", "vhds")
 SYS_DISK_BLOB_NAME_FORMAT = getattr(settings,
                                     "SYS_DISK_BLOB_NAME_FORMAT",
                                     "%s-%s-sys-disk.vhd")
-DATA_DISK_BLOB_NAME_FORMAT = getattr(settings,
-                                     "DATA_DISK_NAME_FORMAT",
-                                     "%s-%s-data-disk.vhd")
+
+DATA_DISK_NAME_FORMAT = "%s-%s-data-disk-%s-%s"
+DATA_DISK_BLOB_NAME_FORMAT = DATA_DISK_NAME_FORMAT + ".vhd"
 
 STATUS_MAX_RETRY_TIMES = getattr(settings,
                                  "STATUS_MAX_RETRY_TIMES",
@@ -90,6 +91,15 @@ RESERVED_ENDPOINT_NAME = {
     "POP3S": "POP3S",
     "MSSQL": "MSSQL",
     "MYSQL": "MYSQL"}
+
+
+def _get_time_stamp():
+    time = datetime.datetime.now()
+    tm = '%d%d%d%d%d%d%d' % (
+        time.year, time.month, time.day,
+        time.hour, time.minute, time.second,
+        time.microsecond)
+    return tm
 
 
 def create_new_key_for_subscription(project_id):
@@ -475,6 +485,15 @@ def virtual_machine_create(request,
             # all default 'ReadOnly'
             host_caching='ReadOnly')
         if cs.deployments:
+            for dep in cs.deployments:
+                for it in dep.role_list:
+                    if role_name == it.role_name:
+                        msg = _('An instance with name'
+                                ' "%s" in the cloud service'
+                                ' "%s" is already existed.') % (role_name,
+                                                                service_name)
+                        messages.error(request, msg)
+                        return False
             # Add this new vm to the existing cloud-service/deployment
             if enable_port:
                 public_ports = _get_cloudservice_used_public_ports(cs)
@@ -621,15 +640,16 @@ def virtual_machine_resize(request, service_name,
                     old_network_config.input_endpoints.input_endpoints
                 old_network_config = new_conf
         else:
-            old_network_config.input_endpoints = ConfigurationSetInputEndpoints()
+            old_network_config.input_endpoints = \
+                ConfigurationSetInputEndpoints()
             old_network_config.input_endpoints.input_endpoints = []
             old_network_config.subnet_names = []
 
         result = client.update_role(
-                service_name, deployment_name,
-                role_name,
-                network_config=old_network_config,
-                role_size=role_size)
+            service_name, deployment_name,
+            role_name,
+            network_config=old_network_config,
+            role_size=role_size)
         return _get_operation_status(client, result.request_id)
 
 
@@ -800,7 +820,8 @@ def virtual_machine_update(request, service_name, deployment_name, role_name,
                     old_network_config.input_endpoints.input_endpoints
                 old_network_config = new_conf
         else:
-            old_network_config.input_endpoints = ConfigurationSetInputEndpoints()
+            old_network_config.input_endpoints = \
+                ConfigurationSetInputEndpoints()
             old_network_config.input_endpoints.input_endpoints = []
             old_network_config.subnet_names = []
 
@@ -861,7 +882,8 @@ def data_disk_get(request, service_name, deployment_name, role_name, lun):
 def _get_data_disk_vhd_file_link(request,
                                  service_name,
                                  deployment_name,
-                                 role_name):
+                                 role_name,
+                                 disk_name):
     """Get the request related vm vhd file storage url."""
     project = next((proj for proj in request.user.authorized_tenants
                     if proj.id == request.user.project_id), None)
@@ -869,29 +891,53 @@ def _get_data_disk_vhd_file_link(request,
         cs = azureclient(request).get_hosted_service_properties(service_name)
         storage_account = project.name + STORAGE_ACCOUNTS_SUFFIX[
             cs.hosted_service_properties.location]
+        time_stamp = _get_time_stamp()
         vhd_file_blob = DATA_DISK_BLOB_NAME_FORMAT % (deployment_name,
-                                                      role_name)
+                                                      role_name,
+                                                      disk_name,
+                                                      time_stamp)
         return CN_STORAGE_BASE_URL % (storage_account,
                                       VHDS_CONTAINER,
                                       vhd_file_blob)
-    else:
-        return ''
+
+
+def _get_available_lun_number(instance):
+    used_luns = []
+    if instance.data_virtual_hard_disks is not None:
+        for dv in instance.data_virtual_hard_disks:
+            used_luns.append(dv.lun)
+    for i in range(0, instance.role.max_data_disk_count):
+        if i not in used_luns:
+            return i
+    return instance.role.max_data_disk_count
 
 
 def data_disk_attach(request,
-                     service_name, deployment_name, role_name, lun=0,
+                     service_name, deployment_name, role_name,
+                     disk_name=None,
                      host_caching=None, media_link=None, disk_label=None,
-                     disk_name=None, logical_disk_size_in_gb=None,
+                     logical_disk_size_in_gb=None,
                      source_media_link=None):
     """Adds a data disk to a virtual machine."""
+    client = azureclient(request)
     media_link = _get_data_disk_vhd_file_link(
         request, service_name,
-        deployment_name, role_name)
-    return azureclient(request).add_data_disk(
-        service_name, deployment_name, role_name, lun,
-        host_caching, media_link, disk_label,
-        disk_name, logical_disk_size_in_gb,
-        source_media_link)
+        deployment_name, role_name, disk_name)
+    vm = client.get_role(service_name, deployment_name, role_name)
+    role_sizes = client.list_role_sizes()
+    rolesize_dict = dict([(item.name, item) for item in role_sizes])
+    vm.role = rolesize_dict.get(vm.role_size)
+    lun = _get_available_lun_number(vm)
+    if int(lun) < vm.role.max_data_disk_count:
+        result = client.add_data_disk(
+            service_name, deployment_name, role_name, lun,
+            host_caching, media_link, disk_label,
+            disk_name=None, logical_disk_size_in_gb=logical_disk_size_in_gb,
+            source_media_link=source_media_link)
+        return _get_operation_status(client, result.request_id)
+    else:
+        raise azure_exceptions.AzureException(400,
+                                              "Data disk count exceeded.")
 
 
 def data_disk_reattach(request,
@@ -914,8 +960,10 @@ def data_disk_deattach(request,
                        service_name, deployment_name,
                        role_name, lun=0, delete_vhd=False):
     """Removes the specified data disk from a virtual machine."""
-    return azureclient(request).delete_data_disk(
+    client = azureclient(request)
+    result = client.delete_data_disk(
         service_name, deployment_name, role_name, lun, delete_vhd)
+    return _get_operation_status(client, result.request_id)
 
 
 """Windows Azure Blob Storage."""

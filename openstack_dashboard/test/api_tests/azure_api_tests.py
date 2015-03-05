@@ -287,7 +287,7 @@ class AzureApiTests(test.APITestCase):
     def test_virtual_machine_create_add_role_to_cloudservice_deployment(self):
         api_cloudservice = self.azure_cloud_services_with_deployment.first()
         api_deployment = self.azure_deployments.first()
-        api_role = self.azure_roles.first()
+        api_role = self.azure_roles.list()[1]
         result = self.azure_async_results.first()
         azureclient = self.stub_azureclient()
         azureclient.get_hosted_service_properties(
@@ -478,11 +478,19 @@ class AzureApiTests(test.APITestCase):
         new_size = self.azure_rolesizes.list()[1]
         result = self.azure_async_results.first()
         azureclient = self.stub_azureclient()
+        azureclient.get_hosted_service_properties(
+            service_name=api_cloudservice.service_name,
+            embed_detail=True).AndReturn(api_cloudservice)
+        azureclient.get_role(
+            api_cloudservice.service_name,
+            api_deployment.name,
+            api_role.role_name).AndReturn(api_role)
         azureclient.update_role(
             api_cloudservice.service_name,
             api_deployment.name,
             api_role.role_name,
-            role_size=new_size.name).AndReturn(result)
+            role_size=new_size.name,
+            network_config=IgnoreArg()).AndReturn(result)
         self._get_operation(azureclient, result)
         self.mox.ReplayAll()
 
@@ -613,19 +621,28 @@ class AzureApiTests(test.APITestCase):
         api_cloudservice = self.azure_cloud_services.list()[1]
         api_deployment = self.azure_deployments.list()[1]
         api_role = self.azure_roles.list()[1]
+        api_rolesizes = self.azure_rolesizes.list()
+        result = self.azure_async_results.first()
         azureclient = self.stub_azureclient()
         azureclient.get_hosted_service_properties(
             api_cloudservice.service_name).AndReturn(api_cloudservice)
+        azureclient.get_role(
+            api_cloudservice.service_name,
+            api_deployment.name,
+            api_role.role_name).AndReturn(api_role)
+        azureclient.list_role_sizes().AndReturn(api_rolesizes)
         azureclient.add_data_disk(
             api_cloudservice.service_name,
             api_deployment.name,
             api_role.role_name,
             0,
             None,
-            'https://test_tenantchinanorth.blob.core.chinacloudapi.cn'
-            '/vhds/letvcloudservicetest02-testvm02win-data-disk.'
-            'vhd',
-            None, None, 1, None)
+            IgnoreArg(),
+            None,
+            disk_name=None,
+            logical_disk_size_in_gb=1,
+            source_media_link=None).AndReturn(result)
+        self._get_operation(azureclient, result)
         self.mox.ReplayAll()
 
         ret = api.azure_api.data_disk_attach(
@@ -633,22 +650,23 @@ class AzureApiTests(test.APITestCase):
             api_cloudservice.service_name,
             api_deployment.name,
             api_role.role_name,
-            0,
             logical_disk_size_in_gb=1)
-        # Request Accept 202
-        self.assertIsNone(ret)
+
+        self.assertTrue(ret)
 
     def test_data_disk_deattach(self):
         api_cloudservice = self.azure_cloud_services.first()
         api_deployment = self.azure_deployments.first()
         api_role = self.azure_roles.first()
+        result = self.azure_async_results.first()
         azureclient = self.stub_azureclient()
         azureclient.delete_data_disk(
             api_cloudservice.service_name,
             api_deployment.name,
             api_role.role_name,
             0,
-            False)
+            False).AndReturn(result)
+        self._get_operation(azureclient, result)
         self.mox.ReplayAll()
 
         ret = api.azure_api.data_disk_deattach(
@@ -658,5 +676,5 @@ class AzureApiTests(test.APITestCase):
             api_role.role_name,
             0,
             False)
-        # Request Accept 202
-        self.assertIsNone(ret)
+
+        self.assertTrue(ret)

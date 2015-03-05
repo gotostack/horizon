@@ -653,7 +653,7 @@ REST_API_REQUIRED_SETTINGS = ['OPENSTACK_HYPERVISOR_FEATURES']
 # SYS_DISK_BLOB_NAME_FORMAT = "%s-%s-sys-disk.vhd"
 
 # Data Disk name format
-# DATA_DISK_BLOB_NAME_FORMAT = "%s-%s-data-disk.vhd"
+# DATA_DISK_BLOB_NAME_FORMAT = "%s-%s-data-disk-%s-%s.vhd"
 
 # Async request status query max times
 # STATUS_MAX_RETRY_TIMES = 30
