@@ -295,6 +295,28 @@ class AttachDataDiskView(AddEndpointView):
     form_class = project_forms.AttatchDatadiskForm
     template_name = 'azure/instances/attach_datadisk.html'
 
+    @memoized.memoized_method
+    def get_object(self, *args, **kwargs):
+        try:
+            disks = api.azure_api.disk_list(self.request)
+        except Exception:
+            disks = []
+            redirect = reverse("horizon:azure:instances:index")
+            msg = _('Unable to retrieve disk list.')
+            exceptions.handle(self.request, msg, redirect=redirect)
+        return disks
+
+    def get_initial(self):
+        initial = super(AttachDataDiskView, self).get_initial()
+        disks = self.get_object()
+        if disks:
+            initial.update(
+                {'cloud_service_name': self.kwargs['cloud_service_name'],
+                 'deployment_name': self.kwargs['deployment_name'],
+                 'instance_name': self.kwargs['instance_name'],
+                 'data_disks': [d for d in disks if d.attached_to is None]})
+        return initial
+
 
 class DeattachDataDiskView(AddEndpointView):
     form_class = project_forms.DeattatchDatadiskForm

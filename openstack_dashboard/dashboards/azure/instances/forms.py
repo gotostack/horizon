@@ -16,7 +16,6 @@ import re
 
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
-from django.views.decorators.debug import sensitive_variables  # noqa
 
 from horizon import exceptions
 from horizon import forms
@@ -149,42 +148,73 @@ class RemoveEndpointForm(InstanceBaseOperationForm):
 
 
 class AttatchDatadiskForm(InstanceBaseOperationForm):
-    disk_name = forms.RegexField(max_length=255,
-                                 label=_("Data Disk Name"),
-                                 regex=NAME_REGEX,
-                                 error_messages=DISK_ERROR_MESSAGES,
-                                 help_text=DISK_NAME_HELP_TEXT)
+    disk_source = forms.ChoiceField(
+        label=_('Disk Source'),
+        widget=forms.Select(attrs={
+            'class': 'switchable',
+            'data-slug': 'source'}))
 
     size = forms.IntegerField(
         label=_("Data Disk Size(GB)"),
         max_value=1023,
         min_value=1,
-        help_text=_("Size in 1 - 1023 GB."))
+        help_text=_("Size in 1 - 1023 GB."),
+        required=False)
 
     def __init__(self, request, *args, **kwargs):
         super(AttatchDatadiskForm, self).__init__(request, *args, **kwargs)
+
+        data_disks = kwargs.get('initial', []).get('data_disks')
+        choices = [(i.name,
+                    "%s - %s GB" % (
+                        i.name,
+                        i.logical_disk_size_in_gb)) for i in data_disks]
+        choices.insert(0, ("new_disk", _("Add a new disk")))
+        self.fields['disk_source'].choices = choices
+
+    def clean(self):
+        cleaned_data = super(AttatchDatadiskForm, self).clean()
+        disk_source_type = self.cleaned_data.get('disk_source')
+        if (disk_source_type == 'new_disk' and
+                not cleaned_data.get('size')):
+            msg = _("You check the 'Add a new disk',"
+                    " so you need to set the disk size.")
+            self._errors['size'] = self.error_class([msg])
+        return cleaned_data
 
     def handle(self, request, data):
         cloud_service_name = data.get("cloud_service_name")
         deployment_name = data.get("deployment_name")
         instance_name = data.get("instance_name")
 
-        disk_name = data.get("disk_name")
+        disk_source = data.get("disk_source")
         size = data.get("size")
         try:
-            api.azure_api.data_disk_attach(
-                request,
-                service_name=cloud_service_name,
-                deployment_name=deployment_name,
-                role_name=instance_name,
-                disk_name=disk_name,
-                logical_disk_size_in_gb=size)
-            messages.success(
-                request,
-                _('Successfully attach disk %(disk_name)s'
-                  ' for instance %(instance_name)s.') %
-                {"disk_name": disk_name,
-                 "instance_name": instance_name})
+            if disk_source == "new_disk":
+                api.azure_api.data_disk_attach(
+                    request,
+                    service_name=cloud_service_name,
+                    deployment_name=deployment_name,
+                    role_name=instance_name,
+                    logical_disk_size_in_gb=size)
+                messages.success(
+                    request,
+                    _('Successfully attach disk'
+                      ' to instance %(instance_name)s.') %
+                    {"instance_name": instance_name})
+            else:
+                api.azure_api.data_disk_attach(
+                    request,
+                    service_name=cloud_service_name,
+                    deployment_name=deployment_name,
+                    role_name=instance_name,
+                    disk_name=disk_source)
+                messages.success(
+                    request,
+                    _('Successfully attach disk %(disk_name)s'
+                      ' for instance %(instance_name)s.') %
+                    {"disk_name": disk_source,
+                     "instance_name": instance_name})
         except Exception:
             redirect = reverse('horizon:azure:instances:index')
             exceptions.handle(request, _("Unable to attach disk"

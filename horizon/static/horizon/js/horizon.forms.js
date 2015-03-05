@@ -350,6 +350,29 @@ horizon.addInitFunction(horizon.forms.init = function () {
     $(modal).find("#id_volume_source_type").change();
   });
 
+  // Handle azure disk source type field
+  function update_azure_disk_source_displayed_fields (field) {
+    var $this = $(field),
+      base_type = $this.val();
+
+    $this.closest(".form-group").nextAll().hide();
+
+    switch(base_type) {
+    case "new_disk":
+        $("#id_disk_name, #id_size").closest(".form-group").show();
+        break;
+    }
+  }
+
+  $(document).on('change', '#attach_datadisk_form #id_disk_source', function (evt) {
+    update_azure_disk_source_displayed_fields(this);
+  });
+
+  $('#attach_datadisk_form #id_disk_source').change();
+  horizon.modals.addModalInitFunction(function (modal) {
+    $(modal).find("#attach_datadisk_form #id_disk_source").change();
+  });
+
   /* Help tooltips */
 
   // Apply standard handler for everything but checkboxes.

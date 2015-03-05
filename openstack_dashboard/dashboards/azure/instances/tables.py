@@ -56,12 +56,12 @@ def get_size(instance):
     if hasattr(instance, "role_size"):
         template_name = 'azure/instances/_instance_flavor.html'
         size_ram = sizeformat.mb_float_format(instance.role_size.memory_in_mb)
-        size_disk = sizeformat.mb_float_format(
+        temporary_disk = sizeformat.mb_float_format(
             instance.role_size.virtual_machine_resource_disk_size_in_mb)
         context = {
             "name": instance.role_size.name,
             "id": instance.role_name,
-            "size_disk": size_disk,
+            "temporary_disk": temporary_disk,
             "size_ram": size_ram,
             "vcpus": instance.role_size.cores,
             "max_data_disk_count": instance.role_size.max_data_disk_count

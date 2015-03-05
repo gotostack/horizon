@@ -1067,10 +1067,17 @@ class InstanceTests(helpers.TestCase):
         self.assertNoFormErrors(res)
         self.assertRedirectsNoFollow(res, INDEX_URL)
 
+    @helpers.create_stubs({api.azure_api: ('disk_list',)})
     def test_attatch_datadisk_instance_get(self):
         server = self.azure_role_instances.first()
         cloud_service = self.azure_cloud_services.first()
+        data_disks = self.azure_data_disks.list()
         deployment = self.azure_deployments.first()
+        api.azure_api.disk_list(
+            IsA(http.HttpRequest)
+        ).AndReturn(data_disks)
+        self.mox.ReplayAll()
+
         url = reverse('horizon:azure:instances:attach',
                       args=[cloud_service.service_name,
                             deployment.name,
@@ -1079,18 +1086,91 @@ class InstanceTests(helpers.TestCase):
 
         self.assertTemplateUsed(res, 'azure/instances/attach_datadisk.html')
 
-    @helpers.create_stubs({api.azure_api: ('data_disk_attach',)})
-    def test_attatch_datadisk_instance_post(self):
+    @helpers.create_stubs({api.azure_api: ('disk_list',
+                                           'data_disk_attach',)})
+    def test_attatch_datadisk_instance_post_new_disk(self):
         server = self.azure_role_instances.first()
         cloud_service = self.azure_cloud_services.first()
         deployment = self.azure_deployments.first()
         data_disk = self.azure_data_disks.first()
+        data_disks = self.azure_data_disks.list()
+        api.azure_api.disk_list(
+            IsA(http.HttpRequest)
+        ).AndReturn(data_disks)
         api.azure_api.data_disk_attach(
             IsA(http.HttpRequest),
             service_name=cloud_service.service_name,
             deployment_name=deployment.name,
             role_name=server.role_name,
-            disk_name=data_disk.name,
+            logical_disk_size_in_gb=data_disk.logical_disk_size_in_gb
+        )
+        self.mox.ReplayAll()
+
+        url = reverse('horizon:azure:instances:attach',
+                      args=[cloud_service.service_name,
+                            deployment.name,
+                            server.role_name])
+        form_data = {
+            'cloud_service_name': cloud_service.service_name,
+            'deployment_name': deployment.name,
+            'instance_name': server.role_name,
+            'disk_source': "new_disk",
+            'size': data_disk.logical_disk_size_in_gb}
+        res = self.client.post(url, form_data)
+
+        self.assertNoFormErrors(res)
+        self.assertRedirectsNoFollow(res, INDEX_URL)
+
+    @helpers.create_stubs({api.azure_api: ('disk_list',
+                                           'data_disk_attach',)})
+    def test_attatch_datadisk_instance_post_old_disk(self):
+        server = self.azure_role_instances.first()
+        cloud_service = self.azure_cloud_services.first()
+        deployment = self.azure_deployments.first()
+        data_disk = self.azure_data_disks.list()[1]
+        data_disks = self.azure_data_disks.list()
+        api.azure_api.disk_list(
+            IsA(http.HttpRequest)
+        ).AndReturn(data_disks)
+        api.azure_api.data_disk_attach(
+            IsA(http.HttpRequest),
+            service_name=cloud_service.service_name,
+            deployment_name=deployment.name,
+            role_name=server.role_name,
+            disk_name=data_disk.name
+        )
+        self.mox.ReplayAll()
+
+        url = reverse('horizon:azure:instances:attach',
+                      args=[cloud_service.service_name,
+                            deployment.name,
+                            server.role_name])
+        form_data = {
+            'cloud_service_name': cloud_service.service_name,
+            'deployment_name': deployment.name,
+            'instance_name': server.role_name,
+            'disk_source': data_disk.name}
+        res = self.client.post(url, form_data)
+
+        self.assertNoFormErrors(res)
+        self.assertRedirectsNoFollow(res, INDEX_URL)
+
+    @helpers.create_stubs({api.azure_api: ('disk_list',
+                                           'data_disk_attach',)})
+    def test_attatch_datadisk_instance_post_exception(self):
+        server = self.azure_role_instances.first()
+        cloud_service = self.azure_cloud_services.first()
+        deployment = self.azure_deployments.first()
+        data_disk = self.azure_data_disks.first()
+        data_disks = self.azure_data_disks.list()
+        api.azure_api.disk_list(
+            IsA(http.HttpRequest)
+        ).AndReturn(data_disks)
+        api.azure_api.data_disk_attach(
+            IsA(http.HttpRequest),
+            service_name=cloud_service.service_name,
+            deployment_name=deployment.name,
+            role_name=server.role_name,
             logical_disk_size_in_gb=data_disk.logical_disk_size_in_gb
         ).AndRaise(self.exceptions.azure)
         self.mox.ReplayAll()
@@ -1103,37 +1183,7 @@ class InstanceTests(helpers.TestCase):
             'cloud_service_name': cloud_service.service_name,
             'deployment_name': deployment.name,
             'instance_name': server.role_name,
-            'disk_name': data_disk.name,
-            'size': data_disk.logical_disk_size_in_gb}
-        res = self.client.post(url, form_data)
-
-        self.assertNoFormErrors(res)
-        self.assertRedirectsNoFollow(res, INDEX_URL)
-
-    @helpers.create_stubs({api.azure_api: ('data_disk_attach',)})
-    def test_attatch_datadisk_instance_post_exception(self):
-        server = self.azure_role_instances.first()
-        cloud_service = self.azure_cloud_services.first()
-        deployment = self.azure_deployments.first()
-        data_disk = self.azure_data_disks.first()
-        api.azure_api.data_disk_attach(
-            IsA(http.HttpRequest),
-            service_name=cloud_service.service_name,
-            deployment_name=deployment.name,
-            role_name=server.role_name,
-            disk_name=data_disk.name,
-            logical_disk_size_in_gb=data_disk.logical_disk_size_in_gb)
-        self.mox.ReplayAll()
-
-        url = reverse('horizon:azure:instances:attach',
-                      args=[cloud_service.service_name,
-                            deployment.name,
-                            server.role_name])
-        form_data = {
-            'cloud_service_name': cloud_service.service_name,
-            'deployment_name': deployment.name,
-            'instance_name': server.role_name,
-            'disk_name': data_disk.name,
+            'disk_source': "new_disk",
             'size': data_disk.logical_disk_size_in_gb}
         res = self.client.post(url, form_data)
 

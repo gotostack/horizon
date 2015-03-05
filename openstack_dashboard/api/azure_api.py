@@ -489,9 +489,10 @@ def virtual_machine_create(request,
                 for it in dep.role_list:
                     if role_name == it.role_name:
                         msg = _('An instance with name'
-                                ' "%s" in the cloud service'
-                                ' "%s" is already existed.') % (role_name,
-                                                                service_name)
+                                ' "%(role_name)s" in the cloud service'
+                                ' "%(service_name)s" is already existed.') % {
+                                    "role_name": role_name,
+                                    "service_name": service_name}
                         messages.error(request, msg)
                         return False
             # Add this new vm to the existing cloud-service/deployment
@@ -932,7 +933,8 @@ def data_disk_attach(request,
         result = client.add_data_disk(
             service_name, deployment_name, role_name, lun,
             host_caching, media_link, disk_label,
-            disk_name=None, logical_disk_size_in_gb=logical_disk_size_in_gb,
+            disk_name=disk_name,
+            logical_disk_size_in_gb=logical_disk_size_in_gb,
             source_media_link=source_media_link)
         return _get_operation_status(client, result.request_id)
     else:

@@ -280,7 +280,7 @@ horizon.addInitFunction(horizon.instances.init = function () {
   }
 
   $document.on('change', '.workflow #id_cloud_services', function (evt) {
-	  update_launch_azure_cloud_service_displayed_fields(this);
+    update_launch_azure_cloud_service_displayed_fields(this);
   });
 
   $('.workflow #id_cloud_services').change();

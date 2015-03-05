@@ -11802,6 +11802,9 @@ msgstr "最大数据盘容量"
 msgid "Max Data Disk Count"
 msgstr "最大数据盘数量"
 
+msgid "Temporary Disk Size"
+msgstr "临时磁盘大小"
+
 msgid "Protocol:"
 msgstr "协议:"
 
