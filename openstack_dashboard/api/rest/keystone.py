@@ -28,7 +28,7 @@ class Users(generic.View):
     """API for keystone users.
     """
     url_regex = r'keystone/users/$'
-    client_keywords = {'project_id', 'domain_id', 'group_id'}
+    client_keywords = ('project_id', 'domain_id', 'group_id')
 
     @rest_utils.ajax()
     def get(self, request):
@@ -379,8 +379,8 @@ class Projects(generic.View):
     interchangeably.
     """
     url_regex = r'keystone/projects/$'
-    client_keywords = {'paginate', 'marker', 'domain_id',
-                       'user_id', 'admin'}
+    client_keywords = ('paginate', 'marker', 'domain_id',
+                       'user_id', 'admin')
 
     @rest_utils.ajax()
     def get(self, request):

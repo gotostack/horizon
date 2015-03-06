@@ -65,9 +65,10 @@ class CreateCloudServiceForm(forms.SelfHandlingForm):
                 messages.success(request,
                                  _('Successfully create'
                                    ' cloud service %s.') % service_name)
+            return True
         except Exception as e:
             redirect = reverse('horizon:lecloud:cloudservices:index')
             exceptions.handle(request,
                               _("Unable to create cloud service: %s") % e,
                               redirect=redirect)
-        return True
+            return False

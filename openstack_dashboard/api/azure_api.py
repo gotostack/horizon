@@ -530,7 +530,6 @@ def virtual_machine_create(request,
 
 
 def _get_operation_status(client, requestId):
-    import datetime
     starttime = datetime.datetime.now()
     count = 0
     done = False
@@ -594,10 +593,15 @@ def virtual_machine_restart(request, service_name, deployment_name, role_name):
 def virtual_machine_start(request, service_name, deployment_name, role_name):
     """Start an azure vm of a cloudservice/deployment."""
     client = azureclient(request)
-    result = client.start_role(service_name,
-                               deployment_name,
-                               role_name)
-    return _get_operation_status(client, result.request_id)
+    try:
+        result = client.start_role(service_name,
+                                   deployment_name,
+                                   role_name)
+        return _get_operation_status(client, result.request_id)
+    except (Exception,
+            WindowsAzureConflictError):
+        raise azure_exceptions.AzureException(
+            409, "An error occurred. Please try again later.")
 
 
 def virtual_machine_capture(request, service_name, deployment_name,

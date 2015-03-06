@@ -33,12 +33,13 @@ LOG = logging.getLogger(__name__)
 
 # Leave this REGEX here for future use.
 PASS_REGEX = re.compile(
-    r"^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])[a-zA-Z\d]{6,72}$",
+    r"^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])[a-zA-Z0-9.,/?@#$%_=+-|]{6,72}$",
     re.UNICODE)
 PASS_ERROR_MESSAGES = {
     'invalid': _('The supplied password must be 6-72 characters.'
                  ' Password must contain uppercase and lowercase'
-                 ' letters and numbers.')}
+                 ' letters and numbers. And some special character'
+                 ' like: .,/?@#$%_=+-|')}
 
 NAME_REGEX = re.compile(r"^[a-zA-Z][a-zA-Z0-9\-]*$", re.UNICODE)
 
@@ -368,7 +369,8 @@ class SetAccessControlsAction(workflows.Action):
         max_length=72,
         widget=forms.PasswordInput(render_value=False),
         regex=validators.password_validator(),
-        error_messages={'invalid': validators.password_validator_msg()})
+        error_messages={'invalid': validators.password_validator_msg()},
+        help_text=validators.password_validator_msg())
 
     confirm_admin_pass = forms.CharField(
         label=_("Confirm Password"),

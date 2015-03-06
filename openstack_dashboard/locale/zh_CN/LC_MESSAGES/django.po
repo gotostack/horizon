@@ -11922,8 +11922,8 @@ msgstr "云主机系统盘将存储到默认的存储账户."
 msgid "Enable SSH/Remote Desktop/PowerShell"
 msgstr "打开端点 SSH/Remote Desktop/PowerShell"
 
-msgid "The supplied password must be 6-72 characters. Password must contain uppercase and lowercase letters and numbers."
-msgstr "密码长度范围6-72位，并且必须包含大小写字母和数字。"
+msgid "The supplied password must be 6-72 characters. Password must contain uppercase and lowercase letters and numbers. And some special character like: .,/?@#$%_=+-|"
+msgstr "密码长度范围6-72位，并且必须包含下面三类字符：大写字母，小写字母，数字。还可以包含下列特殊字符：.,/?@#$%_=+-|"
 
 msgid "Linux will enable SSH port. Windows will enable Remote Desktop and PowerShell."
 msgstr "Linux云主机将打开SSH，Windows云主机将打开远程桌面和PowerShell。"
@@ -11952,8 +11952,8 @@ msgstr "云主机(云服务)将被部署的数据中心。"
 msgid "The instance must belong to one specific 'cloud service', so you can create one cloud service or choose one existed."
 msgstr "云主机必须属于某个特定的'云服务'，你可以在这里直接创建或者选择一个已存在的云服务。"
 
-msgid "An instance with name \"%s\" in the cloud service \"%s\" is already existed."
-msgstr "已经存在一个名为\"%s\"的云主机在云服务\"%s\"中。"
+msgid "An instance with name \"%(role_name)s\" in the cloud service \"%(service_name)s\" is already existed."
+msgstr "已经存在一个名为\"%(role_name)s\"的云主机在云服务\"%(service_name)s\"中。"
 
 msgid "View Detail"
 msgstr "详情"
@@ -12226,3 +12226,9 @@ msgstr "磁盘被删除将永久无法恢复，请备份你的数据。"
 
 msgid "Note: Please backup your important data to persistent storage. Update action will restart your instance."
 msgstr "请注意:请备份你的数据到持久化存储设备，更新操作会重新启动云主机。"
+
+msgid "You check the 'Add a new disk', so you need to set the disk size."
+msgstr "您选择创'建新的数据盘'，请输入一个正确的磁盘大小，1 - 1023。"
+
+msgid "The instance will be started, and begin to charge."
+msgstr "实例将启动并开始计费。"

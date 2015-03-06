@@ -178,7 +178,9 @@ class TerminateInstance(tables.BatchAction):
 
 class StartInstance(tables.BatchAction):
     name = "start"
-    classes = ('btn-confirm',)
+    classes = ('btn-danger',)
+    help_text = _("The instance will be started,"
+                  " and begin to charge.")
 
     @staticmethod
     def action_present(count):
@@ -465,9 +467,6 @@ class InstancesTable(tables.DataTable):
     size = tables.Column(get_size,
                          verbose_name=_("Size"),
                          attrs={'data-type': 'size'})
-    instance_status = tables.Column("instance_status",
-                                    verbose_name=_("Instance Status"),
-                                    status=True)
     power_state = tables.Column("power_state",
                                 filters=(title, filters.replace_underscores),
                                 status=True,
