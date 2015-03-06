@@ -11997,8 +11997,11 @@ msgstr "无法移除云主机的端点"
 msgid "Attach a data disk to the instance."
 msgstr "增加一个数据盘到云主机。"
 
-msgid "The instance can only have one data disk."
-msgstr "一个云主机最多只能挂载一个数据磁盘。"
+msgid "The quantity of data disk is related to the instance size."
+msgstr "云主机可挂载磁盘数量与其规格相关。"
+
+msgid "You can get the max data disk count of one instance in the instance table size column."
+msgstr "你可以在云主机的规格列查看云主机的最大可挂载数据盘数量。"
 
 msgid "Successfully attach disk %(disk_name)s for instance %(instance_name)s."
 msgstr "成功增加磁盘 %(disk_name)s 到云主机 %(instance_name)s "
@@ -12220,3 +12223,6 @@ msgstr[0] "已删除的磁盘"
 
 msgid "Deleted disks are not recoverable."
 msgstr "磁盘被删除将永久无法恢复，请备份你的数据。"
+
+msgid "Note: Please backup your important data to persistent storage. Update action will restart your instance."
+msgstr "请注意:请备份你的数据到持久化存储设备，更新操作会重新启动云主机。"
