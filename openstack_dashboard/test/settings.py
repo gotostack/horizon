@@ -47,7 +47,7 @@ INSTALLED_APPS = (
     'horizon',
     'openstack_dashboard',
     'openstack_dashboard.dashboards.project',
-    'openstack_dashboard.dashboards.azure',
+    'openstack_dashboard.dashboards.lecloud',
     'openstack_dashboard.dashboards.admin',
     'openstack_dashboard.dashboards.identity',
     'openstack_dashboard.dashboards.settings',
