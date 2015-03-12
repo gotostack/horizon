@@ -23,7 +23,7 @@ from openstack_dashboard.api.rest import utils as rest_utils
 from openstack_dashboard.api.rest import urls
 
 
-CLIENT_KEYWORDS = {'resource_type', 'marker', 'sort_dir', 'sort_key', 'paginate'}
+CLIENT_KEYWORDS = ('resource_type', 'marker', 'sort_dir', 'sort_key', 'paginate')
 
 
 @urls.register
