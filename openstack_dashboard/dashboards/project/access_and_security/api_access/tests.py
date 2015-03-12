@@ -56,8 +56,8 @@ class APIAccessTests(test.TestCase):
         self.assertEqual(res.status_code, 200)
         openrc = 'project/access_and_security/api_access/openrc.sh.template'
         self.assertTemplateUsed(res, openrc)
-        name = 'export OS_USERNAME="{}"'.format(self.request.user.username)
-        id = 'export OS_TENANT_ID={}'.format(self.request.user.tenant_id)
+        name = 'export OS_USERNAME="{0}"'.format(self.request.user.username)
+        id = 'export OS_TENANT_ID={0}'.format(self.request.user.tenant_id)
         self.assertTrue(name in res.content)
         self.assertTrue(id in res.content)
 

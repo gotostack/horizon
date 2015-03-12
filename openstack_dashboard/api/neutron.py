@@ -161,7 +161,9 @@ class SecurityGroup(NeutronAPIDictWrapper):
         super(SecurityGroup, self).__init__(sg)
 
     def to_dict(self):
-        return {k: self._apidict[k] for k in self._apidict if k != 'rules'}
+        return dict([(
+            k,
+            self._apidict[k]) for k in self._apidict if k != 'rules'])
 
 
 class SecurityGroupRule(NeutronAPIDictWrapper):
@@ -460,8 +462,10 @@ class FloatingIpManager(network_base.FloatingIpManager):
                               config_name='enable_lb',
                               ext_name='lbaas'):
             # Also get the loadbalancer VIPs
-            vip_dict = {v['port_id']: v['name']
-                        for v in self.client.list_vips().get('vips', [])}
+            vip_dict = dict([(
+                v['port_id'],
+                v['name']
+            ) for v in self.client.list_vips().get('vips', [])])
         else:
             vip_dict = {}
 

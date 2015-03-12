@@ -41,4 +41,8 @@ class Settings(generic.View):
 
     @rest_utils.ajax()
     def get(self, request):
-        return {k: getattr(settings, k, None) for k in settings_allowed}
+        return dict([(
+            k,
+            getattr(settings,
+                    k,
+                    None)) for k in settings_allowed])
