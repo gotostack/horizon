@@ -14,9 +14,9 @@
 
 import re
 
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
-from django.views.decorators.debug import sensitive_variables  # noqa
 
 from horizon import exceptions
 from horizon import forms
@@ -25,10 +25,17 @@ from horizon import messages
 from openstack_dashboard import api
 
 NAME_REGEX = re.compile(r"^[a-zA-Z][a-zA-Z0-9\-]*$", re.UNICODE)
-NAME_HELP_TEXT = _('Cloud service name must begin with letter'
-                   ' and only contain'
-                   ' letters, numbers and hyphens.')
+NAME_HELP_TEXT = _(
+    'Cloud service name must begin with letter'
+    ' and only contain letters, numbers and hyphens.'
+    ' Cloud service name must be globally unique.')
 ERROR_MESSAGES = {'invalid': NAME_HELP_TEXT}
+
+LOCATION_DISPLAY_CHOICE = getattr(
+    settings,
+    "LOCATION_DISPLAY_CHOICE",
+    {"China East": _("China East"),
+     "China North": _("China North")})
 
 
 class CreateCloudServiceForm(forms.SelfHandlingForm):
@@ -48,7 +55,8 @@ class CreateCloudServiceForm(forms.SelfHandlingForm):
     def __init__(self, request, *args, **kwargs):
         super(CreateCloudServiceForm, self).__init__(request, *args, **kwargs)
         locations = kwargs.get('initial', {}).get('locations')
-        choices = [(l.name, l.display_name) for l in locations]
+        choices = [(l.name,
+                    LOCATION_DISPLAY_CHOICE[l.name]) for l in locations]
         self.fields['location'].choices = choices
 
     def handle(self, request, data):

@@ -200,7 +200,7 @@ class AttatchDatadiskForm(InstanceBaseOperationForm):
                 messages.success(
                     request,
                     _('Successfully attach disk'
-                      ' to instance %(instance_name)s.') %
+                      ' to instance "%(instance_name)s".') %
                     {"instance_name": instance_name})
             else:
                 api.azure_api.data_disk_attach(
@@ -211,8 +211,8 @@ class AttatchDatadiskForm(InstanceBaseOperationForm):
                     disk_name=disk_source)
                 messages.success(
                     request,
-                    _('Successfully attach disk %(disk_name)s'
-                      ' for instance %(instance_name)s.') %
+                    _('Successfully attach disk "%(disk_name)s"'
+                      ' for instance "%(instance_name)s".') %
                     {"disk_name": disk_source,
                      "instance_name": instance_name})
         except Exception:

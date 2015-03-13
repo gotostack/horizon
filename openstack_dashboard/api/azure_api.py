@@ -55,17 +55,17 @@ STORAGE_ACCOUNTS_SUFFIX = getattr(
 VHDS_CONTAINER = getattr(settings, "VHDS_CONTAINER", "vhds")
 SYS_DISK_BLOB_NAME_FORMAT = getattr(settings,
                                     "SYS_DISK_BLOB_NAME_FORMAT",
-                                    "%s-%s-sys-disk.vhd")
+                                    "%s-%s-%s-sys-disk.vhd")
 
 DATA_DISK_NAME_FORMAT = "%s-%s-data-disk-%s-%s"
 DATA_DISK_BLOB_NAME_FORMAT = DATA_DISK_NAME_FORMAT + ".vhd"
 
 STATUS_MAX_RETRY_TIMES = getattr(settings,
                                  "STATUS_MAX_RETRY_TIMES",
-                                 30)
+                                 60)
 STATUS_RETRY_INTERVAL = getattr(settings,
                                 "STATUS_RETRY_INTERVAL",
-                                10)
+                                5)
 
 AZURE_KEY_FILE_FOLDER = getattr(
     settings, 'AZURE_KEY_FILE_FOLDER',
@@ -116,7 +116,11 @@ def create_new_key_for_subscription(project_id):
 
 def get_tenant_pem_file_path(project_id):
     """Get the tenant pem file absolute path."""
-    return "%s/%s.pem" % (AZURE_KEY_FILE_FOLDER, project_id)
+    pem_path = "%s/%s.pem" % (AZURE_KEY_FILE_FOLDER, project_id)
+    if os.path.exists(pem_path):
+        return pem_path
+    else:
+        raise Exception("Subscription pem file does not exist.")
 
 
 def get_tenant_cer_file_path(project_id):
@@ -375,7 +379,8 @@ def _get_virtual_machine_vhd_file_link(request, location,
     if project:
         storage_account = project.name + STORAGE_ACCOUNTS_SUFFIX[location]
         vhd_file_blob = SYS_DISK_BLOB_NAME_FORMAT % (deployment_name,
-                                                     role_name)
+                                                     role_name,
+                                                     _get_time_stamp())
         return CN_STORAGE_BASE_URL % (storage_account,
                                       VHDS_CONTAINER,
                                       vhd_file_blob)
@@ -540,15 +545,17 @@ def _get_operation_status(client, requestId):
         if operation and operation.status == 'InProgress':
             time.sleep(STATUS_RETRY_INTERVAL)
         elif operation and operation.status == 'Succeeded':
-            done = True
+            LOG.info("Request Id: %s Succeeded." % requestId)
+            return True
         elif operation and operation.status == 'Failed':
-            done = True
+            LOG.info("Request Id: %s Failed." % requestId)
+            return False
         else:
             LOG.error("Unable to get request Id %s status." % requestId)
 
         if not done and count > STATUS_MAX_RETRY_TIMES:
             LOG.error("Request Id: %s time out." % requestId)
-            done = True
+            return False
 
     endtime = datetime.datetime.now()
     LOG.info("Asynchronous request '%s' "

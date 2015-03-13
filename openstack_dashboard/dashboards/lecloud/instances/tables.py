@@ -25,6 +25,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import ungettext_lazy
 
 from horizon import exceptions
+from horizon import messages
 from horizon import tables
 from horizon.templatetags import sizeformat
 from horizon.utils import filters
@@ -121,8 +122,9 @@ class TerminateInstance(tables.BatchAction):
     classes = ("btn-danger",)
     icon = "off"
     help_text = _("The instance will be deleted, "
-                  "disks associated with the instance"
-                  " are still in the disk repository.")
+                  "memory and temporary disk data "
+                  "will be deleted. The disks associated "
+                  "with the instance are still in the disk repository.")
 
     @staticmethod
     def action_present(count):
@@ -141,7 +143,14 @@ class TerminateInstance(tables.BatchAction):
         )
 
     def action(self, request, obj_id):
-        datum = self.table.get_object_by_id(obj_id)
+        try:
+            datum = self.table.get_object_by_id(obj_id)
+        except Exception:
+            messages.info(
+                request,
+                _("The action cannot be performed at present. "
+                  "Please try again later."))
+            return False
         cs = api.azure_api.cloud_service_detail(
             request,
             datum.cloud_service_name,
@@ -314,7 +323,7 @@ class EditInstance(tables.LinkAction):
     name = "edit"
     verbose_name = _("Edit Instance")
     url = "horizon:lecloud:instances:update"
-    classes = ("ajax-modal",)
+    classes = ("ajax-modal", "btn-danger")
     icon = "pencil"
 
     def get_link_url(self, project):

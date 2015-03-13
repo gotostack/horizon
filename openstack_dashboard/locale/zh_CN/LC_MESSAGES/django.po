@@ -11850,8 +11850,8 @@ msgstr "DNS"
 msgid "Unable to launch instance named \"%s\"."
 msgstr "无法创建云主机: \"%s\""
 
-msgid "Instance name must begin with letter and only contain letters, numbers and hyphens."
-msgstr "云主机名称必须以字母开头，并且只能包含字母、数字和连字符。"
+msgid "Instance name must begin with letter and only contain letters, numbers and hyphens. And length at 3-15."
+msgstr "云主机名称必须以字母开头，并且只能包含字母、数字和连字符。 长度为3-15位。"
 
 msgid "Size Spec"
 msgstr "规格"
@@ -12021,8 +12021,8 @@ msgstr "数据盘"
 msgid "Select an data disk to remove. Choice format 'Disk name' - 'Size'"
 msgstr "选择卸载一个数据盘，选项格式 '磁盘名称' - '大小'"
 
-msgid "Please confirm data stored on data disk has made a backup. De-attach action will remove the data on the data disk completely. And the data cannot be recovered."
-msgstr "在卸载数据盘之前，请检查数据盘是否存有需要备份的数据，如果有请及时备份，卸载的数据盘数据是无法恢复的。"
+msgid "Data disk can be re-attach to a new instance. But before you completely delete the data disk, please confirm data stored on data disk has made a backup."
+msgstr "卸载的数据盘可以重新挂载到新的云主机。但是，在磁盘管理界面删除数据盘之前，请确认数据盘是否还存有需要备份的数据，如果有请及时备份。"
 
 msgid "Remove an endpoint from the instance."
 msgstr "从云主机移除一个选定的端点。移除之后，你将不能通过原来的配置或端口来访问云主机，例如，如果你移除了SSH-22端点，那么你将不能使用ssh登录你的linux云主机。"
@@ -12066,8 +12066,8 @@ msgstr "选择一个新的规格来调整云主机大小"
 msgid "Resize action will restart the instance."
 msgstr "调整云主机大小将会使云主机重新启动，请注意保存云主机中的数据，特别是内存里的数据。"
 
-msgid "The instance will be deleted, disks associated with the instance are still in the disk repository."
-msgstr "终止实例将会使云主机被删除，其内存数据和数据盘的数据都将无法恢复。云主机被删除后，你需要手动删除其系统盘。"
+msgid "The instance will be deleted, memory and temporary disk data will be deleted. The disks associated with the instance are still in the disk repository."
+msgstr "终止实例将会使云主机被删除，其内存数据和临时盘的数据都将无法恢复。云主机被删除后，你需要手动删除其系统盘。"
 
 msgid "Stopped instances will lose any data not saved in persistent storage."
 msgstr "停止云主机将会导致所有未保存数据丢失。"
@@ -12155,8 +12155,11 @@ msgstr "最后修改时间"
 msgid "Create Cloud Service"
 msgstr "创建云服务"
 
-msgid "Cloud service name must begin with letter and only contain letters, numbers and hyphens."
-msgstr "云服务名称必须以字母开头，并且只能包含字母、数字和连字符。"
+msgid "Cloud service name must begin with letter and only contain letters, numbers and hyphens. Cloud service name must be globally unique."
+msgstr "云服务名称必须以字母开头，并且只能包含字母、数字和连字符。云服务名称必须具有全球唯一性。"
+
+msgid "Cloud service name must be globally unique."
+msgstr "云服务名称必须具有全球唯一性。"
 
 msgid "The data center to deploy the cloud service."
 msgstr "选择云服务部署的物理地域，目前可以选择的有北京和上海。"
@@ -12227,8 +12230,38 @@ msgstr "磁盘被删除将永久无法恢复，请备份你的数据。"
 msgid "Note: Please backup your important data to persistent storage. Update action will restart your instance."
 msgstr "请注意:请备份你的数据到持久化存储设备，更新操作会重新启动云主机。"
 
+msgid "Disk Source"
+msgstr "数据盘来源"
+
+msgid "Add a new disk"
+msgstr "创建一个新的数据盘"
+
 msgid "You check the 'Add a new disk', so you need to set the disk size."
 msgstr "您选择创'建新的数据盘'，请输入一个正确的磁盘大小，1 - 1023。"
 
 msgid "The instance will be started, and begin to charge."
 msgstr "实例将启动并开始计费。"
+
+msgid "Unable to retrieve role size list."
+msgstr "无法获取云主机规格列表。"
+
+msgid "China East"
+msgstr "上海"
+
+msgid "China North"
+msgstr "北京"
+
+msgid "Successfully deattach data disk from instance."
+msgstr "成功从云主机卸载数据盘。"
+
+msgid "Unable to deattach disk from instance."
+msgstr "无法从云主机卸载数据盘。"
+
+msgid "Successfully attach disk to instance \"%(instance_name)s\"."
+msgstr "成功挂载数据盘到云主机 \"%(instance_name)s\"."
+
+msgid "Successfully attach disk \"%(disk_name)s\" for instance \"%(instance_name)s\"."
+msgstr "成功挂载数据盘 \"%(disk_name)s\" 到云主机 \"%(instance_name)s\"."
+
+msgid "The action cannot be performed at present. Please try again later."
+msgstr "当前无法执行该动作，请稍后重试。"

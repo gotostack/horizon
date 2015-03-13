@@ -14,6 +14,7 @@
 
 import logging
 
+from django.conf import settings
 from django.core import urlresolvers
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import ungettext_lazy
@@ -21,6 +22,12 @@ from django.utils.translation import ungettext_lazy
 from horizon import tables
 
 from openstack_dashboard import api
+
+LOCATION_DISPLAY_CHOICE = getattr(
+    settings,
+    "LOCATION_DISPLAY_CHOICE",
+    {"China East": _("China East"),
+     "China North": _("China North")})
 
 LOG = logging.getLogger(__name__)
 
@@ -35,7 +42,9 @@ class FilterAction(tables.FilterAction):
 
 
 def get_location(cloudservice):
-    return getattr(cloudservice, 'hosted_service_properties').location
+    return LOCATION_DISPLAY_CHOICE[
+        getattr(cloudservice,
+                'hosted_service_properties').location]
 
 
 def get_date_created(cloudservice):

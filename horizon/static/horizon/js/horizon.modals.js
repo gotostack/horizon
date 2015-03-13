@@ -260,7 +260,7 @@ horizon.addInitFunction(horizon.modals.init = function() {
         } else {
           $('.ajax-modal, .dropdown-toggle').removeAttr("disabled");
           $form.closest(".modal").modal("hide");
-          horizon.alert("danger", gettext("There was an error submitting the form. Please try again."));
+          horizon.alert("info", gettext("There was an error submitting the form. Please try again."));
         }
       }
     };

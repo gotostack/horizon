@@ -41,20 +41,22 @@ PASS_ERROR_MESSAGES = {
                  ' letters and numbers. And some special character'
                  ' like: .,/?@#$%_=+-|')}
 
-NAME_REGEX = re.compile(r"^[a-zA-Z][a-zA-Z0-9\-]*$", re.UNICODE)
-
+INSTANCE_NAME_REGEX = re.compile(r"^[a-zA-Z][a-zA-Z0-9\-]{3,15}$", re.UNICODE)
 INSTANCE_NAME_HELP_TEXT = _('Instance name must begin with letter'
                             ' and only contain'
-                            ' letters, numbers and hyphens.')
+                            ' letters, numbers and hyphens.'
+                            ' And length at 3-15.')
 INSTANCE_ERROR_MESSAGES = {'invalid': INSTANCE_NAME_HELP_TEXT}
 
 RESERVED_USERNAME = getattr(settings,
                             "RESERVED_USERNAME",
                             ('admin', 'administrator', 'root', 'a'))
 
+NAME_REGEX = re.compile(r"^[a-zA-Z][a-zA-Z0-9\-]*$", re.UNICODE)
 CLOUD_SERVICE_NAME_HELP_TEXT = _(
     'Cloud service name must begin with letter'
-    ' and only contain letters, numbers and hyphens.')
+    ' and only contain letters, numbers and hyphens.'
+    ' Cloud service name must be globally unique.')
 CLOUD_SERVICE_ERROR_MESSAGES = {'invalid': CLOUD_SERVICE_NAME_HELP_TEXT}
 
 # reserved for future use
@@ -80,6 +82,12 @@ FLAVOR_DISPLAY_CHOICE = {
     'Standard_D2': _('Standard_D2 (2 cores, 7168 MB)'),
     'Standard_D3': _('Standard_D3 (4 cores), 14336 MB)'),
     'Standard_D4': _('Standard_D4 (8 cores), 28672 MB)')}
+
+LOCATION_DISPLAY_CHOICE = getattr(
+    settings,
+    "LOCATION_DISPLAY_CHOICE",
+    {"China East": _("China East"),
+     "China North": _("China North")})
 
 
 class SelectProjectUserAction(workflows.Action):
@@ -118,7 +126,7 @@ class SelectProjectUser(workflows.Step):
 class SetInstanceDetailsAction(workflows.Action):
     name = forms.RegexField(max_length=15,
                             label=_("Instance Name"),
-                            regex=NAME_REGEX,
+                            regex=INSTANCE_NAME_REGEX,
                             error_messages=INSTANCE_ERROR_MESSAGES,
                             help_text=INSTANCE_NAME_HELP_TEXT)
 
@@ -418,7 +426,8 @@ class SetAccessControlsAction(workflows.Action):
 
         cs_list = [(cs.service_name,
                     '%s - %s' % (cs.service_name,
-                                 cs.hosted_service_properties.location))
+                                 LOCATION_DISPLAY_CHOICE[
+                                     cs.hosted_service_properties.location]))
                    for cs in cloud_services]
         cs_list.sort()
         cs_list.insert(0, ("new_cloudservice", _("Add a new cloud service")))
@@ -430,10 +439,10 @@ class SetAccessControlsAction(workflows.Action):
         except Exception:
             locations = []
             exceptions.handle(request,
-                              _('Unable to retrieve azure location list.'))
+                              _('Unable to retrieve location list.'))
 
         location_list = [
-            (l.name, l.display_name)
+            (l.name, LOCATION_DISPLAY_CHOICE[l.name])
             for l in locations if 'Compute' in l.available_services]
         location_list.sort()
         if not location_list:

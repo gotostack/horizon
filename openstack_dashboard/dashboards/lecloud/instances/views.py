@@ -174,7 +174,7 @@ class UpdateView(workflows.WorkflowView):
         except Exception:
             redirect = reverse("horizon:lecloud:instances:index")
             exceptions.handle(self.request,
-                              _('Unable to retrieve azure role size list.'),
+                              _('Unable to retrieve role size list.'),
                               redirect=redirect)
 
     @memoized.memoized_method
