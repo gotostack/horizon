@@ -146,7 +146,11 @@ class TerminateInstance(tables.BatchAction):
         try:
             datum = self.table.get_object_by_id(obj_id)
         except Exception:
-            messages.info(
+            # TODO(Yulong) optimize, handle the exception
+            # raise exceptions.HorizonException(
+            #     _("The action cannot be performed at present. "
+            #      "Please try again later."))
+            messages.warning(
                 request,
                 _("The action cannot be performed at present. "
                   "Please try again later."))
@@ -212,7 +216,14 @@ class StartInstance(tables.BatchAction):
                 (instance.power_state in ("Stopped", "Suspended")))
 
     def action(self, request, obj_id):
-        datum = self.table.get_object_by_id(obj_id)
+        try:
+            datum = self.table.get_object_by_id(obj_id)
+        except Exception:
+            messages.warning(
+                request,
+                _("The action cannot be performed at present. "
+                  "Please try again later."))
+            return False
         api.azure_api.virtual_machine_start(request,
                                             datum.cloud_service_name,
                                             datum.cloud_service_name,
@@ -249,7 +260,14 @@ class RestartInstance(tables.BatchAction):
             return True
 
     def action(self, request, obj_id):
-        datum = self.table.get_object_by_id(obj_id)
+        try:
+            datum = self.table.get_object_by_id(obj_id)
+        except Exception:
+            messages.warning(
+                request,
+                _("The action cannot be performed at present. "
+                  "Please try again later."))
+            return False
         api.azure_api.virtual_machine_restart(request,
                                               datum.cloud_service_name,
                                               datum.cloud_service_name,
@@ -286,7 +304,14 @@ class StopInstance(tables.BatchAction):
                     and instance.power_state.lower() != "deleting"))
 
     def action(self, request, obj_id):
-        datum = self.table.get_object_by_id(obj_id)
+        try:
+            datum = self.table.get_object_by_id(obj_id)
+        except Exception:
+            messages.warning(
+                request,
+                _("The action cannot be performed at present. "
+                  "Please try again later."))
+            return False
         api.azure_api.virtual_machine_shutdown(request,
                                                datum.cloud_service_name,
                                                datum.cloud_service_name,

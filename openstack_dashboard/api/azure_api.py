@@ -27,6 +27,7 @@ from azure.servicemanagement import OSVirtualHardDisk  # noqa
 from azure.servicemanagement import servicemanagementservice as sms
 from azure.servicemanagement import WindowsConfigurationSet  # noqa
 from azure import WindowsAzureConflictError
+from azure import WindowsAzureError
 from azure import WindowsAzureMissingResourceError
 
 from azure.storage import blobservice
@@ -568,11 +569,17 @@ def virtual_machine_delete(request, service_name,
                            deployment_name, role_name):
     """Delete an azure virtual of a cloudservice/deployment."""
     client = azureclient(request)
-    result = client.delete_role(
-        service_name=service_name,
-        deployment_name=deployment_name,
-        role_name=role_name)
-    return _get_operation_status(client, result.request_id)
+    try:
+        result = client.delete_role(
+            service_name=service_name,
+            deployment_name=deployment_name,
+            role_name=role_name)
+        return _get_operation_status(client, result.request_id)
+    except (Exception,
+            WindowsAzureError,
+            WindowsAzureConflictError):
+        raise azure_exceptions.AzureException(
+            409, "An error occurred. Please try again later.")
 
 
 def virtual_machine_shutdown(request, service_name,
@@ -580,21 +587,31 @@ def virtual_machine_shutdown(request, service_name,
                              post_shutdown_action='StoppedDeallocated'):
     """Shutdown an azure vm of a cloudservice/deployment."""
     client = azureclient(request)
-    result = client.shutdown_role(
-        service_name=service_name,
-        deployment_name=deployment_name,
-        role_name=role_name,
-        post_shutdown_action=post_shutdown_action)
-    return _get_operation_status(client, result.request_id)
+    try:
+        result = client.shutdown_role(
+            service_name=service_name,
+            deployment_name=deployment_name,
+            role_name=role_name,
+            post_shutdown_action=post_shutdown_action)
+        return _get_operation_status(client, result.request_id)
+    except (Exception,
+            WindowsAzureConflictError):
+        raise azure_exceptions.AzureException(
+            409, "An error occurred. Please try again later.")
 
 
 def virtual_machine_restart(request, service_name, deployment_name, role_name):
     """Start an azure vm of a cloudservice/deployment."""
     client = azureclient(request)
-    result = client.restart_role(service_name,
-                                 deployment_name,
-                                 role_name)
-    return _get_operation_status(client, result.request_id)
+    try:
+        result = client.restart_role(service_name,
+                                     deployment_name,
+                                     role_name)
+        return _get_operation_status(client, result.request_id)
+    except (Exception,
+            WindowsAzureConflictError):
+        raise azure_exceptions.AzureException(
+            409, "An error occurred. Please try again later.")
 
 
 def virtual_machine_start(request, service_name, deployment_name, role_name):
@@ -665,13 +682,14 @@ def virtual_machine_resize(request, service_name,
         return _get_operation_status(client, result.request_id)
 
 
-def _get_instance_used_local_ports(instance):
+def _get_instance_used_local_ports(instance, protocol):
     """Get all used endpoint names of an instance."""
     local_ports = []
     for cs in instance.configuration_sets:
         if cs.input_endpoints:
             for en in cs.input_endpoints:
-                local_ports.append(str(en.local_port).lower())
+                if str(protocol).lower() == str(en.protocol).lower():
+                    local_ports.append(str(en.local_port).lower())
     local_ports.sort()
     return local_ports
 
@@ -705,7 +723,7 @@ def virtual_machine_add_endpoint(request, service_name,
         raise azure_exceptions.AzureException(409,
                                               _("Endpoint name is in use."))
 
-    local_ports = _get_instance_used_local_ports(vm)
+    local_ports = _get_instance_used_local_ports(vm, protocol)
     if str(local_port).lower() in local_ports:
         raise azure_exceptions.AzureException(409,
                                               _("Local port is in use."))

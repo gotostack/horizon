@@ -11558,7 +11558,7 @@ msgstr "报错"
 msgid ""
 "An unexpected error has occurred. Try refreshing the page. If that doesn't "
 "help, contact your local administrator."
-msgstr "报错.请刷新,如需帮助请联系管理员."
+msgstr "请求没有正确执行, 请刷新页面, 如需帮助请联系您的系统维护人员."
 
 msgid "Help"
 msgstr "帮助"
@@ -12264,4 +12264,10 @@ msgid "Successfully attach disk \"%(disk_name)s\" for instance \"%(instance_name
 msgstr "成功挂载数据盘 \"%(disk_name)s\" 到云主机 \"%(instance_name)s\"."
 
 msgid "The action cannot be performed at present. Please try again later."
-msgstr "当前无法执行该动作，请稍后重试。"
+msgstr "当前无法执行该动作，请稍后再次尝试。"
+
+msgid "Successfully create cloud service \"%s\"."
+msgstr "成功创建云服务\"%s\"。"
+
+msgid "Launched instance named \"%s\"."
+msgstr "成功创建云主机\"%s\"。"

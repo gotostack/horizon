@@ -41,7 +41,7 @@ PASS_ERROR_MESSAGES = {
                  ' letters and numbers. And some special character'
                  ' like: .,/?@#$%_=+-|')}
 
-INSTANCE_NAME_REGEX = re.compile(r"^[a-zA-Z][a-zA-Z0-9\-]{3,15}$", re.UNICODE)
+INSTANCE_NAME_REGEX = re.compile(r"^[a-zA-Z][a-zA-Z0-9\-]{2,14}$", re.UNICODE)
 INSTANCE_NAME_HELP_TEXT = _('Instance name must begin with letter'
                             ' and only contain'
                             ' letters, numbers and hyphens.'
