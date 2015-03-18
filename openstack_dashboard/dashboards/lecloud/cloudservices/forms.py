@@ -60,10 +60,22 @@ class CreateCloudServiceForm(forms.SelfHandlingForm):
         self.fields['location'].choices = choices
 
     def _check_quotas(self, cleaned_data):
-        subscription = api.azure_api.subscription_get(self.request)
+        try:
+            subscription = api.azure_api.subscription_get(self.request)
+        except Exception:
+            subscription = None
+            exceptions.handle(self.request,
+                              _('Unable to retrieve subscription info.'))
+        project = next((proj for proj in self.request.user.authorized_tenants
+                        if proj.id == self.request.user.project_id), None)
         count_error = []
-        available_cs = subscription.max_hosted_services - \
-            subscription.current_hosted_services
+        if getattr(project, "max_hosted_services") is not None:
+            available_cs = project.max_hosted_services - \
+                subscription.current_hosted_services
+        else:
+            available_cs = subscription.max_hosted_services - \
+                subscription.current_hosted_services
+
         if available_cs < 1:
             count_error.append(_("Cloud Service available: %(avail)s")
                                % {'avail': available_cs})

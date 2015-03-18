@@ -29,6 +29,12 @@ class WelcomeTab(tabs.Tab):
         context = super(WelcomeTab, self).get_context_data(request, **kwargs)
         try:
             self.usage = api.azure_api.subscription_get(request)
+            project = next((proj for proj in request.user.authorized_tenants
+                            if proj.id == request.user.project_id), None)
+            if (getattr(project, "max_hosted_services", None)
+                    and getattr(project, "max_core_count", None)):
+                self.usage.max_hosted_services = project.max_hosted_services
+                self.usage.max_core_count = project.max_core_count
         except Exception:
             self.usage = None
             exceptions.handle(self.request,

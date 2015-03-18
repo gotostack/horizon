@@ -111,7 +111,9 @@ class CreateProjectWorkflowTests(test.BaseAdminViewTests):
                         "domain": domain.id,
                         "subscription_name": '1',
                         "subscription_id": '1',
-                        "is_test": False}
+                        "is_test": False,
+                        "max_hosted_services": 20,
+                        "max_core_count": 100}
         return project_info
 
     def _get_workflow_fields(self, project):
@@ -123,7 +125,9 @@ class CreateProjectWorkflowTests(test.BaseAdminViewTests):
                         "enabled": project.enabled,
                         "subscription_name": '1',
                         "subscription_id": '1',
-                        "is_test": False}
+                        "is_test": False,
+                        "max_hosted_services": 20,
+                        "max_core_count": 100}
         return project_info
 
     def _get_quota_info(self, quota):
@@ -225,6 +229,7 @@ class CreateProjectWorkflowTests(test.BaseAdminViewTests):
         self.assertQuerysetEqual(
             workflow.steps,
             ['<CreateProjectInfo: createprojectinfoaction>',
+             '<CreateSubscriptionInfo: createsubscriptioninfoaction>',
              '<UpdateProjectMembers: update_members>',
              '<UpdateProjectGroups: update_group_members>',
              '<CreateProjectQuota: create_quotas>'])
@@ -929,6 +934,7 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
         self.assertQuerysetEqual(
             workflow.steps,
             ['<UpdateProjectInfo: update_info>',
+             '<UpdateSubscriptionInfo: update_subscription>',
              '<UpdateProjectMembers: update_members>',
              '<UpdateProjectGroups: update_group_members>',
              '<UpdateProjectQuota: update_quotas>'])
@@ -1028,7 +1034,9 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
                            "enabled": project.enabled,
                            "subscription_name": '1',
                            "subscription_id": '1',
-                           "is_test": False}
+                           "is_test": False,
+                           "max_hosted_services": 20,
+                           "max_core_count": 100}
         updated_quota = self._get_quota_info(quota)
 
         # handle
@@ -1064,7 +1072,9 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
                         "enabled": project.enabled,
                         "subscription_name": '1',
                         "subscription_id": '1',
-                        "is_test": False}
+                        "is_test": False,
+                        "max_hosted_services": 20,
+                        "max_core_count": 100}
         workflow_data.update(project_data)
         workflow_data.update(updated_quota)
         url = reverse('horizon:identity:projects:update',
@@ -1205,7 +1215,9 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
                            "enabled": project.enabled,
                            "subscription_name": '1',
                            "subscription_id": '1',
-                           "is_test": False}
+                           "is_test": False,
+                           "max_hosted_services": 20,
+                           "max_core_count": 100}
         updated_quota = self._get_quota_info(quota)
 
         # handle
@@ -1226,7 +1238,9 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
                         "enabled": project.enabled,
                         "subscription_name": '1',
                         "subscription_id": '1',
-                        "is_test": False}
+                        "is_test": False,
+                        "max_hosted_services": 20,
+                        "max_core_count": 100}
         workflow_data.update(project_data)
         workflow_data.update(updated_quota)
         url = reverse('horizon:identity:projects:update',
@@ -1327,7 +1341,9 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
                            "enabled": project.enabled,
                            "subscription_name": '1',
                            "subscription_id": '1',
-                           "is_test": False}
+                           "is_test": False,
+                           "max_hosted_services": 20,
+                           "max_core_count": 100}
         updated_quota = self._get_quota_info(quota)
 
         # handle
@@ -1359,7 +1375,9 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
                         "enabled": project.enabled,
                         "subscription_name": '1',
                         "subscription_id": '1',
-                        "is_test": False}
+                        "is_test": False,
+                        "max_hosted_services": 20,
+                        "max_core_count": 100}
         workflow_data.update(project_data)
         workflow_data.update(updated_quota)
         url = reverse('horizon:identity:projects:update',
@@ -1459,7 +1477,9 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
                            "enabled": project.enabled,
                            "subscription_name": '1',
                            "subscription_id": '1',
-                           "is_test": False}
+                           "is_test": False,
+                           "max_hosted_services": 20,
+                           "max_core_count": 100}
         updated_quota = self._get_quota_info(quota)
 
         # handle
@@ -1482,7 +1502,9 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
                         "enabled": project.enabled,
                         "subscription_name": '1',
                         "subscription_id": '1',
-                        "is_test": False}
+                        "is_test": False,
+                        "max_hosted_services": 20,
+                        "max_core_count": 100}
         workflow_data.update(project_data)
         workflow_data.update(updated_quota)
         url = reverse('horizon:identity:projects:update',

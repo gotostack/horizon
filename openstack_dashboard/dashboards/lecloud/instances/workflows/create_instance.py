@@ -167,6 +167,8 @@ class SetInstanceDetailsAction(workflows.Action):
         ]
 
         if not getattr(project, "is_test", None):
+            # Both None and False are considered as no-test project,
+            # so they have right to choice the standard series.
             role_size_type_choices.append(("flavor_standard", _("Standard")))
         self.fields['role_size_type'].choices = role_size_type_choices
 
@@ -203,17 +205,30 @@ class SetInstanceDetailsAction(workflows.Action):
 
     def _check_quotas(self, cleaned_data):
         # Prevent launching more instances than the quota allows
-        subscription = api.azure_api.subscription_get(self.request)
-        flavor_basic = cleaned_data.get('flavor_basic')
+        try:
+            subscription = api.azure_api.subscription_get(self.request)
+        except Exception:
+            subscription = None
+            exceptions.handle(self.request,
+                              _('Unable to retrieve subscription info.'))
+        flavor_basic = cleaned_data.get('role_size_type')
         flavor_type = cleaned_data.get(flavor_basic)
         flavors = self._get_role_size_list()
         flavors_dict = dict([(r.name, r) for r in flavors])
         flavor = flavors_dict.get(flavor_type)
 
+        project = next((proj for proj in self.request.user.authorized_tenants
+                        if proj.id == self.request.user.project_id), None)
+
         count_error = []
         # Validate cores.
-        available_cores = subscription.max_core_count - \
-            subscription.current_core_count
+        if getattr(project, "max_core_count") is not None:
+            available_cores = project.max_core_count - \
+                subscription.current_core_count
+        else:
+            available_cores = subscription.max_core_count - \
+                subscription.current_core_count
+
         if flavor and available_cores < flavor.cores:
             count_error.append(_("Cores(Available: %(avail)s, "
                                  "Requested: %(req)s)")

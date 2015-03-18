@@ -122,6 +122,21 @@ class UpdateProject(tables.LinkAction):
         return api.keystone.keystone_can_edit_project()
 
 
+class ModifySubscription(tables.LinkAction):
+    name = "subscription"
+    verbose_name = _("Modify Subscription")
+    url = "horizon:identity:projects:update"
+    classes = ("ajax-modal",)
+    icon = "pencil"
+    policy_rules = (('identity', 'identity:update_project'),)
+
+    def get_link_url(self, project):
+        step = 'update_subscription'
+        base_url = reverse(self.url, args=[project.id])
+        param = urlencode({"step": step})
+        return "?".join([base_url, param])
+
+
 class ModifyQuotas(tables.LinkAction):
     name = "quotas"
     verbose_name = _("Modify Quotas")
@@ -250,6 +265,7 @@ class TenantsTable(tables.DataTable):
         verbose_name = _("Projects")
         row_class = UpdateRow
         actions_list = [UpdateMembersLink, UpdateGroupsLink, UpdateProject,
+                        ModifySubscription,
                         DeleteTenantsAction,
                         RescopeTokenToProject]
         if not DISABLE_OPENSTACK_QUOTA:

@@ -45,6 +45,10 @@ COMMON_HORIZONTAL_TEMPLATE = "identity/projects/_common_horizontal_form.html"
 
 DISABLE_OPENSTACK_QUOTA = getattr(settings,
                                   "DISABLE_OPENSTACK_QUOTA", True)
+AZURE_MAX_HOSTED_SERVICES = getattr(settings,
+                                    "AZURE_MAX_HOSTED_SERVICES", 20)
+AZURE_MAX_CORE_COUNT = getattr(settings,
+                               "AZURE_MAX_CORE_COUNT", 100)
 
 
 class ProjectQuotaAction(workflows.Action):
@@ -157,20 +161,6 @@ class CreateProjectInfoAction(workflows.Action):
                                  required=False,
                                  initial=True)
 
-    subscription_name = forms.CharField(
-        label=_("Subscription Name"),
-        required=False,
-        help_text=_("Azure Subscription Name."))
-
-    subscription_id = forms.CharField(
-        label=_("Subscription ID"),
-        required=False,
-        help_text=_("Azure Subscription ID"
-                    " associated with this new project."))
-    is_test = forms.BooleanField(label=_("Is Test Project"),
-                                 required=False,
-                                 initial=False)
-
     def __init__(self, request, *args, **kwargs):
         super(CreateProjectInfoAction, self).__init__(request,
                                                       *args,
@@ -194,10 +184,56 @@ class CreateProjectInfo(workflows.Step):
                    "project_id",
                    "name",
                    "description",
-                   "enabled",
-                   "subscription_name",
+                   "enabled")
+
+
+class CreateSubscriptionInfoAction(workflows.Action):
+    subscription_name = forms.CharField(
+        label=_("Subscription Name"),
+        required=False,
+        help_text=_("Azure Subscription Name."))
+    subscription_id = forms.CharField(
+        label=_("Subscription ID"),
+        required=False,
+        help_text=_("Azure Subscription ID"
+                    " associated with this new project."))
+    is_test = forms.BooleanField(label=_("Is Test Project"),
+                                 required=False,
+                                 initial=False)
+
+    max_hosted_services = forms.IntegerField(
+        label=_("Max Cloud Services"),
+        help_text=_("Maximum quantity of cloud service,"
+                    " range (1 - %s).") % AZURE_MAX_HOSTED_SERVICES,
+        # Quota do not exceed the subscription default value
+        max_value=AZURE_MAX_HOSTED_SERVICES,
+        min_value=1)
+    max_core_count = forms.IntegerField(
+        label=_("Max Core Count"),
+        help_text=_("Maximum quantity of core,"
+                    " range (1 - %s).") % AZURE_MAX_CORE_COUNT,
+        # Quota do not exceed the subscription default value
+        max_value=AZURE_MAX_CORE_COUNT,
+        min_value=1)
+
+    def __init__(self, request, *args, **kwargs):
+        super(CreateSubscriptionInfoAction, self).__init__(request,
+                                                           *args,
+                                                           **kwargs)
+
+    class Meta(object):
+        name = _("Project Subscription Information")
+        help_text = _("Associate a project to a subscription.")
+
+
+class CreateSubscriptionInfo(workflows.Step):
+    action_class = CreateSubscriptionInfoAction
+    template_name = COMMON_HORIZONTAL_TEMPLATE
+    contributes = ("subscription_name",
                    "subscription_id",
-                   "is_test")
+                   "is_test",
+                   "max_hosted_services",
+                   "max_core_count")
 
 
 class UpdateProjectMembersAction(workflows.MembershipAction):
@@ -430,6 +466,7 @@ class CreateProject(CommonQuotaWorkflow):
     failure_message = _('Unable to create project "%s".')
     success_url = "horizon:identity:projects:index"
     default_steps = (CreateProjectInfo,
+                     CreateSubscriptionInfo,
                      UpdateProjectMembers,
                      CreateProjectQuota)
 
@@ -437,18 +474,22 @@ class CreateProject(CommonQuotaWorkflow):
                  *args, **kwargs):
         if PROJECT_GROUP_ENABLED and not DISABLE_OPENSTACK_QUOTA:
             self.default_steps = (CreateProjectInfo,
+                                  CreateSubscriptionInfo,
                                   UpdateProjectMembers,
                                   UpdateProjectGroups,
                                   CreateProjectQuota)
         elif PROJECT_GROUP_ENABLED and DISABLE_OPENSTACK_QUOTA:
             self.default_steps = (CreateProjectInfo,
+                                  CreateSubscriptionInfo,
                                   UpdateProjectMembers,
                                   UpdateProjectGroups)
         elif not PROJECT_GROUP_ENABLED and DISABLE_OPENSTACK_QUOTA:
             self.default_steps = (CreateProjectInfo,
+                                  CreateSubscriptionInfo,
                                   UpdateProjectMembers)
         else:
             self.default_steps = (CreateProjectInfo,
+                                  CreateSubscriptionInfo,
                                   UpdateProjectMembers,
                                   CreateProjectQuota)
 
@@ -468,7 +509,9 @@ class CreateProject(CommonQuotaWorkflow):
             desc = data['description']
             kw = {"subscription_name": data['subscription_name'],
                   "subscription_id": data['subscription_id'],
-                  "is_test": data['is_test']}
+                  "is_test": data['is_test'],
+                  "max_hosted_services": data['max_hosted_services'],
+                  "max_core_count": data['max_core_count']}
             self.object = api.keystone.tenant_create(request,
                                                      name=data['name'],
                                                      description=desc,
@@ -605,10 +648,30 @@ class UpdateProjectInfo(workflows.Step):
                    "domain_name",
                    "name",
                    "description",
-                   "enabled",
-                   "subscription_name",
+                   "enabled")
+
+
+class UpdateSubscriptionInfoAction(CreateSubscriptionInfoAction):
+
+    def __init__(self, request, initial, *args, **kwargs):
+        super(UpdateSubscriptionInfoAction, self).__init__(
+            request, initial, *args, **kwargs)
+
+    class Meta(object):
+        name = _("Project Subscription Information")
+        slug = 'update_subscription'
+        help_text = _("Edit the project's subscription details.")
+
+
+class UpdateSubscriptionInfo(workflows.Step):
+    action_class = UpdateSubscriptionInfoAction
+    template_name = COMMON_HORIZONTAL_TEMPLATE
+    depends_on = ("project_id",)
+    contributes = ("subscription_name",
                    "subscription_id",
-                   "is_test")
+                   "is_test",
+                   "max_hosted_services",
+                   "max_core_count")
 
 
 class UpdateProject(CommonQuotaWorkflow):
@@ -619,6 +682,7 @@ class UpdateProject(CommonQuotaWorkflow):
     failure_message = _('Unable to modify project "%s".')
     success_url = "horizon:identity:projects:index"
     default_steps = (UpdateProjectInfo,
+                     UpdateSubscriptionInfo,
                      UpdateProjectMembers,
                      UpdateProjectQuota)
 
@@ -626,18 +690,22 @@ class UpdateProject(CommonQuotaWorkflow):
                  *args, **kwargs):
         if PROJECT_GROUP_ENABLED and not DISABLE_OPENSTACK_QUOTA:
             self.default_steps = (UpdateProjectInfo,
+                                  UpdateSubscriptionInfo,
                                   UpdateProjectMembers,
                                   UpdateProjectGroups,
                                   UpdateProjectQuota)
         elif PROJECT_GROUP_ENABLED and DISABLE_OPENSTACK_QUOTA:
             self.default_steps = (UpdateProjectInfo,
+                                  UpdateSubscriptionInfo,
                                   UpdateProjectMembers,
                                   UpdateProjectGroups)
         elif not PROJECT_GROUP_ENABLED and DISABLE_OPENSTACK_QUOTA:
             self.default_steps = (UpdateProjectInfo,
+                                  UpdateSubscriptionInfo,
                                   UpdateProjectMembers)
         else:
             self.default_steps = (UpdateProjectInfo,
+                                  UpdateSubscriptionInfo,
                                   UpdateProjectMembers,
                                   UpdateProjectQuota)
         super(UpdateProject, self).__init__(request=request,
@@ -659,7 +727,9 @@ class UpdateProject(CommonQuotaWorkflow):
             project_id = data['project_id']
             kw = {"subscription_name": data['subscription_name'],
                   "subscription_id": data['subscription_id'],
-                  "is_test": data['is_test']}
+                  "is_test": data['is_test'],
+                  "max_hosted_services": data['max_hosted_services'],
+                  "max_core_count": data['max_core_count']}
             return api.keystone.tenant_update(
                 request,
                 project_id,
