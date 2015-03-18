@@ -78,6 +78,21 @@ class AddEndpointForm(InstanceBaseOperationForm):
         max_value=65535,
         min_value=1)
 
+    idle_timeout_in_minutes = forms.IntegerField(
+        label=_("Idle Timeout In Minutes"),
+        help_text=_("Idle timeout in 4 - 30 Minutes."
+                    " Default value is 4, and only for TCP."),
+        required=False,
+        max_value=30,
+        min_value=4)
+
+    # Reserved for future use
+    enable_direct_server_return = forms.BooleanField(
+        label=_("Enable Direct Server Return"),
+        required=False,
+        initial=False,
+        widget=forms.HiddenInput())
+
     def __init__(self, request, *args, **kwargs):
         super(AddEndpointForm, self).__init__(request, *args, **kwargs)
         choices = [("tcp", _("TCP")),
@@ -93,13 +108,15 @@ class AddEndpointForm(InstanceBaseOperationForm):
         protocol = data.get("protocol")
         local_port = data.get("port")
         public_port = data.get("public_port", None)
+        idle_timeout_in_minutes = data.get("idle_timeout_in_minutes", 4)
         try:
             api.azure_api.virtual_machine_add_endpoint(
                 request,
                 cloud_service_name, deployment_name,
                 instance_name,
                 endpoint_name, protocol,
-                local_port, public_port)
+                local_port, public_port,
+                idle_timeout_in_minutes)
             messages.success(
                 request, _('Successfully add'
                            ' endpoint for instance "%s".') % instance_name)

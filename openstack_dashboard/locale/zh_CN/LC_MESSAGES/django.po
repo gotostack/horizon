@@ -12271,3 +12271,42 @@ msgstr "成功创建云服务\"%s\"。"
 
 msgid "Launched instance named \"%s\"."
 msgstr "成功创建云主机\"%s\"。"
+
+msgid "Project Subscription Information"
+msgstr "项目订阅信息"
+
+msgid "Subscription Name"
+msgstr "订阅名称"
+
+msgid "Azure Subscription Name."
+msgstr "Azure订阅名称"
+
+msgid "Subscription ID"
+msgstr "订阅ID"
+
+msgid "Azure Subscription ID associated with this new project."
+msgstr "Azure订阅ID和项目的关联"
+
+msgid "Is Test Project"
+msgstr "测试项目"
+
+msgid "Max Cloud Services"
+msgstr "最大云服务数量"
+
+msgid "Maximum quantity of cloud service range 1 to %(quota)s."
+msgstr "最大云服务数量范围 1 - %s"
+
+msgid "Max Core Count"
+msgstr "最大核心数量"
+
+msgid "Maximum quantity of core range 1 to %(quota)s."
+msgstr "最大核心数量范围 1 - %s"
+
+msgid "Idle Timeout In Minutes"
+msgstr "空闲超时时间"
+
+msgid "Idle timeout in 4 - 30 Minutes. Default value is 4, and only for TCP."
+msgstr "空闲超时时间范围  4-30 分钟，默认值为4，只对TCP协议生效。"
+
+msgid "Modify Subscription"
+msgstr "编辑订阅信息"

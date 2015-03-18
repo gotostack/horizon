@@ -924,7 +924,8 @@ class InstanceTests(helpers.TestCase):
             endpoint.name,
             endpoint.protocol,
             endpoint.local_port,
-            endpoint.public_port)
+            endpoint.port,
+            endpoint.idle_timeout_in_minutes)
 
         self.mox.ReplayAll()
 
@@ -939,7 +940,10 @@ class InstanceTests(helpers.TestCase):
             'endpoint_name': endpoint.name,
             'protocol': endpoint.protocol,
             'port': endpoint.local_port,
-            'public_port': endpoint.public_port}
+            'public_port': endpoint.port,
+            'idle_timeout_in_minutes': endpoint.idle_timeout_in_minutes,
+            'enable_direct_server_return':
+                endpoint.enable_direct_server_return}
         res = self.client.post(url, form_data)
 
         self.assertNoFormErrors(res)
@@ -959,7 +963,8 @@ class InstanceTests(helpers.TestCase):
             endpoint.name,
             endpoint.protocol,
             endpoint.local_port,
-            endpoint.public_port).AndRaise(self.exceptions.azure)
+            endpoint.port,
+            endpoint.idle_timeout_in_minutes).AndRaise(self.exceptions.azure)
 
         self.mox.ReplayAll()
 
@@ -974,7 +979,10 @@ class InstanceTests(helpers.TestCase):
             'endpoint_name': endpoint.name,
             'protocol': endpoint.protocol,
             'port': endpoint.local_port,
-            'public_port': endpoint.public_port}
+            'public_port': endpoint.port,
+            'idle_timeout_in_minutes': endpoint.idle_timeout_in_minutes,
+            'enable_direct_server_return':
+                endpoint.enable_direct_server_return}
         res = self.client.post(url, form_data)
 
         self.assertNoFormErrors(res)

@@ -709,7 +709,8 @@ def virtual_machine_add_endpoint(request, service_name,
                                  deployment_name, role_name,
                                  endpoint_name, protocol,
                                  local_port,
-                                 public_port=None):
+                                 public_port=None,
+                                 idle_timeout_in_minutes=4):
     """Add endpoint to an azure virtual machine."""
     client = azureclient(request)
 
@@ -754,7 +755,8 @@ def virtual_machine_add_endpoint(request, service_name,
                 name=endpoint_name,
                 protocol=protocol,
                 port=str(new_port),
-                local_port=local_port)
+                local_port=local_port,
+                idle_timeout_in_minutes=idle_timeout_in_minutes)
 
             network_config.input_endpoints.input_endpoints.append(endpoint)
             if (network_config.subnet_names is None and
@@ -769,7 +771,8 @@ def virtual_machine_add_endpoint(request, service_name,
                 name=endpoint_name,
                 protocol=protocol,
                 port=str(random.randint(10000, 10010)),
-                local_port=local_port)
+                local_port=local_port,
+                idle_timeout_in_minutes=idle_timeout_in_minutes)
             network_config.input_endpoints.input_endpoints.append(endpoint)
 
     result = client.update_role(

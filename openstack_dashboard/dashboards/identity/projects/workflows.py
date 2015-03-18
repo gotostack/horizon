@@ -203,15 +203,17 @@ class CreateSubscriptionInfoAction(workflows.Action):
 
     max_hosted_services = forms.IntegerField(
         label=_("Max Cloud Services"),
-        help_text=_("Maximum quantity of cloud service,"
-                    " range (1 - %s).") % AZURE_MAX_HOSTED_SERVICES,
+        help_text=_("Maximum quantity of cloud service"
+                    " range 1 to %(quota)s.") % {
+                        "quota": AZURE_MAX_HOSTED_SERVICES},
         # Quota do not exceed the subscription default value
         max_value=AZURE_MAX_HOSTED_SERVICES,
         min_value=1)
     max_core_count = forms.IntegerField(
         label=_("Max Core Count"),
-        help_text=_("Maximum quantity of core,"
-                    " range (1 - %s).") % AZURE_MAX_CORE_COUNT,
+        help_text=_("Maximum quantity of core"
+                    " range 1 to %(quota)s.") % {
+                        "quota": AZURE_MAX_CORE_COUNT},
         # Quota do not exceed the subscription default value
         max_value=AZURE_MAX_CORE_COUNT,
         min_value=1)

@@ -64,6 +64,7 @@ def data(TEST):
     TEST.azure_os_images = utils.TestDataContainer()
 
     TEST.azure_endpoints = utils.TestDataContainer()
+    TEST.azure_instance_endpoints = utils.TestDataContainer()
 
     TEST.azure_disks = utils.TestDataContainer()
     TEST.azure_data_disks = utils.TestDataContainer()
@@ -266,7 +267,8 @@ def data(TEST):
                        'port': 10022,
                        'local_port': 22,
                        'load_balanced_endpoint_set_name': '',
-                       'enable_direct_server_return': False}
+                       'enable_direct_server_return': False,
+                       'idle_timeout_in_minutes': 4}
     endpoint_1 = ConfigurationSetInputEndpoint(**endpoint_dict_1)
     endpoint_1.load_balancer_probe = None
     cfg_set_1.input_endpoints.input_endpoints.append(endpoint_1)
@@ -389,7 +391,8 @@ def data(TEST):
                        'port': 5986,
                        'local_port': 5986,
                        'load_balanced_endpoint_set_name': '',
-                       'enable_direct_server_return': False}
+                       'enable_direct_server_return': False,
+                       'idle_timeout_in_minutes': 4}
     endpoint_2 = ConfigurationSetInputEndpoint(**endpoint_dict_2)
     endpoint_2.load_balancer_probe = None
     cfg_set_2.input_endpoints.input_endpoints.append(endpoint_2)
@@ -399,7 +402,8 @@ def data(TEST):
                        'port': 52234,
                        'local_port': 3389,
                        'load_balanced_endpoint_set_name': '',
-                       'enable_direct_server_return': False}
+                       'enable_direct_server_return': False,
+                       'idle_timeout_in_minutes': 4}
     endpoint_3 = ConfigurationSetInputEndpoint(**endpoint_dict_3)
     endpoint_3.load_balancer_probe = None
     cfg_set_2.input_endpoints.input_endpoints.append(endpoint_3)
@@ -468,7 +472,10 @@ def data(TEST):
     TEST.azure_roles.add(role_1, role_2)
     TEST.azure_role_instances.add(role_instance_1, role_instance_2)
     TEST.azure_deployments.add(deployment_1, deployment_2)
-    TEST.azure_endpoints.add(ins_endpoint_1, ins_endpoint_2, ins_endpoint_3)
+    TEST.azure_instance_endpoints.add(ins_endpoint_1,
+                                      ins_endpoint_2,
+                                      ins_endpoint_3)
+    TEST.azure_endpoints.add(endpoint_1, endpoint_2, endpoint_3)
 
     # OS Images
     os_img_linux_1 = OSImage()

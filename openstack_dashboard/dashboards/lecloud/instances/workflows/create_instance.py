@@ -222,7 +222,7 @@ class SetInstanceDetailsAction(workflows.Action):
 
         count_error = []
         # Validate cores.
-        if getattr(project, "max_core_count") is not None:
+        if getattr(project, "max_core_count", None) is not None:
             available_cores = project.max_core_count - \
                 subscription.current_core_count
         else:

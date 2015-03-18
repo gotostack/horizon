@@ -534,6 +534,10 @@ class InstancesTable(tables.DataTable):
                        AttachDataDisk, DeattachDataDisk)
 
 
+def get_idle(endpoint):
+    return getattr(endpoint, "idle_timeout_in_minutes", "N/A")
+
+
 class EndpointsTable(tables.DataTable):
     name = tables.Column("name",
                          verbose_name=_("Name"))
@@ -543,6 +547,11 @@ class EndpointsTable(tables.DataTable):
                          verbose_name=_("Port (Cloud Service Public)"))
     local_port = tables.Column("local_port",
                                verbose_name=_("Local Port"))
+
+    idle_timeout_in_minutes = tables.Column(
+        get_idle,
+        verbose_name=_("Idle Timeout In Minutes"))
+
     load_balanced_endpoint_set_name = tables.Column(
         "load_balanced_endpoint_set_name",
         verbose_name=_("load balanced endpoint set name"))

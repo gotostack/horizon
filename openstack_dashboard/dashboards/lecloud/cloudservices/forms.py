@@ -69,7 +69,7 @@ class CreateCloudServiceForm(forms.SelfHandlingForm):
         project = next((proj for proj in self.request.user.authorized_tenants
                         if proj.id == self.request.user.project_id), None)
         count_error = []
-        if getattr(project, "max_hosted_services") is not None:
+        if getattr(project, "max_hosted_services", None) is not None:
             available_cs = project.max_hosted_services - \
                 subscription.current_hosted_services
         else:
