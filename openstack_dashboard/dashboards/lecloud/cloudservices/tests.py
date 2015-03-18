@@ -86,13 +86,17 @@ class CloudServicesViewTests(helpers.TestCase):
             res, '<option value="China North">China North</option>')
 
     @helpers.create_stubs({
-        api.azure_api: ('location_list',
+        api.azure_api: ('subscription_get',
+                        'location_list',
                         'cloud_service_create')})
     def test_create_cloud_service_post(self):
         locations = self.azure_locations.list()
         location = self.azure_locations.first()
         cloud_service = self.azure_cloud_services.first()
+        subscription = self.azure_subscriptions.first()
 
+        api.azure_api.subscription_get(
+            IsA(http.HttpRequest)).AndReturn(subscription)
         api.azure_api.location_list(
             IsA(http.HttpRequest)).AndReturn(locations)
         api.azure_api.cloud_service_create(
@@ -116,13 +120,17 @@ class CloudServicesViewTests(helpers.TestCase):
         self.assertRedirectsNoFollow(res, INDEX_URL)
 
     @helpers.create_stubs({
-        api.azure_api: ('location_list',
+        api.azure_api: ('subscription_get',
+                        'location_list',
                         'cloud_service_create')})
     def test_create_cloud_service_post_exception(self):
         locations = self.azure_locations.list()
         location = self.azure_locations.first()
         cloud_service = self.azure_cloud_services.first()
+        subscription = self.azure_subscriptions.first()
 
+        api.azure_api.subscription_get(
+            IsA(http.HttpRequest)).AndReturn(subscription)
         api.azure_api.location_list(
             IsA(http.HttpRequest)).AndReturn(locations)
         api.azure_api.cloud_service_create(

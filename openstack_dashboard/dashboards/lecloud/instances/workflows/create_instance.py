@@ -159,10 +159,15 @@ class SetInstanceDetailsAction(workflows.Action):
         super(SetInstanceDetailsAction, self).__init__(
             request, context, *args, **kwargs)
 
+        project = next((proj for proj in request.user.authorized_tenants
+                        if proj.id == request.user.project_id), None)
+
         role_size_type_choices = [
             ("flavor_basic", _("Basic")),
-            ("flavor_standard", _("Standard")),
         ]
+
+        if not getattr(project, "is_test", None):
+            role_size_type_choices.append(("flavor_standard", _("Standard")))
         self.fields['role_size_type'].choices = role_size_type_choices
 
     @memoized.memoized_method
@@ -196,16 +201,43 @@ class SetInstanceDetailsAction(workflows.Action):
         if check_method:
             check_method(cleaned_data)
 
+    def _check_quotas(self, cleaned_data):
+        # Prevent launching more instances than the quota allows
+        subscription = api.azure_api.subscription_get(self.request)
+        flavor_basic = cleaned_data.get('flavor_basic')
+        flavor_type = cleaned_data.get(flavor_basic)
+        flavors = self._get_role_size_list()
+        flavors_dict = dict([(r.name, r) for r in flavors])
+        flavor = flavors_dict.get(flavor_type)
+
+        count_error = []
+        # Validate cores.
+        available_cores = subscription.max_core_count - \
+            subscription.current_core_count
+        if flavor and available_cores < flavor.cores:
+            count_error.append(_("Cores(Available: %(avail)s, "
+                                 "Requested: %(req)s)")
+                               % {'avail': available_cores,
+                                  'req': flavor.cores})
+
+        if count_error:
+            value_str = ", ".join(count_error)
+            msg = (_('The requested instance cannot be launched. '
+                     'The following requested resource(s) exceed '
+                     'quota(s): %s.') % value_str)
+            self._errors['flavor_basic'] = self.error_class([msg])
+
     def clean(self):
         cleaned_data = super(SetInstanceDetailsAction, self).clean()
 
         self._check_flavor(cleaned_data)
+        self._check_quotas(cleaned_data)
 
         return cleaned_data
 
     def populate_flavor_basic_choices(self, request, context):
         rolesizes = self._get_role_size_list()
-        rolesize_list = [(r.name, r.label)for r in sorted(
+        rolesize_list = [(r.name, r.label) for r in sorted(
             rolesizes,
             key=lambda x: x.cores,
             reverse=False)if r.name[:6] == 'Basic_']

@@ -167,6 +167,9 @@ class CreateProjectInfoAction(workflows.Action):
         required=False,
         help_text=_("Azure Subscription ID"
                     " associated with this new project."))
+    is_test = forms.BooleanField(label=_("Is Test Project"),
+                                 required=False,
+                                 initial=False)
 
     def __init__(self, request, *args, **kwargs):
         super(CreateProjectInfoAction, self).__init__(request,
@@ -193,7 +196,8 @@ class CreateProjectInfo(workflows.Step):
                    "description",
                    "enabled",
                    "subscription_name",
-                   "subscription_id")
+                   "subscription_id",
+                   "is_test")
 
 
 class UpdateProjectMembersAction(workflows.MembershipAction):
@@ -463,7 +467,8 @@ class CreateProject(CommonQuotaWorkflow):
         try:
             desc = data['description']
             kw = {"subscription_name": data['subscription_name'],
-                  "subscription_id": data['subscription_id']}
+                  "subscription_id": data['subscription_id'],
+                  "is_test": data['is_test']}
             self.object = api.keystone.tenant_create(request,
                                                      name=data['name'],
                                                      description=desc,
@@ -602,7 +607,8 @@ class UpdateProjectInfo(workflows.Step):
                    "description",
                    "enabled",
                    "subscription_name",
-                   "subscription_id")
+                   "subscription_id",
+                   "is_test")
 
 
 class UpdateProject(CommonQuotaWorkflow):
@@ -652,7 +658,8 @@ class UpdateProject(CommonQuotaWorkflow):
         try:
             project_id = data['project_id']
             kw = {"subscription_name": data['subscription_name'],
-                  "subscription_id": data['subscription_id']}
+                  "subscription_id": data['subscription_id'],
+                  "is_test": data['is_test']}
             return api.keystone.tenant_update(
                 request,
                 project_id,

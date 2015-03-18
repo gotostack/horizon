@@ -110,7 +110,8 @@ class CreateProjectWorkflowTests(test.BaseAdminViewTests):
                         "enabled": project.enabled,
                         "domain": domain.id,
                         "subscription_name": '1',
-                        "subscription_id": '1'}
+                        "subscription_id": '1',
+                        "is_test": False}
         return project_info
 
     def _get_workflow_fields(self, project):
@@ -121,7 +122,8 @@ class CreateProjectWorkflowTests(test.BaseAdminViewTests):
                         "description": project.description,
                         "enabled": project.enabled,
                         "subscription_name": '1',
-                        "subscription_id": '1'}
+                        "subscription_id": '1',
+                        "is_test": False}
         return project_info
 
     def _get_quota_info(self, quota):
@@ -1025,7 +1027,8 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
                            "description": project._info["description"],
                            "enabled": project.enabled,
                            "subscription_name": '1',
-                           "subscription_id": '1'}
+                           "subscription_id": '1',
+                           "is_test": False}
         updated_quota = self._get_quota_info(quota)
 
         # handle
@@ -1060,7 +1063,8 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
                         "description": project._info["description"],
                         "enabled": project.enabled,
                         "subscription_name": '1',
-                        "subscription_id": '1'}
+                        "subscription_id": '1',
+                        "is_test": False}
         workflow_data.update(project_data)
         workflow_data.update(updated_quota)
         url = reverse('horizon:identity:projects:update',
@@ -1200,7 +1204,8 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
                            "description": project._info["description"],
                            "enabled": project.enabled,
                            "subscription_name": '1',
-                           "subscription_id": '1'}
+                           "subscription_id": '1',
+                           "is_test": False}
         updated_quota = self._get_quota_info(quota)
 
         # handle
@@ -1220,7 +1225,8 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
                         "description": project._info["description"],
                         "enabled": project.enabled,
                         "subscription_name": '1',
-                        "subscription_id": '1'}
+                        "subscription_id": '1',
+                        "is_test": False}
         workflow_data.update(project_data)
         workflow_data.update(updated_quota)
         url = reverse('horizon:identity:projects:update',
@@ -1320,7 +1326,8 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
                            "description": project._info["description"],
                            "enabled": project.enabled,
                            "subscription_name": '1',
-                           "subscription_id": '1'}
+                           "subscription_id": '1',
+                           "is_test": False}
         updated_quota = self._get_quota_info(quota)
 
         # handle
@@ -1351,7 +1358,8 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
                         "description": project._info["description"],
                         "enabled": project.enabled,
                         "subscription_name": '1',
-                        "subscription_id": '1'}
+                        "subscription_id": '1',
+                        "is_test": False}
         workflow_data.update(project_data)
         workflow_data.update(updated_quota)
         url = reverse('horizon:identity:projects:update',
@@ -1450,7 +1458,8 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
                            "description": project._info["description"],
                            "enabled": project.enabled,
                            "subscription_name": '1',
-                           "subscription_id": '1'}
+                           "subscription_id": '1',
+                           "is_test": False}
         updated_quota = self._get_quota_info(quota)
 
         # handle
@@ -1472,7 +1481,8 @@ class UpdateProjectWorkflowTests(test.BaseAdminViewTests):
                         "description": project._info["description"],
                         "enabled": project.enabled,
                         "subscription_name": '1',
-                        "subscription_id": '1'}
+                        "subscription_id": '1',
+                        "is_test": False}
         workflow_data.update(project_data)
         workflow_data.update(updated_quota)
         url = reverse('horizon:identity:projects:update',

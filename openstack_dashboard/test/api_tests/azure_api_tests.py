@@ -22,6 +22,15 @@ from openstack_dashboard.test import helpers as test
 
 
 class AzureApiTests(test.APITestCase):
+    def test_subscription_get(self):
+        subscription = self.azure_subscriptions.first()
+        azureclient = self.stub_azureclient()
+        azureclient.get_subscription().AndReturn(subscription)
+        self.mox.ReplayAll()
+
+        subs = api.azure_api.subscription_get(self.request)
+        self.assertIsInstance(subs, smng.Subscription)
+
     def test_location_list(self):
         api_locations = self.azure_locations.list()
         azureclient = self.stub_azureclient()

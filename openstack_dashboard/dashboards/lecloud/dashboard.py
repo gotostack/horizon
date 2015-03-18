@@ -17,20 +17,13 @@ from django.utils.translation import ugettext_lazy as _
 import horizon
 
 
-class BasePanels(horizon.PanelGroup):
-    slug = "compute"
-    name = _("Compute")
+class LeCloud(horizon.Dashboard):
+    name = _("LeCloud")
+    slug = "lecloud"
     panels = ('overview',
               'instances',
               'cloudservices',
               'disks')
-
-
-class LeCloud(horizon.Dashboard):
-    name = _("LeCloud")
-    slug = "lecloud"
-    panels = (
-        BasePanels,)
     default_panel = 'overview'
     supports_tenants = True
 

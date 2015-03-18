@@ -59,6 +59,29 @@ class CreateCloudServiceForm(forms.SelfHandlingForm):
                     LOCATION_DISPLAY_CHOICE[l.name]) for l in locations]
         self.fields['location'].choices = choices
 
+    def _check_quotas(self, cleaned_data):
+        subscription = api.azure_api.subscription_get(self.request)
+        count_error = []
+        available_cs = subscription.max_hosted_services - \
+            subscription.current_hosted_services
+        if available_cs < 1:
+            count_error.append(_("Cloud Service available: %(avail)s")
+                               % {'avail': available_cs})
+
+        if count_error:
+            value_str = ", ".join(count_error)
+            msg = (_('The requested cloud service cannot be created. '
+                     'The following requested resource(s) exceed '
+                     'quota(s): %s.') % value_str)
+            self._errors['service_name'] = self.error_class([msg])
+
+    def clean(self):
+        cleaned_data = super(CreateCloudServiceForm, self).clean()
+
+        self._check_quotas(cleaned_data)
+
+        return cleaned_data
+
     def handle(self, request, data):
         service_name = data.get("service_name")
         location = data.get("location")

@@ -450,6 +450,7 @@ class InstanceTests(helpers.TestCase):
         azure_os_images = self.azure_os_images.list()
         cloud_services = self.azure_cloud_services.list()
         locations = self.azure_locations.list()
+        subscription = self.azure_subscriptions.first()
 
         api.azure_api.role_size_list(
             IsA(http.HttpRequest)).AndReturn(role_sizes)
@@ -459,8 +460,11 @@ class InstanceTests(helpers.TestCase):
             IsA(http.HttpRequest)).AndReturn(cloud_services)
         api.azure_api.location_list(
             IsA(http.HttpRequest)).AndReturn(locations)
+        api.azure_api.subscription_get(
+            IsA(http.HttpRequest)).AndReturn(subscription)
 
-    @helpers.create_stubs({api.azure_api: ('role_size_list',
+    @helpers.create_stubs({api.azure_api: ('subscription_get',
+                                           'role_size_list',
                                            'list_os_images',
                                            'cloud_service_list',
                                            'location_list',
@@ -509,7 +513,8 @@ class InstanceTests(helpers.TestCase):
         self.assertNoFormErrors(res)
         self.assertRedirectsNoFollow(res, INDEX_URL)
 
-    @helpers.create_stubs({api.azure_api: ('role_size_list',
+    @helpers.create_stubs({api.azure_api: ('subscription_get',
+                                           'role_size_list',
                                            'list_os_images',
                                            'cloud_service_list',
                                            'location_list',

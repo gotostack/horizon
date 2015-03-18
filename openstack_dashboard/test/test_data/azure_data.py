@@ -42,11 +42,14 @@ from azure.servicemanagement import RoleList
 from azure.servicemanagement import RoleSize
 from azure.servicemanagement import StorageAccountProperties
 from azure.servicemanagement import StorageService
+from azure.servicemanagement import Subscription
 
 from openstack_dashboard.test.test_data import utils
 
 
 def data(TEST):
+    TEST.azure_subscriptions = utils.TestDataContainer()
+
     TEST.azure_locations = utils.TestDataContainer()
     TEST.azure_rolesizes = utils.TestDataContainer()
 
@@ -70,6 +73,51 @@ def data(TEST):
     TEST.azure_operation_status = utils.TestDataContainer()
 
     TEST.azure_async_results = utils.TestDataContainer()
+
+    # Subscriptions
+    subscription_1 = Subscription()
+    subscription_1.max_hosted_services = 20
+    subscription_1.account_admin_live_email_id = \
+        'letv_cloud@letv.partner.onmschina.cn'
+    subscription_1.max_storage_accounts = 20
+    subscription_1.max_dns_servers = 20
+    subscription_1.subscription_name = '\u6d4b\u8bd5\u8ba2\u9605-01'
+    subscription_1.max_core_count = 100
+    subscription_1.aad_tenant_id = '57abbe9c-d183-4a3a-835b-2f0b56971bab'
+    subscription_1.max_local_network_sites = 20
+    subscription_1.created_time = '2015-01-22T06:11:26Z'
+    subscription_1.current_virtual_network_sites = 0
+    subscription_1.max_virtual_network_sites = 50
+    subscription_1.subscription_status = 'Active'
+    subscription_1.current_storage_accounts = 2
+    subscription_1.current_core_count = 0
+    subscription_1.subscription_id = 'a3b9e639-f53a-4089-b66b-b075c5b805a1'
+    subscription_1.current_hosted_services = 1
+    subscription_1.service_admin_live_email_id = \
+        'letv_cloud@letv.partner.onmschina.cn'
+
+    subscription_2 = Subscription()
+    subscription_2.max_hosted_services = 20
+    subscription_2.account_admin_live_email_id = \
+        'letv_cloud@letv.partner.onmschina.cn'
+    subscription_2.max_storage_accounts = 20
+    subscription_2.max_dns_servers = 20
+    subscription_2.subscription_name = '\u6d4b\u8bd5\u8ba2\u9605-02'
+    subscription_2.max_core_count = 100
+    subscription_2.aad_tenant_id = '57abbe9c-d183-4a3a-835b-2f0b56971bab'
+    subscription_2.max_local_network_sites = 20
+    subscription_2.created_time = '2015-01-22T06:12:22Z'
+    subscription_2.current_virtual_network_sites = 0
+    subscription_2.max_virtual_network_sites = 50
+    subscription_2.subscription_status = 'Active'
+    subscription_2.current_storage_accounts = 2
+    subscription_2.current_core_count = 0
+    subscription_2.subscription_id = '0c52e978-6279-40bf-a658-30757d5bdbc5'
+    subscription_2.current_hosted_services = 0
+    subscription_2.service_admin_live_email_id = \
+        'letv_cloud@letv.partner.onmschina.cn'
+
+    TEST.azure_subscriptions.add(subscription_1, subscription_2)
 
     # Locations
     location1 = Location()
