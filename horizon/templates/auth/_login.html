@@ -36,6 +36,12 @@
     {% endif %}
     {% if next %}<input type="hidden" name="{{ redirect_field_name }}" value="{{ next }}" />{% endif %}
     {% include "horizon/common/_form_fields.html" %}
+    <img id="login_verify_code" src="{{ HORIZON_CONFIG.verify_code_url }}" onclick="changeCode()">
+    <script language="JavaScript">
+    function changeCode(){
+      document.getElementById("login_verify_code").src="{{ HORIZON_CONFIG.verify_code_url }}?random="+Math.random();
+    }
+    </script>
   </fieldset>
 {% endblock %}
 

@@ -12310,3 +12310,9 @@ msgstr "空闲超时时间范围  4-30 分钟，默认值为4，只对TCP协议�
 
 msgid "Modify Subscription"
 msgstr "编辑订阅信息"
+
+msgid "Verification Code"
+msgstr "验证码"
+
+msgid "Verification Code is incorrect."
+msgstr "验证码不正确."

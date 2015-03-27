@@ -19,6 +19,15 @@ WEBROOT = '/'
 # Do not set it to '/home/', as this will cause circular redirect loop
 # LOGIN_REDIRECT_URL = WEBROOT
 
+# To get the verification code URL.
+# Please make sure verify_code_url is corresponding changed
+# while WEBROOT is altered.
+VERIFY_CODE_URL = '/auth/code'
+if WEBROOT:
+    if WEBROOT[-1]=='/':
+        VERIFY_CODE_URL = WEBROOT + 'auth/code'
+    else:
+        VERIFY_CODE_URL = WEBROOT + '/auth/code'
 
 # Required for Django 1.5.
 # If horizon is running in production (DEBUG is False), set this
@@ -76,6 +85,7 @@ HORIZON_CONFIG = {
         'types': ['alert-success', 'alert-info']
     },
     'help_url': "http://docs.openstack.org",
+    'verify_code_url': VERIFY_CODE_URL,
     'exceptions': {'recoverable': exceptions.RECOVERABLE,
                    'not_found': exceptions.NOT_FOUND,
                    'unauthorized': exceptions.UNAUTHORIZED},
