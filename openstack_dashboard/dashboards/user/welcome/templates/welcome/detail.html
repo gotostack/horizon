@@ -1,0 +1,26 @@
+{% load i18n sizeformat %}
+{% load url from future %}
+
+{% block main %}
+
+  <div id="s3_user_details__overview" class="tab-pane active">
+    <h3>{% trans "How to create a loadbalance instance?" %}</h3>
+    <div class="info row-fluid detail">
+    <h4>{% trans "Steps" %}</h4>
+    <hr class="header_rule">
+    <dl>
+      <dt>1. {% trans "Create pool" %}</dt>
+      <dd><img src="/static/dashboard/img/lbaas/step1.png" /></dd>
+      <dt>2. {% trans "Create Heathmonitor" %}</dt>
+      <dd><img src="/static/dashboard/img/lbaas/step2.png" /></dd>
+      <dt>3. {% trans "Associate Heathmonitor to pool" %}</dt>
+      <dd><img src="/static/dashboard/img/lbaas/step3.png" /></dd>
+      <dt>4. {% trans "Create VIP for pool" %}</dt>
+      <dd><img src="/static/dashboard/img/lbaas/step4.png" /></dd>
+      <dt>5. {% trans "Add member to pool" %}</dt>
+      <dd><img src="/static/dashboard/img/lbaas/step5.png" /></dd>
+    </dl>
+    </div>
+  </div>
+
+{% endblock %}
