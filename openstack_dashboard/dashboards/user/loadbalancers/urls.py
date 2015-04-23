@@ -25,11 +25,22 @@ LOADBALANCER_URL = r'^(?P<loadbalancer_id>[^/]+)/%s'
 urlpatterns = patterns(
     'openstack_dashboard.dashboards.user.loadbalancers.views',
     url(r'^$', views.IndexView.as_view(), name='index'),
+    url(r'^addloadbalancer$',
+        views.AddLoadbalancerView.as_view(), name='addloadbalancer'),
+    url(r'^updateloadbalancer/(?P<loadbalancer_id>[^/]+)/$',
+        views.UpdateLoadbalancerView.as_view(), name='updateloadbalancer'),
     url(LOADBALANCER_URL % '$',
         views.LoadbalancerDetailView.as_view(),
         name='detail'),
+
+
+    url(r'^addlistener$',
+        views.AddListenerView.as_view(), name='addlistener'),
+    url(r'^updatelistener/(?P<listener_id>[^/]+)/$',
+        views.UpdateListenerView.as_view(), name='updatelistener'),
     url(r'^listener/(?P<listener_id>[^/]+)/$',
         views.ListenerDetailsView.as_view(), name='listenerdetails'),
+
     url(r'^pool/(?P<pool_id>[^/]+)/$',
         views.PoolDetailsView.as_view(), name='pooldetails'),
     #url(r'^member/(?P<member_id>[^/]+)/$',

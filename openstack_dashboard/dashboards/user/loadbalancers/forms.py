@@ -28,3 +28,58 @@ from openstack_dashboard import api
 LOG = logging.getLogger(__name__)
 
 
+class UpdateBase(forms.SelfHandlingForm):
+    id = forms.CharField(label=_("ID"),
+                         widget=forms.TextInput(
+                             attrs={'readonly': 'readonly'}))
+    name = forms.CharField(max_length=80, label=_("Name"))
+    description = forms.CharField(required=False,
+                                  max_length=80, label=_("Description"))
+    admin_state_up = forms.ChoiceField(choices=[(True, _('UP')),
+                                                (False, _('DOWN'))],
+                                       label=_("Admin State"))
+
+    failure_url = 'horizon:user:loadbalancers:index'
+
+    def __init__(self, request, *args, **kwargs):
+        super(UpdateBase, self).__init__(request, *args, **kwargs)
+
+
+class UpdateLoadbalancer(UpdateBase):
+
+    def handle(self, request, context):
+        context['admin_state_up'] = (context['admin_state_up'] == 'True')
+        try:
+            lb = api.lbaas_v2.loadbalancer_update(request,
+                                                  context['id'],
+                                                  **context)
+            msg = _(
+                'Loadbalancer %s was successfully updated.') % context['name']
+            LOG.debug(msg)
+            messages.success(request, msg)
+            return lb
+        except Exception:
+            msg = _('Failed to update loadbalancer %s') % context['name']
+            LOG.info(msg)
+            redirect = reverse(self.failure_url)
+            exceptions.handle(request, msg, redirect=redirect)
+
+
+class UpdateListener(UpdateBase):
+
+    def handle(self, request, context):
+        context['admin_state_up'] = (context['admin_state_up'] == 'True')
+        try:
+            lb = api.lbaas_v2.listener_update(request,
+                                              context['id'],
+                                              **context)
+            msg = _(
+                'Listener %s was successfully updated.') % context['name']
+            LOG.debug(msg)
+            messages.success(request, msg)
+            return lb
+        except Exception:
+            msg = _('Failed to update listener %s') % context['name']
+            LOG.info(msg)
+            redirect = reverse(self.failure_url)
+            exceptions.handle(request, msg, redirect=redirect)

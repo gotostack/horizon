@@ -40,6 +40,52 @@ class NameFilterAction(tables.FilterAction):
                 if query in o.name.lower()]
 
 
+class AddLoadbalancerLink(tables.LinkAction):
+    name = "addloadbalancer"
+    verbose_name = _("Add Loadbalancer")
+    url = "horizon:user:loadbalancers:addloadbalancer"
+    classes = ("ajax-modal",)
+    icon = "plus"
+    policy_rules = (("network", "create_loadbalancer"),)
+
+
+class DeleteLoadbalancer(tables.DeleteAction):
+    name = "deleteloadbalancer"
+    policy_rules = (("network", "delete_loadbalancer"),)
+    help_text = _("Deleted loadbalancers are not recoverable.")
+
+    @staticmethod
+    def action_present(count):
+        return ungettext_lazy(
+            u"Delete Loadbalancer",
+            u"Delete Loadbalancers",
+            count
+        )
+
+    @staticmethod
+    def action_past(count):
+        return ungettext_lazy(
+            u"Scheduled deletion of Loadbalancer",
+            u"Scheduled deletion of Loadbalancers",
+            count
+        )
+
+    def delete(self, request, obj_id):
+        api.lbaas_v2.loadbalancer_delete(request, obj_id)
+
+
+class UpdateLoadbalancerLink(policy.PolicyTargetMixin, tables.LinkAction):
+    name = "updateloadbalancer"
+    verbose_name = _("Edit Loadbalancer")
+    classes = ("ajax-modal", "btn-update",)
+    policy_rules = (("network", "update_loadbalancer"),)
+
+    def get_link_url(self, loadbalancer):
+        base_url = reverse("horizon:user:loadbalancers:updateloadbalancer",
+                           kwargs={'loadbalancer_id': loadbalancer.id})
+        return base_url
+
+
 class UpdateLoadbalancersRow(tables.Row):
     ajax = True
 
@@ -75,7 +121,76 @@ class LoadbalancerTable(tables.DataTable):
         verbose_name = _("Loadbalancers")
         status_columns = ["status"]
         row_class = UpdateLoadbalancersRow
-        table_actions = (NameFilterAction,)
+        table_actions = (NameFilterAction, AddLoadbalancerLink,
+                         DeleteLoadbalancer)
+        row_actions = (UpdateLoadbalancerLink, DeleteLoadbalancer)
+
+
+class AddListenerLink(tables.LinkAction):
+    name = "addlistener"
+    verbose_name = _("Add Listener")
+    url = "horizon:user:loadbalancers:addlistener"
+    classes = ("ajax-modal",)
+    icon = "plus"
+    policy_rules = (("network", "create_listener"),)
+
+
+class DeleteListener(tables.DeleteAction):
+    name = "deletelistener"
+    policy_rules = (("network", "delete_listener"),)
+    help_text = _("Deleted listeners are not recoverable.")
+
+    @staticmethod
+    def action_present(count):
+        return ungettext_lazy(
+            u"Delete Listener",
+            u"Delete Listeners",
+            count
+        )
+
+    @staticmethod
+    def action_past(count):
+        return ungettext_lazy(
+            u"Scheduled deletion of Listener",
+            u"Scheduled deletion of Listeners",
+            count
+        )
+
+    def delete(self, request, obj_id):
+        api.lbaas_v2.listener_delete(request, obj_id)
+
+
+class UpdateListenerLink(policy.PolicyTargetMixin, tables.LinkAction):
+    name = "updatelistener"
+    verbose_name = _("Edit Listener")
+    classes = ("ajax-modal", "btn-update",)
+    policy_rules = (("network", "update_listener"),)
+
+    def get_link_url(self, listener):
+        base_url = reverse("horizon:user:loadbalancers:updatelistener",
+                           kwargs={'listener_id': listener.id})
+        return base_url
+
+
+class UpdateListenersRow(tables.Row):
+    ajax = True
+
+    def get_data(self, request, listener_id):
+        listener = api.lbaas_v2.listener_get(request, listener_id)
+        if listener.default_pool_id:
+            try:
+                pool = api.lbaas_v2.pool_get(request,
+                                             listener.default_pool_id)
+                listener.pool_name = pool.name
+            except Exception:
+                listener.pool_name = listener.default_pool_id
+            try:
+                loadbalancer = api.lbaas_v2.loadbalancer_get(request,
+                                                             listener.loadbalancer_id)
+                listener.loadbalancer_name = loadbalancer.name
+            except Exception:
+                listener.loadbalancer_name = listener.loadbalancer_id
+        return loadbalancer
 
 
 class ListenersTable(tables.DataTable):
@@ -97,7 +212,10 @@ class ListenersTable(tables.DataTable):
     class Meta(object):
         name = "listeners"
         verbose_name = _("Listeners")
-        table_actions = (NameFilterAction,)
+        row_class = UpdateListenersRow
+        table_actions = (NameFilterAction, AddListenerLink,
+                         DeleteListener)
+        row_actions = (UpdateListenerLink, DeleteListener)
 
 
 class PoolsTable(tables.DataTable):
