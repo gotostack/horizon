@@ -13,12 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 from django.utils.translation import ugettext_lazy as _
 
 from horizon import exceptions
 from horizon import tabs
-from horizon.utils import memoized
 
 from openstack_dashboard import api
 
@@ -126,7 +124,7 @@ class AclsTab(tabs.TableTab):
         listener_id = self.tab_group.kwargs['listener_id']
         try:
             acls = api.lbaas_v2.acl_list(self.request,
-                                         listener_id)
+                                         listener_id=listener_id)
         except Exception:
             acls = []
             exceptions.handle(self.request,
@@ -150,7 +148,11 @@ class MembersTab(tabs.TableTab):
     def get_members_data(self):
         pool_id = self.tab_group.kwargs['pool_id']
         try:
-            members = api.lbaas_v2.member_list(self.request, pool_id)
+            members = api.lbaas_v2.member_list(self.request,
+                                               pool=pool_id,
+                                               pool_id=pool_id)
+            for m in members:
+                m.pool_id = pool_id
         except Exception:
             members = []
             exceptions.handle(self.request,

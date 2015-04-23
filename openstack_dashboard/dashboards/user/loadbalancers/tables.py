@@ -190,7 +190,7 @@ class UpdateListenersRow(tables.Row):
                 listener.loadbalancer_name = loadbalancer.name
             except Exception:
                 listener.loadbalancer_name = listener.loadbalancer_id
-        return loadbalancer
+        return listener
 
 
 class ListenersTable(tables.DataTable):
@@ -218,6 +218,60 @@ class ListenersTable(tables.DataTable):
         row_actions = (UpdateListenerLink, DeleteListener)
 
 
+class AddPoolLink(tables.LinkAction):
+    name = "addpool"
+    verbose_name = _("Add Pool")
+    url = "horizon:user:loadbalancers:addpool"
+    classes = ("ajax-modal",)
+    icon = "plus"
+    policy_rules = (("network", "create_pool"),)
+
+
+class DeletePool(tables.DeleteAction):
+    name = "deletepool"
+    policy_rules = (("network", "delete_pool"),)
+    help_text = _("Deleted pools are not recoverable.")
+
+    @staticmethod
+    def action_present(count):
+        return ungettext_lazy(
+            u"Delete Pool",
+            u"Delete Pools",
+            count
+        )
+
+    @staticmethod
+    def action_past(count):
+        return ungettext_lazy(
+            u"Scheduled deletion of Pool",
+            u"Scheduled deletion of Pools",
+            count
+        )
+
+    def delete(self, request, obj_id):
+        api.lbaas_v2.pool_delete(request, obj_id)
+
+
+class UpdatePoolLink(policy.PolicyTargetMixin, tables.LinkAction):
+    name = "updatepool"
+    verbose_name = _("Edit Pool")
+    classes = ("ajax-modal", "btn-update",)
+    policy_rules = (("network", "update_pool"),)
+
+    def get_link_url(self, pool):
+        base_url = reverse("horizon:user:loadbalancers:updatepool",
+                           kwargs={'pool_id': pool.id})
+        return base_url
+
+
+class UpdatePoolsRow(tables.Row):
+    ajax = True
+
+    def get_data(self, request, pool_id):
+        pool = api.lbaas_v2.pool_get(request, pool_id)
+        return pool
+
+
 class PoolsTable(tables.DataTable):
     name = tables.Column("name",
                          verbose_name=_("Name"),
@@ -232,7 +286,9 @@ class PoolsTable(tables.DataTable):
     class Meta(object):
         name = "pools"
         verbose_name = _("Pools")
-        table_actions = (NameFilterAction,)
+        table_actions = (NameFilterAction, AddPoolLink,
+                         DeletePool)
+        row_actions = (UpdatePoolLink, DeletePool)
 
 
 class MemberFilterAction(tables.FilterAction):
@@ -242,6 +298,68 @@ class MemberFilterAction(tables.FilterAction):
         query = filter_string.lower()
         return [o for o in objects
                 if query in o.address.lower()]
+
+
+class AddMemberLink(tables.LinkAction):
+    name = "addmember"
+    verbose_name = _("Add Member")
+    url = "horizon:user:loadbalancers:addmember"
+    classes = ("ajax-modal",)
+    icon = "plus"
+    policy_rules = (("network", "create_member"),)
+
+    def get_link_url(self, datum=None):
+        pool_id = self.table.kwargs['pool_id']
+        return reverse(self.url, args=(pool_id,))
+
+
+class DeleteMember(tables.DeleteAction):
+    name = "deletemember"
+    policy_rules = (("network", "delete_member"),)
+    help_text = _("Deleted members are not recoverable.")
+
+    @staticmethod
+    def action_present(count):
+        return ungettext_lazy(
+            u"Delete Member",
+            u"Delete Members",
+            count
+        )
+
+    @staticmethod
+    def action_past(count):
+        return ungettext_lazy(
+            u"Scheduled deletion of Member",
+            u"Scheduled deletion of Members",
+            count
+        )
+
+    def delete(self, request, obj_id):
+        datum = self.table.get_object_by_id(obj_id)
+        api.lbaas_v2.member_delete(request,
+                                   obj_id,
+                                   datum.pool_id)
+
+
+class UpdateMemberLink(policy.PolicyTargetMixin, tables.LinkAction):
+    name = "updatemember"
+    verbose_name = _("Edit Member")
+    classes = ("ajax-modal", "btn-update",)
+    policy_rules = (("network", "update_member"),)
+
+    def get_link_url(self, member):
+        base_url = reverse("horizon:user:loadbalancers:updatemember",
+                           kwargs={'pool_id': member.pool_id,
+                                   'member_id': member.id})
+        return base_url
+
+
+class UpdateMembersRow(tables.Row):
+    ajax = True
+
+    def get_data(self, request, member_id):
+        member = api.lbaas_v2.member_get(request, member_id)
+        return member
 
 
 class MembersTable(tables.DataTable):
@@ -256,7 +374,9 @@ class MembersTable(tables.DataTable):
     class Meta(object):
         name = "members"
         verbose_name = _("Members")
-        table_actions = (MemberFilterAction,)
+        table_actions = (MemberFilterAction, AddMemberLink,
+                         DeleteMember)
+        row_actions = (UpdateMemberLink, DeleteMember)
 
 
 class AclsTable(tables.DataTable):

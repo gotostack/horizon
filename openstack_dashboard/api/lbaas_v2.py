@@ -195,8 +195,18 @@ def listener_update(request, listener_id, **kwargs):
 
 def pool_create(request, **kwargs):
     """LBaaS v2 Create a pool."""
+    body = {
+        "pool": {
+            "description": kwargs['description'],
+            "lb_algorithm": kwargs['lb_algorithm'],
+            "listener_id": kwargs['listener_id'],
+            "protocol": kwargs['protocol'],
+            "name": kwargs['name'],
+            "admin_state_up": kwargs['admin_state_up']
+        }
+    }
     pool = neutronclient(
-        request).create_lbaas_pool(**kwargs).get('pool')
+        request).create_lbaas_pool(body).get('pool')
     return Pool(pool)
 
 
@@ -225,17 +235,32 @@ def pool_get(request, pool_id, **kwargs):
 
 def pool_update(request, pool_id, **kwargs):
     """LBaaS v2 Update a given pool."""
+    body = {
+        "pool": {
+            "name": kwargs['name'],
+            "lb_algorithm": kwargs['lb_algorithm'],
+            "description": kwargs['description'],
+            "admin_state_up": kwargs['admin_state_up']
+        }
+    }
     pool = neutronclient(
         request).update_lbaas_pool(pool_id,
-                                   **kwargs).get('pool')
+                                   body).get('pool')
     return Pool(pool)
 
 
 def member_create(request, pool_id, **kwargs):
     """LBaaS v2 Create a member."""
+    body = {"member": {
+        "admin_state_up": kwargs['admin_state_up'],
+        "subnet_id": kwargs['subnet_id'],
+        "address": kwargs['address'],
+        "protocol_port": kwargs['protocol_port']}}
+    if kwargs['weight']:
+        body['member']['weight'] = kwargs['weight']
     member = neutronclient(
         request).create_lbaas_member(pool_id,
-                                     **kwargs).get('member')
+                                     body).get('member')
     return Member(member)
 
 
@@ -245,10 +270,10 @@ def member_delete(request, member_id, pool_id):
 
 
 @memoized
-def member_list(request, pool_id, retrieve_all=True, **kwargs):
+def member_list(request, pool, retrieve_all=True, **kwargs):
     """LBaaS v2 List members that belong to a given tenant."""
     members = neutronclient(
-        request).list_lbaas_members(pool_id,
+        request).list_lbaas_members(pool,
                                     retrieve_all,
                                     **kwargs).get('members')
     return [Member(m) for m in members]
@@ -266,10 +291,17 @@ def member_get(request, member_id, pool_id, **kwargs):
 
 def member_update(request, member_id, pool_id, **kwargs):
     """LBaaS v2 Update a given member."""
+    body = {"member": {
+        "admin_state_up": kwargs['admin_state_up'],}}
+    if kwargs['weight']:
+        body['member']['weight'] = kwargs['weight']
+
+    # if kwargs['subnet_id']:
+    #     body['member']['subnet_id'] = kwargs['subnet_id']
     member = neutronclient(
         request).update_lbaas_member(member_id,
                                      pool_id,
-                                     **kwargs).get('member')
+                                     body).get('member')
     return Member(member)
 
 

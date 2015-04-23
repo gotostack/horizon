@@ -216,8 +216,101 @@ class UpdateListenerView(forms.ModalFormView):
             exceptions.handle(self.request, msg, redirect=redirect)
 
     def get_initial(self):
-        lb = self._get_object()
-        return {'id': lb['id'],
-                'name': lb['name'],
-                'description': lb['description'],
-                'admin_state_up': lb['admin_state_up']}
+        _obj = self._get_object()
+        return {'id': _obj['id'],
+                'name': _obj['name'],
+                'description': _obj['description'],
+                'admin_state_up': _obj['admin_state_up']}
+
+
+class AddPoolView(workflows.WorkflowView):
+    workflow_class = user_workflows.AddPool
+
+
+class UpdatePoolView(forms.ModalFormView):
+    form_class = user_forms.UpdatePool
+    form_id = "update_pool_form"
+    modal_header = _("Edit Pool")
+    template_name = "user/loadbalancers/updatepool.html"
+    context_object_name = 'pool'
+    submit_label = _("Save Changes")
+    submit_url = "horizon:user:loadbalancers:updatepool"
+    success_url = reverse_lazy("horizon:user:loadbalancers:index")
+    page_title = _("Edit Pool")
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdatePoolView,
+                        self).get_context_data(**kwargs)
+        context["pool_id"] = self.kwargs['pool_id']
+        args = (self.kwargs['pool_id'],)
+        context['submit_url'] = reverse(self.submit_url, args=args)
+        return context
+
+    @memoized.memoized_method
+    def _get_object(self, *args, **kwargs):
+        pool_id = self.kwargs['pool_id']
+        try:
+            return api.lbaas_v2.pool_get(self.request,
+                                                 pool_id)
+        except Exception as e:
+            redirect = self.success_url
+            msg = _('Unable to retrieve pool details. %s') % e
+            exceptions.handle(self.request, msg, redirect=redirect)
+
+    def get_initial(self):
+        _obg = self._get_object()
+        return {'id': _obg['id'],
+                'name': _obg['name'],
+                'description': _obg['description'],
+                'admin_state_up': _obg['admin_state_up'],
+                'lb_algorithm': _obg['lb_algorithm']}
+
+
+class AddMemberView(workflows.WorkflowView):
+    workflow_class = user_workflows.AddMember
+
+    def get_initial(self):
+        return {"pool_id": self.kwargs['pool_id']}
+
+
+class UpdateMemberView(forms.ModalFormView):
+    form_class = user_forms.UpdateMember
+    form_id = "update_member_form"
+    modal_header = _("Edit Member")
+    template_name = "user/loadbalancers/updatemember.html"
+    context_object_name = 'member'
+    submit_label = _("Save Changes")
+    submit_url = "horizon:user:loadbalancers:updatemember"
+    success_url = reverse_lazy("horizon:user:loadbalancers:index")
+    page_title = _("Edit Member")
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdateMemberView,
+                        self).get_context_data(**kwargs)
+        context["member_id"] = self.kwargs['member_id']
+        context["pool_id"] = self.kwargs['pool_id']
+        args = (self.kwargs['pool_id'],
+                self.kwargs['member_id'])
+        context['submit_url'] = reverse(self.submit_url, args=args)
+        return context
+
+    @memoized.memoized_method
+    def _get_object(self, *args, **kwargs):
+        member_id = self.kwargs['member_id']
+        pool_id = self.kwargs['pool_id']
+        try:
+            return api.lbaas_v2.member_get(self.request,
+                                           member_id,
+                                           pool_id)
+        except Exception as e:
+            redirect = self.success_url
+            msg = _('Unable to retrieve member details. %s') % e
+            exceptions.handle(self.request, msg, redirect=redirect)
+
+    def get_initial(self):
+        _obg = self._get_object()
+        return {'member_id': _obg['id'],
+                'pool_id': self.kwargs['pool_id'],
+                'weight': _obg['weight'],
+                'admin_state_up': _obg['admin_state_up'],
+                'subnet_id': _obg['subnet_id']}

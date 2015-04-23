@@ -27,6 +27,8 @@ from openstack_dashboard import api
 
 LOG = logging.getLogger(__name__)
 
+AVAILABLE_METHODS = ('ROUND_ROBIN', 'LEAST_CONNECTIONS', 'SOURCE_IP')
+
 
 class UpdateBase(forms.SelfHandlingForm):
     id = forms.CharField(label=_("ID"),
@@ -80,6 +82,74 @@ class UpdateListener(UpdateBase):
             return lb
         except Exception:
             msg = _('Failed to update listener %s') % context['name']
+            LOG.info(msg)
+            redirect = reverse(self.failure_url)
+            exceptions.handle(request, msg, redirect=redirect)
+
+
+class UpdatePool(UpdateBase):
+    lb_algorithm = forms.ChoiceField(label=_("Load Balancing Method"))
+
+    def __init__(self, request, *args, **kwargs):
+        super(UpdateBase, self).__init__(request, *args, **kwargs)
+
+        lb_algorithm_choices = [('', _("Select an Algorithm"))]
+        [lb_algorithm_choices.append((m, m)) for m in AVAILABLE_METHODS]
+        self.fields['lb_algorithm'].choices = lb_algorithm_choices
+
+    def handle(self, request, context):
+        context['admin_state_up'] = (context['admin_state_up'] == 'True')
+        try:
+            lb = api.lbaas_v2.pool_update(request,
+                                              context['id'],
+                                              **context)
+            msg = _(
+                'Pool %s was successfully updated.') % context['name']
+            LOG.debug(msg)
+            messages.success(request, msg)
+            return lb
+        except Exception:
+            msg = _('Failed to update pool %s') % context['name']
+            LOG.info(msg)
+            redirect = reverse(self.failure_url)
+            exceptions.handle(request, msg, redirect=redirect)
+
+
+class UpdateMember(forms.SelfHandlingForm):
+    member_id = forms.CharField(label=_("ID"),
+                         widget=forms.TextInput(
+                             attrs={'readonly': 'readonly'}))
+    pool_id = forms.CharField(label=_("Pool"),
+                              widget=forms.TextInput(
+                                  attrs={'readonly': 'readonly'}))
+    weight = forms.IntegerField(
+        max_value=256, min_value=1, label=_("Weight"), required=False,
+        help_text=_("Relative part of requests this pool member serves "
+                    "compared to others. \nThe same weight will be applied to "
+                    "all the selected members and can be modified later. "
+                    "Weight must be in the range 1 to 256.")
+    )
+    admin_state_up = forms.ChoiceField(choices=[(True, _('UP')),
+                                                (False, _('DOWN'))],
+                                       label=_("Admin State"))
+
+    failure_url = 'horizon:user:loadbalancers:index'
+
+    def __init__(self, request, *args, **kwargs):
+        super(UpdateMember, self).__init__(request, *args, **kwargs)
+
+    def handle(self, request, context):
+        context['admin_state_up'] = (context['admin_state_up'] == 'True')
+        try:
+            member = api.lbaas_v2.member_update(request,
+                                                **context)
+            msg = _('Member %s was successfully updated.')\
+                % context['member_id']
+            LOG.debug(msg)
+            messages.success(request, msg)
+            return member
+        except Exception:
+            msg = _('Failed to update member %s') % context['member_id']
             LOG.info(msg)
             redirect = reverse(self.failure_url)
             exceptions.handle(request, msg, redirect=redirect)
