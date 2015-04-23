@@ -183,7 +183,7 @@ class AddListenerAction(workflows.Action):
             loadbalancers = api.lbaas_v2.loadbalancer_list(request, tenant_id)
         except Exception:
             exceptions.handle(request,
-                              _('Unable to retrieve networks list.'))
+                              _('Unable to retrieve loadbalancer list.'))
             loadbalancers = []
         for l in loadbalancers:
             loadbalancer_choices.append((l.id, l.name))
@@ -233,6 +233,174 @@ class AddListener(workflows.Workflow):
     def handle(self, request, context):
         try:
             api.lbaas_v2.listener_create(request, **context)
+            return True
+        except Exception as e:
+            exceptions.handle(request, e)
+            return False
+
+
+class AddPoolAction(workflows.Action):
+    name = forms.CharField(max_length=80, label=_("Name"))
+    description = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Description"))
+    listener_id = forms.ChoiceField(label=_("Listener"))
+    lb_algorithm = forms.ChoiceField(label=_("Load Balancing Method"))
+    protocol = forms.ChoiceField(label=_("Protocol"))
+    admin_state_up = forms.ChoiceField(choices=[(True, _('UP')),
+                                                (False, _('DOWN'))],
+                                       label=_("Admin State"))
+
+    def __init__(self, request, *args, **kwargs):
+        super(AddPoolAction, self).__init__(request, *args, **kwargs)
+        tenant_id = request.user.tenant_id
+        listener_choices = [('', _("Select a Loadbalancer"))]
+        try:
+            listeners = api.lbaas_v2.listener_list(request, tenant_id)
+        except Exception:
+            exceptions.handle(request,
+                              _('Unable to retrieve listener list.'))
+            listeners = []
+        for l in listeners:
+            listener_choices.append((l.id, l.name))
+        self.fields['listener_id'].choices = listener_choices
+
+        lb_algorithm_choices = [('', _("Select an Algorithm"))]
+        [lb_algorithm_choices.append((m, m)) for m in AVAILABLE_METHODS]
+        self.fields['lb_algorithm'].choices = lb_algorithm_choices
+
+        protocol_choices = [('', _("Select a Protocol"))]
+        [protocol_choices.append((p, p)) for p in AVAILABLE_PROTOCOLS]
+        self.fields['protocol'].choices = protocol_choices
+
+    class Meta(object):
+        name = _("Add New Pool")
+        permissions = ('openstack.services.network',)
+        help_text = _("Create pool for current project.\n\n"
+                      "Assign a name and description for the pool. "
+                      "Choose one subnet where all members of this "
+                      "pool must be on. "
+                      "Select the protocol and load balancing method "
+                      "for this pool. "
+                      "Admin State is UP (checked) by default.")
+
+
+class AddPoolStep(workflows.Step):
+    action_class = AddPoolAction
+    contributes = ("name", "description", "listener_id", "lb_algorithm",
+                   "protocol", "admin_state_up")
+
+    def contribute(self, data, context):
+        context = super(AddPoolStep, self).contribute(data, context)
+        context['admin_state_up'] = (context['admin_state_up'] == 'True')
+        if data:
+            return context
+
+
+class AddPool(workflows.Workflow):
+    slug = "addpool"
+    name = _("Add Pool")
+    finalize_button_name = _("Add")
+    success_message = _('Added pool "%s".')
+    failure_message = _('Unable to add pool "%s".')
+    success_url = "horizon:user:loadbalancers:index"
+    default_steps = (AddPoolStep,)
+
+    def format_status_message(self, message):
+        name = self.context.get('name')
+        return message % name
+
+    def handle(self, request, context):
+        try:
+            api.lbaas_v2.pool_create(request, **context)
+            return True
+        except Exception as e:
+            exceptions.handle(request, e)
+            return False
+
+
+class AddMemberAction(workflows.Action):
+    pool_id = forms.CharField(label=_("Pool"),
+                              widget=forms.TextInput(
+                                  attrs={'readonly': 'readonly'}))
+    protocol_port = forms.IntegerField(
+        label=_("Protocol Port"), min_value=1,
+        help_text=_("Enter an integer value "
+                    "between 1 and 65535."),
+        validators=[validators.validate_port_range])
+    weight = forms.IntegerField(
+        max_value=256, min_value=1, label=_("Weight"), required=False,
+        help_text=_("Relative part of requests this pool member serves "
+                    "compared to others. \nThe same weight will be applied to "
+                    "all the selected members and can be modified later. "
+                    "Weight must be in the range 1 to 256.")
+    )
+    subnet_id = forms.ChoiceField(label=_("VIP Subnet"),
+                                  required=False)
+    address = forms.IPField(label=_("Specify a free IP address "
+                                    "from the selected subnet"),
+                            version=forms.IPv4,
+                            mask=False)
+    admin_state_up = forms.ChoiceField(choices=[(True, _('UP')),
+                                                (False, _('DOWN'))],
+                                       label=_("Admin State"))
+
+    def __init__(self, request, *args, **kwargs):
+        super(AddMemberAction, self).__init__(request, *args, **kwargs)
+        tenant_id = request.user.tenant_id
+        subnet_id_choices = [('', _("Select a Subnet"))]
+        try:
+            networks = api.neutron.network_list_for_tenant(request, tenant_id)
+        except Exception:
+            exceptions.handle(request,
+                              _('Unable to retrieve networks list.'))
+            networks = []
+        for n in networks:
+            for s in n['subnets']:
+                subnet_id_choices.append((s.id, s.cidr))
+        self.fields['subnet_id'].choices = subnet_id_choices
+
+    class Meta(object):
+        name = _("Add New Member")
+        permissions = ('openstack.services.network',)
+        help_text = _("Create member for current project.\n\n"
+                      "Assign a name and description for the member. "
+                      "Choose one subnet where all members of this "
+                      "member must be on. "
+                      "Select the protocol and load balancing method "
+                      "for this member. "
+                      "Admin State is UP (checked) by default.")
+
+
+class AddMemberStep(workflows.Step):
+    action_class = AddMemberAction
+    contributes = ("pool_id", "address", "protocol_port", "weight",
+                   "subnet_id", "admin_state_up")
+
+    def contribute(self, data, context):
+        context = super(AddMemberStep, self).contribute(data, context)
+        context['admin_state_up'] = (context['admin_state_up'] == 'True')
+        if data:
+            return context
+
+
+class AddMember(workflows.Workflow):
+    slug = "addmember"
+    name = _("Add Member")
+    finalize_button_name = _("Add")
+    success_message = _('Added member "%s".')
+    failure_message = _('Unable to add member "%s".')
+    success_url = "horizon:user:loadbalancers:index"
+    default_steps = (AddMemberStep,)
+
+    def format_status_message(self, message):
+        name = self.context.get('name')
+        return message % name
+
+    def handle(self, request, context):
+        try:
+            api.lbaas_v2.member_create(request,
+                                       **context)
             return True
         except Exception as e:
             exceptions.handle(request, e)
