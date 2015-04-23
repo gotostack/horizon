@@ -1,4 +1,5 @@
-#    Copyright 2013, Big Switch Networks, Inc.
+# Copyright 2015 Letv Cloud Computing
+# All Rights Reserved
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -18,6 +19,7 @@ from django.utils.datastructures import SortedDict
 from django.utils.translation import ugettext_lazy as _
 
 from horizon import messages
+from horizon.utils.memoized import memoized  # noqa
 
 from openstack_dashboard.api import neutron
 
@@ -93,8 +95,17 @@ def get_loadbalancer_list_on_agent(request, agent_id, **kwargs):
 
 def loadbalancer_create(request, **kwargs):
     """LBaaS v2 Create a loadbalancer."""
+    body = {'loadbalancer': {
+        'name': kwargs['name'],
+        'description': kwargs['description'],
+        'vip_subnet_id': kwargs['vip_subnet_id'],
+        'admin_state_up': kwargs['admin_state_up'],
+        'provider': kwargs['provider']}}
+    if kwargs.get('vip_address'):
+        body['loadbalancer']['vip_address'] = kwargs['vip_address']
+
     loadbalancer = neutronclient(
-        request).create_loadbalancer(**kwargs).get('loadbalancer')
+        request).create_loadbalancer(body).get('loadbalancer')
     return Loadbalancer(loadbalancer)
 
 
@@ -103,6 +114,7 @@ def loadbalancer_delete(request, loadbalancer_id):
     neutronclient(request).delete_loadbalancer(loadbalancer_id)
 
 
+@memoized
 def loadbalancer_list(request, retrieve_all=True, **kwargs):
     """LBaaS v2 List loadbalancers that belong to a given tenant."""
     loadbalancers = neutronclient(
@@ -111,6 +123,7 @@ def loadbalancer_list(request, retrieve_all=True, **kwargs):
     return [Loadbalancer(l) for l in loadbalancers]
 
 
+@memoized
 def loadbalancer_get(request, loadbalancer_id, **kwargs):
     """LBaaS v2 Show information of a given loadbalancer."""
     loadbalancer = neutronclient(
@@ -121,16 +134,27 @@ def loadbalancer_get(request, loadbalancer_id, **kwargs):
 
 def loadbalancer_update(request, loadbalancer_id, **kwargs):
     """LBaaS v2 Update a given loadbalancer."""
+    body = {'loadbalancer': {
+        'name': kwargs['name'],
+        'description': kwargs['description'],
+        'admin_state_up': kwargs['admin_state_up']}}
     loadbalancer = neutronclient(
         request).update_loadbalancer(loadbalancer_id,
-                                     **kwargs).get('loadbalancer')
+                                     body).get('loadbalancer')
     return Loadbalancer(loadbalancer)
 
 
 def listener_create(request, **kwargs):
     """LBaaS v2 Create a listener."""
+    body = {"listener": {
+        'name': kwargs['name'],
+        'description': kwargs['description'],
+        "loadbalancer_id": kwargs['loadbalancer_id'],
+        "protocol_port": kwargs['protocol_port'],
+        "protocol": kwargs['protocol'],
+        'admin_state_up': kwargs['admin_state_up']}}
     listener = neutronclient(
-        request).create_listener(**kwargs).get('listener')
+        request).create_listener(body).get('listener')
     return Listener(listener)
 
 
@@ -139,6 +163,7 @@ def listener_delete(request, listener_id):
     neutronclient(request).delete_listener(listener_id)
 
 
+@memoized
 def listener_list(request, retrieve_all=True, **kwargs):
     """LBaaS v2 List listeners that belong to a given tenant."""
     listeners = neutronclient(
@@ -147,6 +172,7 @@ def listener_list(request, retrieve_all=True, **kwargs):
     return [Listener(l) for l in listeners]
 
 
+@memoized
 def listener_get(request, listener_id, **kwargs):
     """LBaaS v2 Show information of a given listener."""
     listener = neutronclient(
@@ -157,9 +183,13 @@ def listener_get(request, listener_id, **kwargs):
 
 def listener_update(request, listener_id, **kwargs):
     """LBaaS v2 Update a given listener."""
+    body = {"listener": {
+        'name': kwargs['name'],
+        'description': kwargs['description'],
+        'admin_state_up': kwargs['admin_state_up']}}
     listener = neutronclient(
         request).update_listener(listener_id,
-                                 **kwargs).get('listener')
+                                 body).get('listener')
     return Listener(listener)
 
 
@@ -175,6 +205,7 @@ def pool_delete(request, pool_id):
     neutronclient(request).delete_lbaas_pool(pool_id)
 
 
+@memoized
 def pool_list(request, retrieve_all=True, **kwargs):
     """LBaaS v2 List pools that belong to a given tenant."""
     pools = neutronclient(
@@ -183,6 +214,7 @@ def pool_list(request, retrieve_all=True, **kwargs):
     return [Pool(p) for p in pools]
 
 
+@memoized
 def pool_get(request, pool_id, **kwargs):
     """LBaaS v2 Show information of a given pool."""
     pool = neutronclient(
@@ -212,6 +244,7 @@ def member_delete(request, member_id, pool_id):
     neutronclient(request).delete_lbaas_member(member_id, pool_id)
 
 
+@memoized
 def member_list(request, pool_id, retrieve_all=True, **kwargs):
     """LBaaS v2 List members that belong to a given tenant."""
     members = neutronclient(
@@ -221,6 +254,7 @@ def member_list(request, pool_id, retrieve_all=True, **kwargs):
     return [Member(m) for m in members]
 
 
+@memoized
 def member_get(request, member_id, pool_id, **kwargs):
     """LBaaS v2 Show information of a given member."""
     member = neutronclient(
@@ -251,6 +285,7 @@ def healthmonitor_delete(request, healthmonitor_id):
     neutronclient(request).delete_lbaas_healthmonitor(healthmonitor_id)
 
 
+@memoized
 def healthmonitor_list(request, retrieve_all=True, **kwargs):
     """LBaaS v2 List healthmonitors that belong to a given tenant."""
     healthmonitors = neutronclient(
@@ -259,6 +294,7 @@ def healthmonitor_list(request, retrieve_all=True, **kwargs):
     return [Healthmonitor(h) for h in healthmonitors]
 
 
+@memoized
 def healthmonitor_get(request, healthmonitor_id, **kwargs):
     """LBaaS v2 Show information of a given healthmonitor."""
     healthmonitor = neutronclient(
@@ -287,6 +323,7 @@ def acl_delete(request, acl_id):
     neutronclient(request).delete_acl(acl_id)
 
 
+@memoized
 def acl_list(request, retrieve_all=True, **kwargs):
     """LBaaS v2 List acls that belong to a given tenant."""
     acls = neutronclient(
@@ -295,6 +332,7 @@ def acl_list(request, retrieve_all=True, **kwargs):
     return [Acl(a) for a in acls]
 
 
+@memoized
 def acl_get(request, acl_id, **kwargs):
     """LBaaS v2 Show information of a given acl."""
     acl = neutronclient(

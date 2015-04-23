@@ -137,3 +137,87 @@ class PoolDetailsView(tabs.TabbedTableView):
         return self.tab_group_class(request,
                                     pool=pool,
                                     **kwargs)
+
+
+class AddLoadbalancerView(workflows.WorkflowView):
+    workflow_class = user_workflows.AddLoadbalancer
+
+
+class UpdateLoadbalancerView(forms.ModalFormView):
+    form_class = user_forms.UpdateLoadbalancer
+    form_id = "update_loadbalancer_form"
+    modal_header = _("Edit Loadbalancer")
+    template_name = "user/loadbalancers/updateloadbalancer.html"
+    context_object_name = 'loadbalancer'
+    submit_label = _("Save Changes")
+    submit_url = "horizon:user:loadbalancers:updateloadbalancer"
+    success_url = reverse_lazy("horizon:user:loadbalancers:index")
+    page_title = _("Edit Loadbalancer")
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdateLoadbalancerView,
+                        self).get_context_data(**kwargs)
+        context["loadbalancer_id"] = self.kwargs['loadbalancer_id']
+        args = (self.kwargs['loadbalancer_id'],)
+        context['submit_url'] = reverse(self.submit_url, args=args)
+        return context
+
+    @memoized.memoized_method
+    def _get_object(self, *args, **kwargs):
+        loadbalancer_id = self.kwargs['loadbalancer_id']
+        try:
+            return api.lbaas_v2.loadbalancer_get(self.request,
+                                                 loadbalancer_id)
+        except Exception as e:
+            redirect = self.success_url
+            msg = _('Unable to retrieve loadbalancer details. %s') % e
+            exceptions.handle(self.request, msg, redirect=redirect)
+
+    def get_initial(self):
+        lb = self._get_object()
+        return {'id': lb['id'],
+                'name': lb['name'],
+                'description': lb['description'],
+                'admin_state_up': lb['admin_state_up']}
+
+
+class AddListenerView(workflows.WorkflowView):
+    workflow_class = user_workflows.AddListener
+
+
+class UpdateListenerView(forms.ModalFormView):
+    form_class = user_forms.UpdateListener
+    form_id = "update_listener_form"
+    modal_header = _("Edit Listener")
+    template_name = "user/loadbalancers/updatelistener.html"
+    context_object_name = 'listener'
+    submit_label = _("Save Changes")
+    submit_url = "horizon:user:loadbalancers:updatelistener"
+    success_url = reverse_lazy("horizon:user:loadbalancers:index")
+    page_title = _("Edit Listener")
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdateListenerView,
+                        self).get_context_data(**kwargs)
+        context["listener_id"] = self.kwargs['listener_id']
+        args = (self.kwargs['listener_id'],)
+        context['submit_url'] = reverse(self.submit_url, args=args)
+        return context
+
+    @memoized.memoized_method
+    def _get_object(self, *args, **kwargs):
+        listener_id = self.kwargs['listener_id']
+        try:
+            return api.lbaas_v2.listener_get(self.request,
+                                                 listener_id)
+        except Exception as e:
+            redirect = self.success_url
+            msg = _('Unable to retrieve listener details. %s') % e
+            exceptions.handle(self.request, msg, redirect=redirect)
+
+    def get_initial(self):
+        lb = self._get_object()
+        return {'id': lb['id'],
+                'name': lb['name'],
+                'description': lb['description'],
+                'admin_state_up': lb['admin_state_up']}

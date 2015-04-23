@@ -26,10 +26,214 @@ from openstack_dashboard import api
 from openstack_dashboard.dashboards.user.loadbalancers import utils
 
 
-AVAILABLE_PROTOCOLS = ('HTTP', 'HTTPS', 'TCP')
+AVAILABLE_PROTOCOLS = ('TCP', 'HTTP', 'HTTPS', 'TERMINATED_HTTPS')
 AVAILABLE_METHODS = ('ROUND_ROBIN', 'LEAST_CONNECTIONS', 'SOURCE_IP')
 
 
 LOG = logging.getLogger(__name__)
 
 
+class AddLoadbalancerAction(workflows.Action):
+    name = forms.CharField(max_length=80, label=_("Name"))
+    description = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Description"))
+    # provider is optional because some LBaaS implemetation does
+    # not support service-type extension.
+    provider = forms.ChoiceField(label=_("Provider"), required=False)
+
+    vip_subnet_id = forms.ChoiceField(label=_("VIP Subnet"))
+    vip_address = forms.IPField(label=_("Specify a free IP address "
+                                    "from the selected subnet"),
+                            version=forms.IPv4,
+                            mask=False,
+                            required=False)
+
+    admin_state_up = forms.ChoiceField(choices=[(True, _('UP')),
+                                                (False, _('DOWN'))],
+                                       label=_("Admin State"))
+
+    def __init__(self, request, *args, **kwargs):
+        super(AddLoadbalancerAction, self).__init__(request, *args, **kwargs)
+        tenant_id = request.user.tenant_id
+        subnet_id_choices = [('', _("Select a Subnet"))]
+        try:
+            networks = api.neutron.network_list_for_tenant(request, tenant_id)
+        except Exception:
+            exceptions.handle(request,
+                              _('Unable to retrieve networks list.'))
+            networks = []
+        for n in networks:
+            for s in n['subnets']:
+                subnet_id_choices.append((s.id, s.cidr))
+        self.fields['vip_subnet_id'].choices = subnet_id_choices
+
+        # provider choice
+        try:
+            if api.neutron.is_extension_supported(request, 'service-type'):
+                provider_list = api.neutron.provider_list(request)
+                providers = [p for p in provider_list
+                             if p['service_type'] == 'LOADBALANCERV2']
+            else:
+                providers = None
+        except Exception:
+            exceptions.handle(request,
+                              _('Unable to retrieve providers list.'))
+            providers = []
+
+        if providers:
+            default_providers = [p for p in providers if p.get('default')]
+            if default_providers:
+                default_provider = default_providers[0]['name']
+            else:
+                default_provider = None
+            provider_choices = [(p['name'], p['name']) for p in providers
+                                if p['name'] != default_provider]
+            if default_provider:
+                provider_choices.insert(
+                    0, (default_provider,
+                        _("%s (default)") % default_provider))
+        else:
+            if providers is None:
+                msg = _("Provider for Load Balancer is not supported")
+            else:
+                msg = _("No provider is available")
+            provider_choices = [('', msg)]
+            self.fields['provider'].widget.attrs['readonly'] = True
+        self.fields['provider'].choices = provider_choices
+
+    class Meta(object):
+        name = _("Add New Loadbalancer")
+        permissions = ('openstack.services.network',)
+        help_text = _("Create loadbalancer for current project.\n\n"
+                      "Assign a name and description for the loadbalancer. "
+                      "Choose one subnet where all members of this "
+                      "pool must be on. "
+                      "Select the protocol and load balancing method "
+                      "for this pool. "
+                      "Admin State is UP (checked) by default.")
+
+
+class AddLoadbalancerStep(workflows.Step):
+    action_class = AddLoadbalancerAction
+    contributes = ("name", "description", "vip_subnet_id", "provider",
+                   "vip_address", "admin_state_up")
+
+    def contribute(self, data, context):
+        context = super(AddLoadbalancerStep, self).contribute(data, context)
+        context['admin_state_up'] = (context['admin_state_up'] == 'True')
+        if data:
+            return context
+
+
+class AddLoadbalancer(workflows.Workflow):
+    slug = "addloadbalancer"
+    name = _("Add Loadbalancer")
+    finalize_button_name = _("Add")
+    success_message = _('Added loadbalancer "%s".')
+    failure_message = _('Unable to add loadbalancer "%s".')
+    success_url = "horizon:user:loadbalancers:index"
+    default_steps = (AddLoadbalancerStep,)
+
+    def format_status_message(self, message):
+        name = self.context.get('name')
+        return message % name
+
+    def handle(self, request, context):
+        try:
+            api.lbaas_v2.loadbalancer_create(request, **context)
+            return True
+        except Exception as e:
+            exceptions.handle(request, e)
+            return False
+
+
+class AddListenerAction(workflows.Action):
+    name = forms.CharField(max_length=80, label=_("Name"))
+    description = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Description"))
+
+    loadbalancer_id = forms.ChoiceField(label=_("Loadbalancer"))
+
+    protocol = forms.ChoiceField(label=_("Protocol"))
+    protocol_port = forms.IntegerField(
+        label=_("Protocol Port"), min_value=1,
+        help_text=_("Enter an integer value "
+                    "between 1 and 65535."),
+        validators=[validators.validate_port_range])
+
+    connection_limit = forms.ChoiceField(
+        choices = [(5000, 5000),
+                   (10000, 10000),
+                   (20000, 20000),
+                   (40000, 40000)],
+        label=_("Connection Limit"),
+        help_text=_("Maximum number of connections allowed."))
+
+    admin_state_up = forms.ChoiceField(choices=[(True, _('UP')),
+                                                (False, _('DOWN'))],
+                                       label=_("Admin State"))
+
+    def __init__(self, request, *args, **kwargs):
+        super(AddListenerAction, self).__init__(request, *args, **kwargs)
+        tenant_id = request.user.tenant_id
+        loadbalancer_choices = [('', _("Select a Loadbalancer"))]
+        try:
+            loadbalancers = api.lbaas_v2.loadbalancer_list(request, tenant_id)
+        except Exception:
+            exceptions.handle(request,
+                              _('Unable to retrieve networks list.'))
+            loadbalancers = []
+        for l in loadbalancers:
+            loadbalancer_choices.append((l.id, l.name))
+        self.fields['loadbalancer_id'].choices = loadbalancer_choices
+
+        protocol_choices = [('', _("Select a Protocol"))]
+        [protocol_choices.append((p, p)) for p in AVAILABLE_PROTOCOLS]
+        self.fields['protocol'].choices = protocol_choices
+
+    class Meta(object):
+        name = _("Add New Listener")
+        permissions = ('openstack.services.network',)
+        help_text = _("Create listener for current project.\n\n"
+                      "Assign a name and description for the listener. "
+                      "Choose one subnet where all members of this "
+                      "pool must be on. "
+                      "Select the protocol and load balancing method "
+                      "for this pool. "
+                      "Admin State is UP (checked) by default.")
+
+
+class AddListenerStep(workflows.Step):
+    action_class = AddListenerAction
+    contributes = ("name", "description", "loadbalancer_id", "protocol",
+                   "protocol_port", "connection_limit", "admin_state_up")
+
+    def contribute(self, data, context):
+        context = super(AddListenerStep, self).contribute(data, context)
+        context['admin_state_up'] = (context['admin_state_up'] == 'True')
+        if data:
+            return context
+
+
+class AddListener(workflows.Workflow):
+    slug = "addlistener"
+    name = _("Add Listener")
+    finalize_button_name = _("Add")
+    success_message = _('Added listener "%s".')
+    failure_message = _('Unable to add listener "%s".')
+    success_url = "horizon:user:loadbalancers:index"
+    default_steps = (AddListenerStep,)
+
+    def format_status_message(self, message):
+        name = self.context.get('name')
+        return message % name
+
+    def handle(self, request, context):
+        try:
+            api.lbaas_v2.listener_create(request, **context)
+            return True
+        except Exception as e:
+            exceptions.handle(request, e)
+            return False
