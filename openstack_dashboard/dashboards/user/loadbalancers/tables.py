@@ -17,6 +17,7 @@ import logging
 
 from django.core.urlresolvers import reverse
 from django.template import defaultfilters as filters
+from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import ungettext_lazy
 
@@ -97,6 +98,22 @@ class UpdateLoadbalancersRow(tables.Row):
         return loadbalancer
 
 
+class AddListenerLink(tables.LinkAction):
+    name = "addlistener"
+    verbose_name = _("Add Listener")
+    url = "horizon:user:loadbalancers:addlistener"
+    classes = ("ajax-modal",)
+    icon = "plus"
+    policy_rules = (("network", "create_listener"),)
+
+    def get_link_url(self, datum=None):
+        if datum:
+            base_url = reverse(self.url)
+            params = urlencode({"loadbalancer_id": datum.id})
+            return "?".join([base_url, params])
+        return reverse(self.url)
+
+
 class LoadbalancerTable(tables.DataTable):
     name = tables.Column("name",
                          verbose_name=_("Name"),
@@ -120,16 +137,9 @@ class LoadbalancerTable(tables.DataTable):
         row_class = UpdateLoadbalancersRow
         table_actions = (NameFilterAction, AddLoadbalancerLink,
                          DeleteLoadbalancer)
-        row_actions = (UpdateLoadbalancerLink, DeleteLoadbalancer)
-
-
-class AddListenerLink(tables.LinkAction):
-    name = "addlistener"
-    verbose_name = _("Add Listener")
-    url = "horizon:user:loadbalancers:addlistener"
-    classes = ("ajax-modal",)
-    icon = "plus"
-    policy_rules = (("network", "create_listener"),)
+        row_actions = (UpdateLoadbalancerLink,
+                       AddListenerLink,
+                       DeleteLoadbalancer)
 
 
 class DeleteListener(tables.DeleteAction):
@@ -190,6 +200,35 @@ class UpdateListenersRow(tables.Row):
         return listener
 
 
+class AddAclToListenerLink(tables.LinkAction):
+    name = "addacltolistener"
+    verbose_name = _("Add Acl")
+    url = "horizon:user:loadbalancers:addacl"
+    classes = ("ajax-modal",)
+    icon = "plus"
+    policy_rules = (("network", "create_acl"),)
+
+    def get_link_url(self, datum=None):
+        if datum:
+            return reverse(self.url, args=(datum.id,))
+
+
+class AddPoolLink(tables.LinkAction):
+    name = "addpool"
+    verbose_name = _("Add Pool")
+    url = "horizon:user:loadbalancers:addpool"
+    classes = ("ajax-modal",)
+    icon = "plus"
+    policy_rules = (("network", "create_pool"),)
+
+    def get_link_url(self, datum):
+        if datum:
+            base_url = reverse(self.url)
+            params = urlencode({"listener_id": datum.id})
+            return "?".join([base_url, params])
+        return reverse(self.url)
+
+
 class ListenersTable(tables.DataTable):
     name = tables.Column("name",
                          verbose_name=_("Name"),
@@ -212,16 +251,10 @@ class ListenersTable(tables.DataTable):
         row_class = UpdateListenersRow
         table_actions = (NameFilterAction, AddListenerLink,
                          DeleteListener)
-        row_actions = (UpdateListenerLink, DeleteListener)
-
-
-class AddPoolLink(tables.LinkAction):
-    name = "addpool"
-    verbose_name = _("Add Pool")
-    url = "horizon:user:loadbalancers:addpool"
-    classes = ("ajax-modal",)
-    icon = "plus"
-    policy_rules = (("network", "create_pool"),)
+        row_actions = (UpdateListenerLink,
+                       AddPoolLink,
+                       AddAclToListenerLink,
+                       DeleteListener)
 
 
 class DeletePool(tables.DeleteAction):
@@ -268,6 +301,35 @@ class UpdatePoolsRow(tables.Row):
         return api.lbaas_v2.pool_get(request, pool_id)
 
 
+class AddMemberToPoolLink(tables.LinkAction):
+    name = "addmembertopool"
+    verbose_name = _("Add Member")
+    url = "horizon:user:loadbalancers:addmember"
+    classes = ("ajax-modal",)
+    icon = "plus"
+    policy_rules = (("network", "create_member"),)
+
+    def get_link_url(self, datum=None):
+        if datum:
+            return reverse(self.url, args=(datum.id,))
+
+
+class AddHealthmonitorLink(tables.LinkAction):
+    name = "addhealthmonitor"
+    verbose_name = _("Add Healthmonitor")
+    url = "horizon:user:loadbalancers:addhealthmonitor"
+    classes = ("ajax-modal",)
+    icon = "plus"
+    policy_rules = (("network", "create_healthmonitor"),)
+
+    def get_link_url(self, datum=None):
+        if datum:
+            base_url = reverse(self.url)
+            params = urlencode({"pool_id": datum.id})
+            return "?".join([base_url, params])
+        return reverse(self.url)
+
+
 class PoolsTable(tables.DataTable):
     name = tables.Column("name",
                          verbose_name=_("Name"),
@@ -284,7 +346,10 @@ class PoolsTable(tables.DataTable):
         verbose_name = _("Pools")
         table_actions = (NameFilterAction, AddPoolLink,
                          DeletePool)
-        row_actions = (UpdatePoolLink, DeletePool)
+        row_actions = (UpdatePoolLink,
+                       AddMemberToPoolLink,
+                       AddHealthmonitorLink,
+                       DeletePool)
 
 
 class MemberFilterAction(tables.FilterAction):
@@ -461,15 +526,6 @@ class HealthmonitorFilterAction(tables.FilterAction):
         query = filter_string.lower()
         return [o for o in objects
                 if query in o.type.lower()]
-
-
-class AddHealthmonitorLink(tables.LinkAction):
-    name = "addhealthmonitor"
-    verbose_name = _("Add Healthmonitor")
-    url = "horizon:user:loadbalancers:addhealthmonitor"
-    classes = ("ajax-modal",)
-    icon = "plus"
-    policy_rules = (("network", "create_healthmonitor"),)
 
 
 class DeleteHealthmonitor(tables.DeleteAction):
