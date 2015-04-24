@@ -255,7 +255,7 @@ def member_create(request, pool_id, **kwargs):
     if kwargs['weight']:
         body['member']['weight'] = kwargs['weight']
     if kwargs['subnet_id']:
-        body['member']['subnet_id'] = kwargs['weight']
+        body['member']['subnet_id'] = kwargs['subnet_id']
     member = neutronclient(
         request).create_lbaas_member(pool_id,
                                      body).get('member')
