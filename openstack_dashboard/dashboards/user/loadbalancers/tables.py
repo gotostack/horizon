@@ -17,12 +17,9 @@ import logging
 
 from django.core.urlresolvers import reverse
 from django.template import defaultfilters as filters
-from django.utils import http
-from django.utils.translation import pgettext_lazy
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import ungettext_lazy
 
-from horizon import exceptions
 from horizon import tables
 
 from openstack_dashboard import api
@@ -185,8 +182,8 @@ class UpdateListenersRow(tables.Row):
             except Exception:
                 listener.pool_name = listener.default_pool_id
             try:
-                loadbalancer = api.lbaas_v2.loadbalancer_get(request,
-                                                             listener.loadbalancer_id)
+                loadbalancer = api.lbaas_v2.loadbalancer_get(
+                    request, listener.loadbalancer_id)
                 listener.loadbalancer_name = loadbalancer.name
             except Exception:
                 listener.loadbalancer_name = listener.loadbalancer_id
@@ -199,7 +196,7 @@ class ListenersTable(tables.DataTable):
                          link="horizon:user:loadbalancers:listenerdetails")
     description = tables.Column('description', verbose_name=_("Description"))
     protocol = tables.Column('protocol',
-                            verbose_name=_("Protocol"))
+                             verbose_name=_("Protocol"))
     protocol_port = tables.Column('protocol_port',
                                   verbose_name=_("Protocol Port"))
     connection_limit = tables.Column('connection_limit',

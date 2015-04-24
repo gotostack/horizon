@@ -58,7 +58,7 @@ class ListenersTab(tabs.TableTab):
 
         if loadbalancer_dict and pool_dict:
             for ls in listeners:
-                # NOTE(yulong): Returning a list to 
+                # NOTE(yulong): Returning a list to
                 # future proof for M:N objects
                 # that are not yet implemented.
                 # Neutron-lbaas-v2 not implemented

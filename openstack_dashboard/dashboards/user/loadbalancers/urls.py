@@ -57,11 +57,11 @@ urlpatterns = patterns(
         views.AddMemberView.as_view(), name='addmember'),
     url(r'^updatemember/(?P<pool_id>[^/]+)/(?P<member_id>[^/]+)/$',
         views.UpdateMemberView.as_view(), name='updatemember'),
-    #url(r'^member/(?P<member_id>[^/]+)/$',
+    # url(r'^member/(?P<member_id>[^/]+)/$',
     #    views.MemberDetailsView.as_view(), name='memberdetails')
 
     url(r'^addhealthmonitor$',
         views.AddHealthmonitorView.as_view(), name='addhealthmonitor'),
     url(r'^updatehealthmonitor/(?P<healthmonitor_id>[^/]+)/$',
         views.UpdateHealthmonitorView.as_view(), name='updatehealthmonitor'),
-    )
+)

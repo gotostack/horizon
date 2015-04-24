@@ -15,16 +15,7 @@
 
 from mox import IsA  # noqa
 
-from django.core.urlresolvers import reverse
-from django.core.urlresolvers import reverse_lazy
-from django import http
-
-from horizon.workflows import views
-
-from openstack_dashboard import api
 from openstack_dashboard.test import helpers as test
-
-from openstack_dashboard.dashboards.user.loadbalancers import workflows
 
 
 class LoadBalancerTests(test.TestCase):

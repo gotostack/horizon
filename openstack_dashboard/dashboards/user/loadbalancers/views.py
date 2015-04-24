@@ -19,8 +19,6 @@ from django.utils.translation import ugettext_lazy as _
 
 from horizon import exceptions
 from horizon import forms
-from horizon import messages
-from horizon import tables
 from horizon import tabs
 from horizon.utils import memoized
 from horizon import workflows
@@ -29,10 +27,7 @@ from openstack_dashboard import api
 from openstack_dashboard.dashboards.user.loadbalancers \
     import forms as user_forms
 from openstack_dashboard.dashboards.user.loadbalancers \
-    import tables as user_tables
-from openstack_dashboard.dashboards.user.loadbalancers \
     import tabs as user_tabs
-from openstack_dashboard.dashboards.user.loadbalancers import utils
 from openstack_dashboard.dashboards.user.loadbalancers \
     import workflows as user_workflows
 
@@ -209,7 +204,7 @@ class UpdateListenerView(forms.ModalFormView):
         listener_id = self.kwargs['listener_id']
         try:
             return api.lbaas_v2.listener_get(self.request,
-                                                 listener_id)
+                                             listener_id)
         except Exception as e:
             redirect = self.success_url
             msg = _('Unable to retrieve listener details. %s') % e

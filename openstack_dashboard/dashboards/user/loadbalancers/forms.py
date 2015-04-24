@@ -101,8 +101,8 @@ class UpdatePool(UpdateBase):
         context['admin_state_up'] = (context['admin_state_up'] == 'True')
         try:
             lb = api.lbaas_v2.pool_update(request,
-                                              context['id'],
-                                              **context)
+                                          context['id'],
+                                          **context)
             msg = _(
                 'Pool %s was successfully updated.') % context['name']
             LOG.debug(msg)
@@ -117,8 +117,8 @@ class UpdatePool(UpdateBase):
 
 class UpdateMember(forms.SelfHandlingForm):
     member_id = forms.CharField(label=_("ID"),
-                         widget=forms.TextInput(
-                             attrs={'readonly': 'readonly'}))
+                                widget=forms.TextInput(
+                                    attrs={'readonly': 'readonly'}))
     pool_id = forms.CharField(label=_("Pool"),
                               widget=forms.TextInput(
                                   attrs={'readonly': 'readonly'}))
@@ -157,11 +157,11 @@ class UpdateMember(forms.SelfHandlingForm):
 
 class UpdateAcl(forms.SelfHandlingForm):
     listener_id = forms.CharField(label=_("Listener"),
-                              widget=forms.TextInput(
-                                  attrs={'readonly': 'readonly'}))
+                                  widget=forms.TextInput(
+                                      attrs={'readonly': 'readonly'}))
     acl_id = forms.CharField(label=_("Acl ID"),
-                              widget=forms.TextInput(
-                                  attrs={'readonly': 'readonly'}))
+                             widget=forms.TextInput(
+                                 attrs={'readonly': 'readonly'}))
     name = forms.CharField(max_length=80, label=_("Name"))
     description = forms.CharField(
         initial="", required=False,
@@ -212,8 +212,8 @@ class UpdateAcl(forms.SelfHandlingForm):
 
 class UpdateHealthmonitor(forms.SelfHandlingForm):
     healthmonitor_id = forms.CharField(label=_("ID"),
-                         widget=forms.TextInput(
-                             attrs={'readonly': 'readonly'}))
+                                       widget=forms.TextInput(
+                                           attrs={'readonly': 'readonly'}))
     type = forms.ChoiceField(
         label=_("Type"),
         widget=forms.TextInput(
@@ -284,14 +284,15 @@ class UpdateHealthmonitor(forms.SelfHandlingForm):
         context['admin_state_up'] = (context['admin_state_up'] == 'True')
         try:
             healthmonitor = api.lbaas_v2.healthmonitor_update(request,
-                                                **context)
+                                                              **context)
             msg = _('Healthmonitor %s was successfully updated.')\
                 % context['healthmonitor_id']
             LOG.debug(msg)
             messages.success(request, msg)
             return healthmonitor
         except Exception:
-            msg = _('Failed to update healthmonitor %s') % context['healthmonitor_id']
+            msg = _('Failed to update healthmonitor %s')\
+                % context['healthmonitor_id']
             LOG.info(msg)
             redirect = reverse(self.failure_url)
             exceptions.handle(request, msg, redirect=redirect)
