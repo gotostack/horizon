@@ -24,7 +24,6 @@ from horizon.utils import validators
 from horizon import workflows
 
 from openstack_dashboard import api
-from openstack_dashboard.dashboards.user.loadbalancers import utils
 
 
 AVAILABLE_PROTOCOLS = ('TCP', 'HTTP', 'HTTPS', 'TERMINATED_HTTPS')
@@ -45,10 +44,10 @@ class AddLoadbalancerAction(workflows.Action):
 
     vip_subnet_id = forms.ChoiceField(label=_("VIP Subnet"))
     vip_address = forms.IPField(label=_("Specify a free IP address "
-                                    "from the selected subnet"),
-                            version=forms.IPv4,
-                            mask=False,
-                            required=False)
+                                        "from the selected subnet"),
+                                version=forms.IPv4,
+                                mask=False,
+                                required=False)
 
     admin_state_up = forms.ChoiceField(choices=[(True, _('UP')),
                                                 (False, _('DOWN'))],
@@ -165,10 +164,10 @@ class AddListenerAction(workflows.Action):
         validators=[validators.validate_port_range])
 
     connection_limit = forms.ChoiceField(
-        choices = [(5000, 5000),
-                   (10000, 10000),
-                   (20000, 20000),
-                   (40000, 40000)],
+        choices=[(5000, 5000),
+                 (10000, 10000),
+                 (20000, 20000),
+                 (40000, 40000)],
         label=_("Connection Limit"),
         help_text=_("Maximum number of connections allowed."))
 
@@ -415,8 +414,8 @@ class AddMember(workflows.Workflow):
 
 class AddAclAction(workflows.Action):
     listener_id = forms.CharField(label=_("Listener"),
-                              widget=forms.TextInput(
-                                  attrs={'readonly': 'readonly'}))
+                                  widget=forms.TextInput(
+                                      attrs={'readonly': 'readonly'}))
     name = forms.CharField(max_length=80, label=_("Name"))
     description = forms.CharField(
         initial="", required=False,

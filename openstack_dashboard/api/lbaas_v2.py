@@ -15,10 +15,6 @@
 
 from __future__ import absolute_import
 
-from django.utils.datastructures import SortedDict
-from django.utils.translation import ugettext_lazy as _
-
-from horizon import messages
 from horizon.utils.memoized import memoized  # noqa
 
 from openstack_dashboard.api import neutron
@@ -258,6 +254,8 @@ def member_create(request, pool_id, **kwargs):
         "protocol_port": kwargs['protocol_port']}}
     if kwargs['weight']:
         body['member']['weight'] = kwargs['weight']
+    if kwargs['subnet_id']:
+        body['member']['subnet_id'] = kwargs['weight']
     member = neutronclient(
         request).create_lbaas_member(pool_id,
                                      body).get('member')
@@ -291,13 +289,10 @@ def member_get(request, member_id, pool_id, **kwargs):
 
 def member_update(request, member_id, pool_id, **kwargs):
     """LBaaS v2 Update a given member."""
-    body = {"member": {
-        "admin_state_up": kwargs['admin_state_up'],}}
+    body = {"member": {"admin_state_up": kwargs['admin_state_up']}}
     if kwargs['weight']:
         body['member']['weight'] = kwargs['weight']
 
-    # if kwargs['subnet_id']:
-    #     body['member']['subnet_id'] = kwargs['subnet_id']
     member = neutronclient(
         request).update_lbaas_member(member_id,
                                      pool_id,
