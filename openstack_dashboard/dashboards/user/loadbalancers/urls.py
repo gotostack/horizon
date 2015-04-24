@@ -41,6 +41,11 @@ urlpatterns = patterns(
     url(r'^listener/(?P<listener_id>[^/]+)/$',
         views.ListenerDetailsView.as_view(), name='listenerdetails'),
 
+    url(r'^addacl/(?P<listener_id>[^/]+)/$',
+        views.AddAclView.as_view(), name='addacl'),
+    url(r'^updateacl/(?P<listener_id>[^/]+)/(?P<acl_id>[^/]+)/$',
+        views.UpdateAclView.as_view(), name='updateacl'),
+
     url(r'^addpool$',
         views.AddPoolView.as_view(), name='addpool'),
     url(r'^updatepool/(?P<pool_id>[^/]+)/$',
@@ -54,4 +59,9 @@ urlpatterns = patterns(
         views.UpdateMemberView.as_view(), name='updatemember'),
     #url(r'^member/(?P<member_id>[^/]+)/$',
     #    views.MemberDetailsView.as_view(), name='memberdetails')
+
+    url(r'^addhealthmonitor$',
+        views.AddHealthmonitorView.as_view(), name='addhealthmonitor'),
+    url(r'^updatehealthmonitor/(?P<healthmonitor_id>[^/]+)/$',
+        views.UpdateHealthmonitorView.as_view(), name='updatehealthmonitor'),
     )

@@ -47,7 +47,7 @@ class LoadbalancerDetailView(tabs.TabbedTableView):
     tab_group_class = user_tabs.LoadbalancerDetailTabs
     template_name = 'user/loadbalancers/loadbalancer_detail.html'
     failure_url = reverse_lazy('horizon:user:loadbalancers:index')
-    page_title = _("Loadbalancer Details")
+    page_title = _("Loadbalancer Details: {{ loadbalancer.name }}")
 
     @memoized.memoized_method
     def _get_data(self):
@@ -79,7 +79,7 @@ class ListenerDetailsView(tabs.TabbedTableView):
     tab_group_class = user_tabs.ListenerDetailTabs
     template_name = 'user/loadbalancers/listener_detail.html'
     failure_url = reverse_lazy('horizon:user:loadbalancers:index')
-    page_title = _("Listener Details")
+    page_title = _("Listener Details: {{ listener.name }}")
 
     @memoized.memoized_method
     def _get_data(self):
@@ -111,7 +111,7 @@ class PoolDetailsView(tabs.TabbedTableView):
     tab_group_class = user_tabs.PoolDetailTabs
     template_name = 'user/loadbalancers/pool_detail.html'
     failure_url = reverse_lazy('horizon:user:loadbalancers:index')
-    page_title = _("Pool Details")
+    page_title = _("Pool Details: {{ pool.name }}")
 
     @memoized.memoized_method
     def _get_data(self):
@@ -251,7 +251,7 @@ class UpdatePoolView(forms.ModalFormView):
         pool_id = self.kwargs['pool_id']
         try:
             return api.lbaas_v2.pool_get(self.request,
-                                                 pool_id)
+                                         pool_id)
         except Exception as e:
             redirect = self.success_url
             msg = _('Unable to retrieve pool details. %s') % e
@@ -281,18 +281,22 @@ class UpdateMemberView(forms.ModalFormView):
     context_object_name = 'member'
     submit_label = _("Save Changes")
     submit_url = "horizon:user:loadbalancers:updatemember"
-    success_url = reverse_lazy("horizon:user:loadbalancers:index")
+    success_url = "horizon:user:loadbalancers:pooldetails"
     page_title = _("Edit Member")
 
     def get_context_data(self, **kwargs):
         context = super(UpdateMemberView,
                         self).get_context_data(**kwargs)
-        context["member_id"] = self.kwargs['member_id']
         context["pool_id"] = self.kwargs['pool_id']
+        context["member_id"] = self.kwargs['member_id']
         args = (self.kwargs['pool_id'],
                 self.kwargs['member_id'])
         context['submit_url'] = reverse(self.submit_url, args=args)
         return context
+
+    def get_success_url(self):
+        return reverse(self.success_url,
+                       args=(self.kwargs['pool_id'],))
 
     @memoized.memoized_method
     def _get_object(self, *args, **kwargs):
@@ -314,3 +318,104 @@ class UpdateMemberView(forms.ModalFormView):
                 'weight': _obg['weight'],
                 'admin_state_up': _obg['admin_state_up'],
                 'subnet_id': _obg['subnet_id']}
+
+
+class AddAclView(workflows.WorkflowView):
+    workflow_class = user_workflows.AddAcl
+
+    def get_initial(self):
+        return {"listener_id": self.kwargs['listener_id']}
+
+
+class UpdateAclView(forms.ModalFormView):
+    form_class = user_forms.UpdateAcl
+    form_id = "update_acl_form"
+    modal_header = _("Edit Acl")
+    template_name = "user/loadbalancers/updateacl.html"
+    context_object_name = 'acl'
+    submit_label = _("Save Changes")
+    submit_url = "horizon:user:loadbalancers:updateacl"
+    success_url = reverse_lazy("horizon:user:loadbalancers:index")
+    page_title = _("Edit Acl")
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdateAclView,
+                        self).get_context_data(**kwargs)
+        context["acl_id"] = self.kwargs['acl_id']
+        context["listener_id"] = self.kwargs['listener_id']
+        args = (self.kwargs['listener_id'],
+                self.kwargs['acl_id'])
+        context['submit_url'] = reverse(self.submit_url, args=args)
+        return context
+
+    @memoized.memoized_method
+    def _get_object(self, *args, **kwargs):
+        acl_id = self.kwargs['acl_id']
+        try:
+            return api.lbaas_v2.acl_get(self.request,
+                                        acl_id)
+        except Exception as e:
+            redirect = self.success_url
+            msg = _('Unable to retrieve acl details. %s') % e
+            exceptions.handle(self.request, msg, redirect=redirect)
+
+    def get_initial(self):
+        _obg = self._get_object()
+        return {'acl_id': _obg['id'],
+                'listener_id': self.kwargs['listener_id'],
+                'name': _obg['name'],
+                'description': _obg['description'],
+                'action': _obg['action'],
+                'condition': _obg['condition'],
+                'acl_type': _obg['acl_type'],
+                'operator': _obg['operator'],
+                'match': _obg['match'],
+                'match_condition': _obg['match_condition'],
+                'admin_state_up': _obg['admin_state_up']}
+
+
+class AddHealthmonitorView(workflows.WorkflowView):
+    workflow_class = user_workflows.AddHealthmonitor
+
+
+class UpdateHealthmonitorView(forms.ModalFormView):
+    form_class = user_forms.UpdateHealthmonitor
+    form_id = "update_healthmonitor_form"
+    modal_header = _("Edit Healthmonitor")
+    template_name = "user/loadbalancers/updatehealthmonitor.html"
+    context_object_name = 'healthmonitor'
+    submit_label = _("Save Changes")
+    submit_url = "horizon:user:loadbalancers:updatehealthmonitor"
+    success_url = reverse_lazy("horizon:user:loadbalancers:index")
+    page_title = _("Edit Healthmonitor")
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdateHealthmonitorView,
+                        self).get_context_data(**kwargs)
+        context["healthmonitor_id"] = self.kwargs['healthmonitor_id']
+        args = (self.kwargs['healthmonitor_id'],)
+        context['submit_url'] = reverse(self.submit_url, args=args)
+        return context
+
+    @memoized.memoized_method
+    def _get_object(self, *args, **kwargs):
+        healthmonitor_id = self.kwargs['healthmonitor_id']
+        try:
+            return api.lbaas_v2.healthmonitor_get(self.request,
+                                                  healthmonitor_id)
+        except Exception as e:
+            redirect = self.success_url
+            msg = _('Unable to retrieve healthmonitor details. %s') % e
+            exceptions.handle(self.request, msg, redirect=redirect)
+
+    def get_initial(self):
+        _obg = self._get_object()
+        return {"healthmonitor_id": _obg["id"],
+                "type": _obg["type"],
+                "delay": _obg['delay'],
+                "timeout": _obg['timeout'],
+                "max_retries": _obg['max_retries'],
+                "http_method": _obg['http_method'],
+                "url_path": _obg['url_path'],
+                "expected_codes": _obg['expected_codes'],
+                "admin_state_up": _obg['admin_state_up']}

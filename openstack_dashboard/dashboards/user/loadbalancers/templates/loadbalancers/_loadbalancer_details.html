@@ -17,7 +17,7 @@
 
     <dt>{% trans "VIP" %}</dt>
     {% if loadbalancer.vip_id %}
-      {% url 'horizon:project:loadbalancers:vipdetails' loadbalancer.vip_id as vip_url %}
+      {% url 'horizon:user:loadbalancers:vipdetails' loadbalancer.vip_id as vip_url %}
       <dd><a href="{{ vip_url }}">{{ loadbalancer.vip.name_or_id }}</a></dd>
     {% else %}
       <dd>{% trans "-" %}</dd>
@@ -27,7 +27,7 @@
     <dd>{{ loadbalancer.provider|default:_("N/A") }}</dd>
 
     <dt>{% trans "Subnet" %}</dt>
-    {% url 'horizon:project:networks:subnets:detail' loadbalancer.subnet_id as subnet_url %}
+    {% url 'horizon:user:networks:subnets:detail' loadbalancer.subnet_id as subnet_url %}
     <dd><a href="{{ subnet_url }}">{{ loadbalancer.subnet.name_or_id }} {{ loadbalancer.subnet.cidr }}</a></dd>
 
     <dt>{% trans "Protocol" %}</dt>
@@ -40,7 +40,7 @@
     <dd>
       {% if loadbalancer.members %}
       {% for member in loadbalancer.members %}
-      {% url 'horizon:project:loadbalancers:memberdetails' member.id as member_url %}
+      {% url 'horizon:user:loadbalancers:memberdetails' member.id as member_url %}
       <a href="{{ member_url }}">{{ member.address }}:{{ member.protocol_port }}</a><br>
       {% endfor %}
       {% else %}

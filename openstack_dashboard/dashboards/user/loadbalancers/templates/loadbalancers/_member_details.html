@@ -10,7 +10,7 @@
     <dd>{{ member.tenant_id }}</dd>
 
     <dt>{% trans "Pool" %}</dt>
-    {% url 'horizon:project:loadbalancers:pooldetails' member.pool_id as pool_url %}
+    {% url 'horizon:user:loadbalancers:pooldetails' member.pool_id as pool_url %}
     <dd><a href="{{ pool_url }}">{{ member.pool.name_or_id }}</a></dd>
 
     <dt>{% trans "Address" %}</dt>
