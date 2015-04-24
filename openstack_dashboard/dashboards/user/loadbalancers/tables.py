@@ -268,8 +268,7 @@ class UpdatePoolsRow(tables.Row):
     ajax = True
 
     def get_data(self, request, pool_id):
-        pool = api.lbaas_v2.pool_get(request, pool_id)
-        return pool
+        return api.lbaas_v2.pool_get(request, pool_id)
 
 
 class PoolsTable(tables.DataTable):
@@ -358,8 +357,7 @@ class UpdateMembersRow(tables.Row):
     ajax = True
 
     def get_data(self, request, member_id):
-        member = api.lbaas_v2.member_get(request, member_id)
-        return member
+        return api.lbaas_v2.member_get(request, member_id)
 
 
 class MembersTable(tables.DataTable):
@@ -379,10 +377,69 @@ class MembersTable(tables.DataTable):
         row_actions = (UpdateMemberLink, DeleteMember)
 
 
+class AddAclLink(tables.LinkAction):
+    name = "addacl"
+    verbose_name = _("Add Acl")
+    url = "horizon:user:loadbalancers:addacl"
+    classes = ("ajax-modal",)
+    icon = "plus"
+    policy_rules = (("network", "create_acl"),)
+
+    def get_link_url(self, datum=None):
+        listener_id = self.table.kwargs['listener_id']
+        return reverse(self.url, args=(listener_id,))
+
+
+class DeleteAcl(tables.DeleteAction):
+    name = "deleteacl"
+    policy_rules = (("network", "delete_acl"),)
+    help_text = _("Deleted acls are not recoverable.")
+
+    @staticmethod
+    def action_present(count):
+        return ungettext_lazy(
+            u"Delete Acl",
+            u"Delete Acls",
+            count
+        )
+
+    @staticmethod
+    def action_past(count):
+        return ungettext_lazy(
+            u"Scheduled deletion of Acl",
+            u"Scheduled deletion of Acls",
+            count
+        )
+
+    def delete(self, request, obj_id):
+        api.lbaas_v2.acl_delete(request, obj_id)
+
+
+class UpdateAclLink(policy.PolicyTargetMixin, tables.LinkAction):
+    name = "updateacl"
+    verbose_name = _("Edit Acl")
+    classes = ("ajax-modal", "btn-update",)
+    policy_rules = (("network", "update_acl"),)
+
+    def get_link_url(self, acl):
+        base_url = reverse("horizon:user:loadbalancers:updateacl",
+                           kwargs={'listener_id': acl.listener_id,
+                                   'acl_id': acl.id})
+        return base_url
+
+
+class UpdateAclsRow(tables.Row):
+    ajax = True
+
+    def get_data(self, request, acl_id):
+        acl = api.lbaas_v2.acl_get(request, acl_id)
+        return acl
+
+
 class AclsTable(tables.DataTable):
     name = tables.Column("name",
                          verbose_name=_("Name"))
-    acl_type = tables.Column('acl_type', verbose_name=_("Acl Type"))
+    acl_type = tables.Column('acl_type', verbose_name=_("ACL Type"))
     description = tables.Column('description', verbose_name=_("Description"))
     listener_id = tables.Column('listener_id', verbose_name=_("Listener"))
     action = tables.Column('action', verbose_name=_("Action"))
@@ -395,7 +452,9 @@ class AclsTable(tables.DataTable):
     class Meta(object):
         name = "acls"
         verbose_name = _("Acls")
-        table_actions = (NameFilterAction,)
+        table_actions = (NameFilterAction, AddAclLink,
+                         DeleteAcl)
+        row_actions = (UpdateAclLink, DeleteAcl)
 
 
 class HealthmonitorFilterAction(tables.FilterAction):
@@ -405,6 +464,60 @@ class HealthmonitorFilterAction(tables.FilterAction):
         query = filter_string.lower()
         return [o for o in objects
                 if query in o.type.lower()]
+
+
+class AddHealthmonitorLink(tables.LinkAction):
+    name = "addhealthmonitor"
+    verbose_name = _("Add Healthmonitor")
+    url = "horizon:user:loadbalancers:addhealthmonitor"
+    classes = ("ajax-modal",)
+    icon = "plus"
+    policy_rules = (("network", "create_healthmonitor"),)
+
+
+class DeleteHealthmonitor(tables.DeleteAction):
+    name = "deletehealthmonitor"
+    policy_rules = (("network", "delete_healthmonitor"),)
+    help_text = _("Deleted healthmonitors are not recoverable.")
+
+    @staticmethod
+    def action_present(count):
+        return ungettext_lazy(
+            u"Delete Healthmonitor",
+            u"Delete Healthmonitors",
+            count
+        )
+
+    @staticmethod
+    def action_past(count):
+        return ungettext_lazy(
+            u"Scheduled deletion of Healthmonitor",
+            u"Scheduled deletion of Healthmonitors",
+            count
+        )
+
+    def delete(self, request, obj_id):
+        api.lbaas_v2.healthmonitor_delete(request,
+                                          obj_id)
+
+
+class UpdateHealthmonitorLink(policy.PolicyTargetMixin, tables.LinkAction):
+    name = "updatehealthmonitor"
+    verbose_name = _("Edit Healthmonitor")
+    classes = ("ajax-modal", "btn-update",)
+    policy_rules = (("network", "update_healthmonitor"),)
+
+    def get_link_url(self, healthmonitor):
+        base_url = reverse("horizon:user:loadbalancers:updatehealthmonitor",
+                           kwargs={'healthmonitor_id': healthmonitor.id})
+        return base_url
+
+
+class UpdateHealthmonitorRow(tables.Row):
+    ajax = True
+
+    def get_data(self, request, healthmonitor_id):
+        return api.lbaas_v2.healthmonitor_get(request, healthmonitor_id)
 
 
 class HealthmonitorsTable(tables.DataTable):
@@ -421,4 +534,6 @@ class HealthmonitorsTable(tables.DataTable):
     class Meta(object):
         name = "healthmonitors"
         verbose_name = _("Healthmonitors")
-        table_actions = (HealthmonitorFilterAction,)
+        table_actions = (NameFilterAction, AddHealthmonitorLink,
+                         DeleteHealthmonitor)
+        row_actions = (UpdateHealthmonitorLink, DeleteHealthmonitor)

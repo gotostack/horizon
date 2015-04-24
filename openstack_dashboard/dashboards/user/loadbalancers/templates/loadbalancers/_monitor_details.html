@@ -38,7 +38,7 @@
     <dt>{% trans "Pools" %}</dt>
     {% if monitor.pools %}
     {% for pool in monitor.pools %}
-    {% url 'horizon:project:loadbalancers:pooldetails' pool.id as pool_url %}
+    {% url 'horizon:user:loadbalancers:pooldetails' pool.id as pool_url %}
     <dd><a href="{{ pool_url }}">{{ pool.name_or_id }}</a></dd>
     {% endfor %}
     {% else %}

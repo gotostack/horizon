@@ -15,6 +15,7 @@
 
 import logging
 
+from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
 
 from horizon import exceptions
@@ -336,7 +337,8 @@ class AddMemberAction(workflows.Action):
                     "Weight must be in the range 1 to 256.")
     )
     subnet_id = forms.ChoiceField(label=_("VIP Subnet"),
-                                  required=False)
+                                  # temporarily set to required
+                                  required=True)
     address = forms.IPField(label=_("Specify a free IP address "
                                     "from the selected subnet"),
                             version=forms.IPv4,
@@ -390,8 +392,97 @@ class AddMember(workflows.Workflow):
     finalize_button_name = _("Add")
     success_message = _('Added member "%s".')
     failure_message = _('Unable to add member "%s".')
-    success_url = "horizon:user:loadbalancers:index"
+    success_url = "horizon:user:loadbalancers:pooldetails"
     default_steps = (AddMemberStep,)
+
+    def get_success_url(self):
+        pool_id = self.context.get('pool_id')
+        return reverse(self.success_url, args=(pool_id,))
+
+    def format_status_message(self, message):
+        address = self.context.get('address')
+        return message % address
+
+    def handle(self, request, context):
+        try:
+            api.lbaas_v2.member_create(request,
+                                       **context)
+            return True
+        except Exception as e:
+            exceptions.handle(request, e)
+            return False
+
+
+class AddAclAction(workflows.Action):
+    listener_id = forms.CharField(label=_("Listener"),
+                              widget=forms.TextInput(
+                                  attrs={'readonly': 'readonly'}))
+    name = forms.CharField(max_length=80, label=_("Name"))
+    description = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Description"))
+    action = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Action"))
+    condition = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Condition"))
+    acl_type = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Acl Type"))
+    operator = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Operator"))
+    match = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Match"))
+    match_condition = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Match condition"))
+    admin_state_up = forms.ChoiceField(choices=[(True, _('UP')),
+                                                (False, _('DOWN'))],
+                                       label=_("Admin State"))
+
+    def __init__(self, request, *args, **kwargs):
+        super(AddAclAction, self).__init__(request, *args, **kwargs)
+
+    class Meta(object):
+        name = _("Add New Acl")
+        permissions = ('openstack.services.network',)
+        help_text = _("Create acl for current project.\n\n"
+                      "Assign a name and description for the acl. "
+                      "Choose one subnet where all acls of this "
+                      "acl must be on. "
+                      "Select the protocol and load balancing method "
+                      "for this acl. "
+                      "Admin State is UP (checked) by default.")
+
+
+class AddAclStep(workflows.Step):
+    action_class = AddAclAction
+    contributes = ("listener_id", "name", "description", "action",
+                   "condition", "acl_type", "operator",
+                   "match", "match_condition", "admin_state_up")
+
+    def contribute(self, data, context):
+        context = super(AddAclStep, self).contribute(data, context)
+        context['admin_state_up'] = (context['admin_state_up'] == 'True')
+        if data:
+            return context
+
+
+class AddAcl(workflows.Workflow):
+    slug = "addacl"
+    name = _("Add Acl")
+    finalize_button_name = _("Add")
+    success_message = _('Added acl "%s".')
+    failure_message = _('Unable to add acl "%s".')
+    success_url = "horizon:user:loadbalancers:listenerdetails"
+    default_steps = (AddAclStep,)
+
+    def get_success_url(self):
+        listener_id = self.context.get('listener_id')
+        return reverse(self.success_url, args=(listener_id,))
 
     def format_status_message(self, message):
         name = self.context.get('name')
@@ -399,8 +490,161 @@ class AddMember(workflows.Workflow):
 
     def handle(self, request, context):
         try:
-            api.lbaas_v2.member_create(request,
-                                       **context)
+            api.lbaas_v2.acl_create(request,
+                                    **context)
+            return True
+        except Exception as e:
+            exceptions.handle(request, e)
+            return False
+
+
+class AddHealthmonitorAction(workflows.Action):
+    pool_id = forms.ChoiceField(label=_("Pool"))
+    type = forms.ChoiceField(
+        label=_("Type"),
+        choices=[('ping', _('PING')),
+                 ('tcp', _('TCP')),
+                 ('http', _('HTTP')),
+                 ('https', _('HTTPS'))],
+        widget=forms.Select(attrs={
+            'class': 'switchable',
+            'data-slug': 'type'
+        }))
+    delay = forms.IntegerField(
+        min_value=1,
+        label=_("Delay"),
+        help_text=_("The minimum time in seconds between regular checks "
+                    "of a member"))
+    timeout = forms.IntegerField(
+        min_value=1,
+        label=_("Timeout"),
+        help_text=_("The maximum time in seconds for a monitor to wait "
+                    "for a reply"))
+    max_retries = forms.IntegerField(
+        max_value=10, min_value=1,
+        label=_("Max Retries (1~10)"),
+        help_text=_("Number of permissible failures before changing "
+                    "the status of member to inactive"))
+    http_method = forms.ChoiceField(
+        initial="GET",
+        required=False,
+        choices=[('GET', _('GET'))],
+        label=_("HTTP Method"),
+        help_text=_("HTTP method used to check health status of a member"),
+        widget=forms.Select(attrs={
+            'class': 'switched',
+            'data-switch-on': 'type',
+            'data-type-http': _('HTTP Method'),
+            'data-type-https': _('HTTP Method')
+        }))
+    url_path = forms.CharField(
+        initial="/",
+        required=False,
+        max_length=80,
+        label=_("URL"),
+        widget=forms.TextInput(attrs={
+            'class': 'switched',
+            'data-switch-on': 'type',
+            'data-type-http': _('URL'),
+            'data-type-https': _('URL')
+        }))
+    expected_codes = forms.RegexField(
+        initial="200",
+        required=False,
+        max_length=80,
+        regex=r'^(\d{3}(\s*,\s*\d{3})*)$|^(\d{3}-\d{3})$',
+        label=_("Expected HTTP Status Codes"),
+        help_text=_("Expected code may be a single value (e.g. 200), "
+                    "a list of values (e.g. 200, 202), "
+                    "or range of values (e.g. 200-204)"),
+        widget=forms.TextInput(attrs={
+            'class': 'switched',
+            'data-switch-on': 'type',
+            'data-type-http': _('Expected HTTP Status Codes'),
+            'data-type-https': _('Expected HTTP Status Codes')
+        }))
+    admin_state_up = forms.ChoiceField(choices=[(True, _('UP')),
+                                                (False, _('DOWN'))],
+                                       label=_("Admin State"))
+
+    def __init__(self, request, *args, **kwargs):
+        super(AddHealthmonitorAction, self).__init__(request, *args, **kwargs)
+        pool_id_choices = [('', _("Select a Pool"))]
+        try:
+            pools = api.lbaas_v2.pool_list(request)
+        except Exception:
+            exceptions.handle(request,
+                              _('Unable to retrieve pool list.'))
+            pools = []
+        for p in pools:
+            pool_id_choices.append((p.id, p.name))
+        self.fields['pool_id'].choices = pool_id_choices
+
+    def clean(self):
+        cleaned_data = super(AddHealthmonitorAction, self).clean()
+        type_opt = cleaned_data.get('type')
+        delay = cleaned_data.get('delay')
+        timeout = cleaned_data.get('timeout')
+
+        if not delay >= timeout:
+            msg = _('Delay must be greater than or equal to Timeout')
+            self._errors['delay'] = self.error_class([msg])
+
+        if type_opt in ['http', 'https']:
+            http_method_opt = cleaned_data.get('http_method')
+            url_path = cleaned_data.get('url_path')
+            expected_codes = cleaned_data.get('expected_codes')
+
+            if not http_method_opt:
+                msg = _('Please choose a HTTP method')
+                self._errors['http_method'] = self.error_class([msg])
+            if not url_path:
+                msg = _('Please specify an URL')
+                self._errors['url_path'] = self.error_class([msg])
+            if not expected_codes:
+                msg = _('Please enter a single value (e.g. 200), '
+                        'a list of values (e.g. 200, 202), '
+                        'or range of values (e.g. 200-204)')
+                self._errors['expected_codes'] = self.error_class([msg])
+        return cleaned_data
+
+    class Meta(object):
+        name = _("Add New Monitor")
+        permissions = ('openstack.services.network',)
+        help_text = _("Create a monitor template.\n\n"
+                      "Select type of monitoring. "
+                      "Specify delay, timeout, and retry limits "
+                      "required by the monitor. "
+                      "Specify method, URL path, and expected "
+                      "HTTP codes upon success.")
+
+
+class AddHealthmonitorStep(workflows.Step):
+    action_class = AddHealthmonitorAction
+    contributes = ("pool_id", "type", "delay", "timeout", "max_retries",
+                   "http_method", "url_path", "expected_codes",
+                   "admin_state_up")
+
+    def contribute(self, data, context):
+        context = super(AddHealthmonitorStep, self).contribute(data, context)
+        context['admin_state_up'] = (context['admin_state_up'] == 'True')
+        if data:
+            return context
+
+
+class AddHealthmonitor(workflows.Workflow):
+    slug = "addmonitor"
+    name = _("Add Monitor")
+    finalize_button_name = _("Add")
+    success_message = _('Added monitor')
+    failure_message = _('Unable to add monitor')
+    success_url = "horizon:user:loadbalancers:index"
+    default_steps = (AddHealthmonitorStep,)
+
+    def handle(self, request, context):
+        try:
+            api.lbaas_v2.healthmonitor_create(request,
+                                              **context)
             return True
         except Exception as e:
             exceptions.handle(request, e)

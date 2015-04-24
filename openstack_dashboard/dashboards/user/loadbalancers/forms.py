@@ -153,3 +153,145 @@ class UpdateMember(forms.SelfHandlingForm):
             LOG.info(msg)
             redirect = reverse(self.failure_url)
             exceptions.handle(request, msg, redirect=redirect)
+
+
+class UpdateAcl(forms.SelfHandlingForm):
+    listener_id = forms.CharField(label=_("Listener"),
+                              widget=forms.TextInput(
+                                  attrs={'readonly': 'readonly'}))
+    acl_id = forms.CharField(label=_("Acl ID"),
+                              widget=forms.TextInput(
+                                  attrs={'readonly': 'readonly'}))
+    name = forms.CharField(max_length=80, label=_("Name"))
+    description = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Description"))
+    action = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Action"))
+    condition = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Condition"))
+    acl_type = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Acl Type"))
+    operator = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Operator"))
+    match = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Match"))
+    match_condition = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Match condition"))
+    admin_state_up = forms.ChoiceField(choices=[(True, _('UP')),
+                                                (False, _('DOWN'))],
+                                       label=_("Admin State"))
+
+    failure_url = 'horizon:user:loadbalancers:index'
+
+    def __init__(self, request, *args, **kwargs):
+        super(UpdateAcl, self).__init__(request, *args, **kwargs)
+
+    def handle(self, request, context):
+        context['admin_state_up'] = (context['admin_state_up'] == 'True')
+        try:
+            acl = api.lbaas_v2.acl_update(request,
+                                          **context)
+            msg = _('Acl %s was successfully updated.')\
+                % context['acl_id']
+            LOG.debug(msg)
+            messages.success(request, msg)
+            return acl
+        except Exception:
+            msg = _('Failed to update acl %s') % context['acl_id']
+            LOG.info(msg)
+            redirect = reverse(self.failure_url)
+            exceptions.handle(request, msg, redirect=redirect)
+
+
+class UpdateHealthmonitor(forms.SelfHandlingForm):
+    healthmonitor_id = forms.CharField(label=_("ID"),
+                         widget=forms.TextInput(
+                             attrs={'readonly': 'readonly'}))
+    type = forms.ChoiceField(
+        label=_("Type"),
+        widget=forms.TextInput(
+            attrs={'readonly': 'readonly'}))
+    delay = forms.IntegerField(
+        min_value=1,
+        label=_("Delay"),
+        help_text=_("The minimum time in seconds between regular checks "
+                    "of a member"))
+    timeout = forms.IntegerField(
+        min_value=1,
+        label=_("Timeout"),
+        help_text=_("The maximum time in seconds for a monitor to wait "
+                    "for a reply"))
+    max_retries = forms.IntegerField(
+        max_value=10, min_value=1,
+        label=_("Max Retries (1~10)"),
+        help_text=_("Number of permissible failures before changing "
+                    "the status of member to inactive"))
+    http_method = forms.ChoiceField(
+        initial="GET",
+        required=False,
+        choices=[('GET', _('GET'))],
+        label=_("HTTP Method"),
+        help_text=_("HTTP method used to check health status of a member"),
+        widget=forms.Select(attrs={
+            'class': 'switched',
+            'data-switch-on': 'type',
+            'data-type-http': _('HTTP Method'),
+            'data-type-https': _('HTTP Method')
+        }))
+    url_path = forms.CharField(
+        initial="/",
+        required=False,
+        max_length=80,
+        label=_("URL"),
+        widget=forms.TextInput(attrs={
+            'class': 'switched',
+            'data-switch-on': 'type',
+            'data-type-http': _('URL'),
+            'data-type-https': _('URL')
+        }))
+    expected_codes = forms.RegexField(
+        initial="200",
+        required=False,
+        max_length=80,
+        regex=r'^(\d{3}(\s*,\s*\d{3})*)$|^(\d{3}-\d{3})$',
+        label=_("Expected HTTP Status Codes"),
+        help_text=_("Expected code may be a single value (e.g. 200), "
+                    "a list of values (e.g. 200, 202), "
+                    "or range of values (e.g. 200-204)"),
+        widget=forms.TextInput(attrs={
+            'class': 'switched',
+            'data-switch-on': 'type',
+            'data-type-http': _('Expected HTTP Status Codes'),
+            'data-type-https': _('Expected HTTP Status Codes')
+        }))
+    admin_state_up = forms.ChoiceField(choices=[(True, _('UP')),
+                                                (False, _('DOWN'))],
+                                       label=_("Admin State"))
+
+    failure_url = 'horizon:user:loadbalancers:index'
+
+    def __init__(self, request, *args, **kwargs):
+        super(UpdateHealthmonitor, self).__init__(request, *args, **kwargs)
+
+    def handle(self, request, context):
+        context['admin_state_up'] = (context['admin_state_up'] == 'True')
+        try:
+            healthmonitor = api.lbaas_v2.healthmonitor_update(request,
+                                                **context)
+            msg = _('Healthmonitor %s was successfully updated.')\
+                % context['healthmonitor_id']
+            LOG.debug(msg)
+            messages.success(request, msg)
+            return healthmonitor
+        except Exception:
+            msg = _('Failed to update healthmonitor %s') % context['healthmonitor_id']
+            LOG.info(msg)
+            redirect = reverse(self.failure_url)
+            exceptions.handle(request, msg, redirect=redirect)

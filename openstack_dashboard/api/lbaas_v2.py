@@ -307,8 +307,23 @@ def member_update(request, member_id, pool_id, **kwargs):
 
 def healthmonitor_create(request, **kwargs):
     """LBaaS v2 Create a healthmonitor."""
+    monitor_type = kwargs['type'].upper()
+    body = {
+        "healthmonitor": {
+            "pool_id": kwargs['pool_id'],
+            "type": monitor_type,
+            "delay": kwargs['delay'],
+            "timeout": kwargs['timeout'],
+            "max_retries": kwargs['max_retries'],
+            "admin_state_up": kwargs['admin_state_up']
+        }
+    }
+    if monitor_type in ['HTTP', 'HTTPS']:
+        body['healthmonitor']['http_method'] = kwargs['http_method']
+        body['healthmonitor']['url_path'] = kwargs['url_path']
+        body['healthmonitor']['expected_codes'] = kwargs['expected_codes']
     healthmonitor = neutronclient(
-        request).create_lbaas_healthmonitor(**kwargs).get('healthmonitor')
+        request).create_lbaas_healthmonitor(body).get('healthmonitor')
     return Healthmonitor(healthmonitor)
 
 
@@ -337,16 +352,41 @@ def healthmonitor_get(request, healthmonitor_id, **kwargs):
 
 def healthmonitor_update(request, healthmonitor_id, **kwargs):
     """LBaaS v2 Update a given healthmonitor."""
+    body = {
+        "healthmonitor": {
+            "delay": kwargs['delay'],
+            "timeout": kwargs['timeout'],
+            "max_retries": kwargs['max_retries'],
+            "http_method": kwargs['http_method'],
+            "url_path": kwargs['url_path'],
+            "expected_codes": kwargs['expected_codes'],
+            "admin_state_up": kwargs['admin_state_up']
+        }
+    }
     healthmonitor = neutronclient(
         request).update_lbaas_healthmonitor(healthmonitor_id,
-                                            **kwargs).get('healthmonitor')
+                                            body).get('healthmonitor')
     return Healthmonitor(healthmonitor)
 
 
 def acl_create(request, **kwargs):
     """LBaaS v2 Create an acl."""
+    body = {
+        "acl": {
+            "name": kwargs['name'],
+            "description": kwargs['description'],
+            "admin_state_up": kwargs['admin_state_up'],
+            "match_condition": kwargs['match_condition'],
+            "listener_id": kwargs['listener_id'],
+            "operator": kwargs['operator'],
+            "match": kwargs['match'],
+            "action": kwargs['action'],
+            "acl_type": kwargs['acl_type'],
+            "condition": kwargs['condition'],
+        }
+    }
     acl = neutronclient(
-        request).create_acl(**kwargs).get('acl')
+        request).create_acl(body).get('acl')
     return Acl(acl)
 
 
@@ -375,7 +415,20 @@ def acl_get(request, acl_id, **kwargs):
 
 def acl_update(request, acl_id, **kwargs):
     """LBaaS v2 Update a given acl."""
+    body = {
+        "acl": {
+            "name": kwargs['name'],
+            "description": kwargs['description'],
+            "admin_state_up": kwargs['admin_state_up'],
+            "match_condition": kwargs['match_condition'],
+            "operator": kwargs['operator'],
+            "match": kwargs['match'],
+            "action": kwargs['action'],
+            "acl_type": kwargs['acl_type'],
+            "condition": kwargs['condition'],
+        }
+    }
     acl = neutronclient(
         request).update_acl(acl_id,
-                            **kwargs).get('acl')
+                            body).get('acl')
     return Acl(acl)
