@@ -22,12 +22,11 @@ class User(horizon.Dashboard):
     name = _("User")
     slug = "user"
     panels = (
-        'welcome',
         'network_topology',
         'networks',
         'routers',
         'loadbalancers')
-    default_panel = 'welcome'
+    default_panel = 'network_topology'
 
 
 horizon.register(User)
