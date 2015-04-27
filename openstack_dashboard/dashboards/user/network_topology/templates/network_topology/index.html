@@ -40,11 +40,11 @@
 <div id="topologyMessages"></div>
 
 <script type="text/javascript">
-  if (typeof horizon.network_topology !== 'undefined') {
-    horizon.network_topology.init();
+  if (typeof horizon.usernetwork_topology !== 'undefined') {
+    horizon.usernetwork_topology.init();
   } else {
     addHorizonLoadEvent(function () {
-      horizon.network_topology.init();
+      horizon.usernetwork_topology.init();
     });
   }
 </script>
