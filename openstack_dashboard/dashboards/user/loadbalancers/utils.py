@@ -38,9 +38,10 @@ def get_monitor_display_name(monitor):
 
 
 @memoized.memoized_method
-def get_subnets(request):
+def get_subnets(request, tenant_id):
     try:
-        subnets = api.neutron.subnet_list(request)
+        subnets = api.neutron.subnet_list(request,
+                                          tenant_id=tenant_id)
     except Exception:
         subnets = []
         exceptions.handle(request,
@@ -49,9 +50,10 @@ def get_subnets(request):
 
 
 @memoized.memoized_method
-def get_loadbalancers(request):
+def get_loadbalancers(request, tenant_id):
     try:
-        loadbalancers = api.lbaas_v2.loadbalancer_list(request)
+        loadbalancers = api.lbaas_v2.loadbalancer_list(request,
+                                                       tenant_id=tenant_id)
     except Exception:
         loadbalancers = []
         exceptions.handle(request,
@@ -60,9 +62,10 @@ def get_loadbalancers(request):
 
 
 @memoized.memoized_method
-def get_listeners(request):
+def get_listeners(request, tenant_id):
     try:
-        listeners = api.lbaas_v2.listener_list(request)
+        listeners = api.lbaas_v2.listener_list(request,
+                                               tenant_id=tenant_id)
     except Exception:
         listeners = []
         exceptions.handle(request,
@@ -71,9 +74,10 @@ def get_listeners(request):
 
 
 @memoized.memoized_method
-def get_pools(request):
+def get_pools(request, tenant_id):
     try:
-        pools = api.lbaas_v2.pool_list(request)
+        pools = api.lbaas_v2.pool_list(request,
+                                       tenant_id=tenant_id)
     except Exception:
         pools = []
         exceptions.handle(request,
@@ -82,9 +86,10 @@ def get_pools(request):
 
 
 @memoized.memoized_method
-def get_healthmonitors(request):
+def get_healthmonitors(request, tenant_id):
     try:
-        healthmonitors = api.lbaas_v2.healthmonitor_list(request)
+        healthmonitors = api.lbaas_v2.healthmonitor_list(request,
+                                                         tenant_id=tenant_id)
     except Exception:
         healthmonitors = []
         exceptions.handle(request,

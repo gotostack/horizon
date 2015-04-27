@@ -34,9 +34,12 @@ class LoadbalancersTab(tabs.TableTab):
     permissions = ('openstack.services.network',)
 
     def get_loadbalancers_data(self):
+        tenant_id=self.request.user.tenant_id
         subnet_dict = dict([(
-            n.id, n.cidr) for n in utils.get_subnets(self.request)])
-        loadbalancers = utils.get_loadbalancers(self.request)
+            n.id, n.cidr) for n in utils.get_subnets(self.request,
+                                                     tenant_id)])
+        loadbalancers = utils.get_loadbalancers(self.request,
+                                                tenant_id)
         if subnet_dict and loadbalancers:
             for lb in loadbalancers:
                 lb.subnet_name = subnet_dict.get(lb.vip_subnet_id)
@@ -50,11 +53,15 @@ class ListenersTab(tabs.TableTab):
     template_name = "horizon/common/_detail_table.html"
 
     def get_listeners_data(self):
+        tenant_id=self.request.user.tenant_id
         loadbalancer_dict = dict([(
-            l.id, l.name) for l in utils.get_loadbalancers(self.request)])
+            l.id, l.name) for l in utils.get_loadbalancers(self.request,
+                                                           tenant_id)])
         pool_dict = dict([(
-            p.id, p.name) for p in utils.get_pools(self.request)])
-        listeners = utils.get_listeners(self.request)
+            p.id, p.name) for p in utils.get_pools(self.request,
+                                                   tenant_id)])
+        listeners = utils.get_listeners(self.request,
+                                        tenant_id)
 
         if loadbalancer_dict and pool_dict:
             for ls in listeners:
@@ -75,7 +82,8 @@ class PoolsTab(tabs.TableTab):
     template_name = "horizon/common/_detail_table.html"
 
     def get_pools_data(self):
-        return utils.get_pools(self.request)
+        tenant_id=self.request.user.tenant_id
+        return utils.get_pools(self.request, tenant_id)
 
 
 class HealthmonitorsTab(tabs.TableTab):
@@ -86,7 +94,8 @@ class HealthmonitorsTab(tabs.TableTab):
     permissions = ('openstack.services.network',)
 
     def get_healthmonitors_data(self):
-        return utils.get_healthmonitors(self.request)
+        tenant_id=self.request.user.tenant_id
+        return utils.get_healthmonitors(self.request, tenant_id)
 
 
 class LoadbalancerTabs(tabs.TabGroup):
@@ -122,9 +131,11 @@ class AclsTab(tabs.TableTab):
 
     def get_acls_data(self):
         listener_id = self.tab_group.kwargs['listener_id']
+        tenant_id=self.request.user.tenant_id
         try:
             acls = api.lbaas_v2.acl_list(self.request,
-                                         listener_id=listener_id)
+                                         listener_id=listener_id,
+                                         tenant_id=tenant_id)
         except Exception:
             acls = []
             exceptions.handle(self.request,
@@ -146,11 +157,13 @@ class MembersTab(tabs.TableTab):
     preload = False
 
     def get_members_data(self):
+        tenant_id=self.request.user.tenant_id
         pool_id = self.tab_group.kwargs['pool_id']
         try:
             members = api.lbaas_v2.member_list(self.request,
                                                pool=pool_id,
-                                               pool_id=pool_id)
+                                               pool_id=pool_id,
+                                               tenant_id=tenant_id)
             for m in members:
                 m.pool_id = pool_id
         except Exception:

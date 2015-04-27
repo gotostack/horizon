@@ -99,7 +99,8 @@ def loadbalancer_create(request, **kwargs):
         'provider': kwargs['provider']}}
     if kwargs.get('vip_address'):
         body['loadbalancer']['vip_address'] = kwargs['vip_address']
-
+    if kwargs.get('agent'):
+        body['loadbalancer']['agent'] = kwargs['agent']
     loadbalancer = neutronclient(
         request).create_loadbalancer(body).get('loadbalancer')
     return Loadbalancer(loadbalancer)
