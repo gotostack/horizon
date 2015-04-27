@@ -227,10 +227,27 @@ class JSONView(View):
                          'fixed_ips': []}
             ports.append(fake_port)
 
+    def _get_loadbalancers(self, request):
+        tenant_id = request.user.tenant_id
+        try:
+            loadbalancers = api.lbaas_v2.loadbalancer_list(
+                request, tenant_id=tenant_id)
+        except Exception:
+            loadbalancers = []
+
+        data = [{'name': lb.name,
+                 'status': lb.provisioning_status,
+                 'id': lb.id,
+                 'port_id': lb.vip_port_id}
+                for lb in loadbalancers]
+        self.add_resource_url('horizon:user:loadbalancers:detail', data)
+        return data
+
     def get(self, request, *args, **kwargs):
         data = {'networks': self._get_networks(request),
                 'ports': self._get_ports(request),
-                'routers': self._get_routers(request)}
+                'routers': self._get_routers(request),
+                'loadbalancers': self._get_loadbalancers(request)}
         self._prepare_gateway_ports(data['routers'], data['ports'])
         json_string = json.dumps(data, ensure_ascii=False)
         return HttpResponse(json_string, content_type='text/json')

@@ -15,6 +15,10 @@ horizon.usernetwork_topology = {
     small:'#topology_template > .router_small',
     normal:'#topology_template > .router_normal'
   },
+  loadbalancer_tmpl: {
+    small:'#topology_template > .instance_small',
+    normal:'#topology_template > .instance_normal'
+  },
   balloon_tmpl : null,
   balloon_device_tmpl : null,
   balloon_port_tmpl : null,
@@ -186,9 +190,38 @@ horizon.usernetwork_topology = {
         self.network_height += device.height + element_properties.margin;
       });
     });
+    $.each([
+      {model:model.loadbalancers, type:'loadbalancer'}
+    ], function(index, devices) {
+      var type = devices.type;
+      var model = devices.model;
+      $.each(model, function(index, device) {
+        device.type = type;
+        device.ports = self.select_lbaas_port(device.port_id);
+        var hasports = (device.ports.length <= 0) ? false : true;
+        //alert(hasports)
+        device.parent_network = (hasports) ?
+          self.select_main_port(device.ports).network_id : self.model.networks[0].id;
+        //alert(device.parent_network)
+        var height = element_properties.port_margin*(device.ports.length - 1);
+        device.height =
+          (self.draw_mode === 'normal' && height > element_properties.default_height) ? height :
+            element_properties.default_height;
+        device.pos_y = self.network_height;
+        device.port_height =
+          (self.draw_mode === 'small' && height > device.height) ? 1 :
+            element_properties.port_height;
+        device.port_margin =
+          (self.draw_mode === 'small' && height > device.height) ?
+            device.height/device.ports.length :
+            element_properties.port_margin;
+        self.network_height += device.height + element_properties.margin;
+        //alert(device)
+      });
+    });
     $.each(model.networks, function(index, network) {
       network.devices = [];
-      $.each([model.routers, ],function(index, devices) {
+      $.each([model.routers, model.loadbalancers],function(index, devices) {
         $.each(devices,function(index, device) {
           if(network.id === device.parent_network) {
             network.devices.push(device);
@@ -452,6 +485,13 @@ horizon.usernetwork_topology = {
       }
     });
   },
+  select_lbaas_port: function(port_id){
+    return $.map(this.model.ports,function(port, index){
+      if (port.id === port_id) {
+        return port;
+      }
+    });
+  },
   select_main_port: function(ports){
     var _self = this;
     var main_port_index = 0;
@@ -560,6 +600,11 @@ horizon.usernetwork_topology = {
       html = balloon_tmpl.render(html_data,{
         table1:device_tmpl,
         table2:(ports.length > 0) ? port_tmpl : null
+      });
+    } else if (d.type === 'loadbalancer') {
+      html_data.view_details_label = gettext("View Loadbalancer Details");
+      html = balloon_tmpl.render(html_data,{
+        table1:device_tmpl
       });
     } else {
       return;
