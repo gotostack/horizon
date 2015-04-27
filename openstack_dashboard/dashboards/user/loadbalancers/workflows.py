@@ -15,6 +15,7 @@
 
 import logging
 
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
 
@@ -29,6 +30,9 @@ from openstack_dashboard import api
 AVAILABLE_PROTOCOLS = ('TCP', 'HTTP', 'HTTPS', 'TERMINATED_HTTPS')
 AVAILABLE_METHODS = ('ROUND_ROBIN', 'LEAST_CONNECTIONS', 'SOURCE_IP')
 
+ENABLE_SPECIFY_LBV2_AGENT = getattr(settings,
+                                    'ENABLE_SPECIFY_LBV2_AGENT',
+                                    False)
 
 LOG = logging.getLogger(__name__)
 
@@ -101,6 +105,21 @@ class AddLoadbalancerAction(workflows.Action):
             provider_choices = [('', msg)]
             self.fields['provider'].widget.attrs['readonly'] = True
         self.fields['provider'].choices = provider_choices
+
+        if ENABLE_SPECIFY_LBV2_AGENT:
+            self.fields['agent'] = forms.ChoiceField(
+                label=_("Agent Host"), required=False)
+            agent_choices = [('', _("Select an Agent Host"))]
+            try:
+                agents = api.neutron.agent_list(request)
+            except Exception:
+                exceptions.handle(request,
+                                  _('Unable to retrieve agent list.'))
+                agents = []
+            for a in agents:
+                if a.agent_type == "Loadbalancerv2 agent":
+                    agent_choices.append((a.id, a.host))
+            self.fields['agent'].choices = agent_choices
 
     class Meta(object):
         name = _("Add New Loadbalancer")
