@@ -34,7 +34,7 @@ class LoadbalancersTab(tabs.TableTab):
     permissions = ('openstack.services.network',)
 
     def get_loadbalancers_data(self):
-        tenant_id=self.request.user.tenant_id
+        tenant_id = self.request.user.tenant_id
         subnet_dict = dict([(
             n.id, n.cidr) for n in utils.get_subnets(self.request,
                                                      tenant_id)])
@@ -53,7 +53,7 @@ class ListenersTab(tabs.TableTab):
     template_name = "horizon/common/_detail_table.html"
 
     def get_listeners_data(self):
-        tenant_id=self.request.user.tenant_id
+        tenant_id = self.request.user.tenant_id
         loadbalancer_dict = dict([(
             l.id, l.name) for l in utils.get_loadbalancers(self.request,
                                                            tenant_id)])
@@ -82,7 +82,7 @@ class PoolsTab(tabs.TableTab):
     template_name = "horizon/common/_detail_table.html"
 
     def get_pools_data(self):
-        tenant_id=self.request.user.tenant_id
+        tenant_id = self.request.user.tenant_id
         return utils.get_pools(self.request, tenant_id)
 
 
@@ -94,7 +94,7 @@ class HealthmonitorsTab(tabs.TableTab):
     permissions = ('openstack.services.network',)
 
     def get_healthmonitors_data(self):
-        tenant_id=self.request.user.tenant_id
+        tenant_id = self.request.user.tenant_id
         return utils.get_healthmonitors(self.request, tenant_id)
 
 
@@ -131,7 +131,7 @@ class AclsTab(tabs.TableTab):
 
     def get_acls_data(self):
         listener_id = self.tab_group.kwargs['listener_id']
-        tenant_id=self.request.user.tenant_id
+        tenant_id = self.request.user.tenant_id
         try:
             acls = api.lbaas_v2.acl_list(self.request,
                                          listener_id=listener_id,
@@ -157,7 +157,7 @@ class MembersTab(tabs.TableTab):
     preload = False
 
     def get_members_data(self):
-        tenant_id=self.request.user.tenant_id
+        tenant_id = self.request.user.tenant_id
         pool_id = self.tab_group.kwargs['pool_id']
         try:
             members = api.lbaas_v2.member_list(self.request,
