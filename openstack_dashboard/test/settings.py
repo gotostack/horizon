@@ -51,6 +51,8 @@ INSTALLED_APPS = (
     'openstack_dashboard.dashboards.identity',
     'openstack_dashboard.dashboards.settings',
     'openstack_dashboard.dashboards.router',
+    'openstack_dashboard.dashboards.user',
+    'openstack_dashboard.dashboards.manager',
 )
 
 AUTHENTICATION_BACKENDS = ('openstack_auth.backend.KeystoneBackend',)

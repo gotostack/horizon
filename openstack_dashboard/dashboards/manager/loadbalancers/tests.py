@@ -18,5 +18,5 @@ from mox import IsA  # noqa
 from openstack_dashboard.test import helpers as test
 
 
-class LoadBalancerTests(test.TestCase):
+class LoadBalancerTests(test.BaseAdminViewTests):
     pass
