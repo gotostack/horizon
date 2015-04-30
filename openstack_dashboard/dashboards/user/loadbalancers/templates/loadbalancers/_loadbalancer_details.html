@@ -1,4 +1,5 @@
 {% load i18n sizeformat parse_date %}
+{% load url from future %}
 
 <div class="info row detail">
   <hr class="header_rule">
@@ -6,54 +7,28 @@
     <dt>{% trans "ID" %}</dt>
     <dd>{{ loadbalancer.id }}</dd>
 
-    <dt>{% trans "Name" %}</dt>
-    <dd>{{ loadbalancer.name|default:_("-") }}</dd>
-
-    <dt>{% trans "Description" %}</dt>
-    <dd>{{ loadbalancer.description|default:_("-") }}</dd>
-
     <dt>{% trans "Project ID" %}</dt>
     <dd>{{ loadbalancer.tenant_id }}</dd>
 
-    <dt>{% trans "VIP" %}</dt>
-    {% if loadbalancer.vip_id %}
-      {% url 'horizon:user:loadbalancers:vipdetails' loadbalancer.vip_id as vip_url %}
-      <dd><a href="{{ vip_url }}">{{ loadbalancer.vip.name_or_id }}</a></dd>
-    {% else %}
-      <dd>{% trans "-" %}</dd>
-    {% endif %}
+    <dt>{% trans "Name" %}</dt>
+    <dd>{{ loadbalancer.name|default:_("-") }}</dd>
 
     <dt>{% trans "Provider" %}</dt>
     <dd>{{ loadbalancer.provider|default:_("N/A") }}</dd>
 
+    <dt>{% trans "Description" %}</dt>
+    <dd>{{ loadbalancer.description|default:_("-") }}</dd>
+
     <dt>{% trans "Subnet" %}</dt>
-    {% url 'horizon:user:networks:subnets:detail' loadbalancer.subnet_id as subnet_url %}
-    <dd><a href="{{ subnet_url }}">{{ loadbalancer.subnet.name_or_id }} {{ loadbalancer.subnet.cidr }}</a></dd>
+    {% url 'horizon:user:networks:subnets:detail' loadbalancer.vip_subnet_id as subnet_url %}
+    <dd><a href="{{ subnet_url }}">{{ loadbalancer.vip_subnet_id }}</a></dd>
 
-    <dt>{% trans "Protocol" %}</dt>
-    <dd>{{ loadbalancer.protocol }}</dd>
-
-    <dt>{% trans "Load Balancing Method" %}</dt>
-    <dd>{{ loadbalancer.lb_method }}</dd>
-
-    <dt>{% trans "Members" %}</dt>
+    <dt>{% trans "Listeners" %}</dt>
     <dd>
-      {% if loadbalancer.members %}
-      {% for member in loadbalancer.members %}
-      {% url 'horizon:user:loadbalancers:memberdetails' member.id as member_url %}
-      <a href="{{ member_url }}">{{ member.address }}:{{ member.protocol_port }}</a><br>
-      {% endfor %}
-      {% else %}
-      <dd>{% trans "-" %}</dd>
-      {% endif %}
-    </dd>
-
-    <dt>{% trans "Health Monitors" %}</dt>
-    <dd>
-      {% if loadbalancer.health_monitors %}
-      {% for monitor in loadbalancer.health_monitors %}
-      {% url 'horizon:user:loadbalancers:monitordetails' monitor.id as monitor_url %}
-      <a href="{{ monitor_url }}">{{ monitor.display_name }}</a><br>
+      {% if loadbalancer.listeners %}
+      {% for ls in loadbalancer.listeners %}
+      {% url 'horizon:user:loadbalancers:listenerdetails' ls.id as listener_url %}
+      <a href="{{ listener_url }}">{{ ls.id }}</a><br>
       {% endfor %}
       {% else %}
       <dd>{% trans "-" %}</dd>
@@ -63,7 +38,26 @@
     <dt>{% trans "Admin State Up" %}</dt>
     <dd>{{ loadbalancer.admin_state_up|yesno|capfirst }}</dd>
 
-    <dt>{% trans "Status" %}</dt>
-    <dd>{{ loadbalancer.status }}</dd>
+  </dl>
+</div>
+
+<div class="info row detail">
+  <h4>{% trans "Loadbalancer Statistics" %}</h4>
+  <hr class="header_rule">
+  <dl class="dl-horizontal">
+
+    {% if loadbalancer.stats %}
+      <dt>{% trans "Bytes In" %}</dt>
+      <dd>{{ loadbalancer.stats.bytes_in }}</dd>
+
+      <dt>{% trans "Bytes Out" %}</dt>
+      <dd>{{ loadbalancer.stats.bytes_out }}</dd>
+
+      <dt>{% trans "Active Connections" %}</dt>
+      <dd>{{ loadbalancer.stats.active_connections }}</dd>
+
+      <dt>{% trans "Total Connections" %}</dt>
+      <dd>{{ loadbalancer.stats.total_connections }}</dd>
+    {% endif %}
   </dl>
 </div>

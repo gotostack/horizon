@@ -1,0 +1,44 @@
+{% load i18n sizeformat parse_date %}
+{% load url from future %}
+
+<div class="info row detail">
+  <hr class="header_rule">
+  <dl class="dl-horizontal">
+    <dt>{% trans "ID" %}</dt>
+    <dd>{{ pool.id }}</dd>
+
+    <dt>{% trans "Project ID" %}</dt>
+    <dd>{{ pool.tenant_id }}</dd>
+
+    <dt>{% trans "Name" %}</dt>
+    <dd>{{ pool.name|default:_("-") }}</dd>
+
+    <dt>{% trans "Protocol" %}</dt>
+    <dd>{{ pool.protocol }}</dd>
+
+    <dt>{% trans "Algorithm" %}</dt>
+    <dd>{{ pool.lb_algorithm }}</dd>
+
+    <dt>{% trans "Healthmonitor" %}</dt>
+    <dd>{{ pool.healthmonitor_id|default:_("-") }}</dd>
+
+    <dt>{% trans "Description" %}</dt>
+    <dd>{{ pool.description|default:_("-") }}</dd>
+
+    <dt>{% trans "Listeners" %}</dt>
+    <dd>
+      {% if pool.listeners %}
+      {% for ls in pool.listeners %}
+      {% url 'horizon:user:loadbalancers:listenerdetails' ls.id as listener_url %}
+      <a href="{{ listener_url }}">{{ ls.id }}</a><br>
+      {% endfor %}
+      {% else %}
+      <dd>{% trans "-" %}</dd>
+      {% endif %}
+    </dd>
+
+    <dt>{% trans "Admin State Up" %}</dt>
+    <dd>{{ pool.admin_state_up|yesno|capfirst }}</dd>
+
+  </dl>
+</div>

@@ -1,0 +1,49 @@
+{% load i18n sizeformat parse_date %}
+{% load url from future %}
+
+<div class="info row detail">
+  <hr class="header_rule">
+  <dl class="dl-horizontal">
+    <dt>{% trans "ID" %}</dt>
+    <dd>{{ listener.id }}</dd>
+
+    <dt>{% trans "Project ID" %}</dt>
+    <dd>{{ listener.tenant_id }}</dd>
+
+    <dt>{% trans "Name" %}</dt>
+    <dd>{{ listener.name|default:_("-") }}</dd>
+
+    <dt>{% trans "Protocol" %}</dt>
+    <dd>{{ listener.protocol }}</dd>
+
+    <dt>{% trans "Protocol Port" %}</dt>
+    <dd>{{ listener.protocol_port }}</dd>
+
+    <dt>{% trans "Connection Limit" %}</dt>
+    <dd>{{ listener.connection_limit }}</dd>
+
+    <dt>{% trans "Description" %}</dt>
+    <dd>{{ listener.description|default:_("-") }}</dd>
+
+    <dt>{% trans "Default Pool" %}</dt>
+    {% url 'horizon:user:loadbalancers:pooldetails' listener.default_pool_id as pool_url %}
+    <dd><a href="{{ pool_url }}">{{ listener.default_pool_id }}</a></dd>
+
+    <dt>{% trans "Loadbalancers" %}</dt>
+    <dd>
+      {% if listener.loadbalancers %}
+      {% for lb in listener.loadbalancers %}
+      {% url 'horizon:user:loadbalancers:loadbalancerdetails' lb.id as loadbalancer_url %}
+      <a href="{{ loadbalancer_url }}">{{ lb.id }}</a><br>
+      {% endfor %}
+      {% else %}
+      <dd>{% trans "-" %}</dd>
+      {% endif %}
+    </dd>
+
+
+    <dt>{% trans "Admin State Up" %}</dt>
+    <dd>{{ listener.admin_state_up|yesno|capfirst }}</dd>
+
+  </dl>
+</div>

@@ -32,7 +32,7 @@ urlpatterns = patterns(
         views.UpdateLoadbalancerView.as_view(), name='updateloadbalancer'),
     url(LOADBALANCER_URL % '$',
         views.LoadbalancerDetailView.as_view(),
-        name='detail'),
+        name='loadbalancerdetails'),
 
     url(r'^addlistener$',
         views.AddListenerView.as_view(), name='addlistener'),
