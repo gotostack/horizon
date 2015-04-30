@@ -117,7 +117,7 @@ class AddListenerLink(tables.LinkAction):
 class LoadbalancerTable(tables.DataTable):
     name = tables.Column("name",
                          verbose_name=_("Name"),
-                         link="horizon:user:loadbalancers:detail")
+                         link="horizon:user:loadbalancers:loadbalancerdetails")
     description = tables.Column('description', verbose_name=_("Description"))
     provider = tables.Column(
         'provider', verbose_name=_("Provider"),
@@ -224,7 +224,8 @@ class AddPoolLink(tables.LinkAction):
     def get_link_url(self, datum):
         if datum:
             base_url = reverse(self.url)
-            params = urlencode({"listener_id": datum.id})
+            params = urlencode({"listener_id": datum.id,
+                                "protocol": datum.protocol})
             return "?".join([base_url, params])
         return reverse(self.url)
 

@@ -107,9 +107,9 @@ class LoadbalancerTabs(tabs.TabGroup):
     sticky = True
 
 
-class OverviewTab(tabs.Tab):
-    name = _("Overview")
-    slug = "overview"
+class LoadbalancerOverviewTab(tabs.Tab):
+    name = _("LoadbalancerOverview")
+    slug = "loadbalanceroverview"
     template_name = "user/loadbalancers/_loadbalancer_details.html"
 
     def get_context_data(self, request):
@@ -118,7 +118,7 @@ class OverviewTab(tabs.Tab):
 
 class LoadbalancerDetailTabs(tabs.TabGroup):
     slug = "loadbalancer_details"
-    tabs = (OverviewTab,)
+    tabs = (LoadbalancerOverviewTab,)
     sticky = True
 
 
@@ -143,9 +143,18 @@ class AclsTab(tabs.TableTab):
         return acls
 
 
+class ListenerOverviewTab(tabs.Tab):
+    name = _("ListenerOverview")
+    slug = "listeneroverview"
+    template_name = "user/loadbalancers/_listener_details.html"
+
+    def get_context_data(self, request):
+        return {"listener": self.tab_group.kwargs['listener']}
+
+
 class ListenerDetailTabs(tabs.TabGroup):
     slug = "listener_details"
-    tabs = (AclsTab,)
+    tabs = (ListenerOverviewTab, AclsTab,)
     sticky = True
 
 
@@ -173,7 +182,16 @@ class MembersTab(tabs.TableTab):
         return members
 
 
+class PoolOverviewTab(tabs.Tab):
+    name = _("PoolOverview")
+    slug = "pooloverview"
+    template_name = "user/loadbalancers/_pool_details.html"
+
+    def get_context_data(self, request):
+        return {"pool": self.tab_group.kwargs['pool']}
+
+
 class PoolDetailTabs(tabs.TabGroup):
     slug = "member_details"
-    tabs = (MembersTab,)
+    tabs = (PoolOverviewTab, MembersTab,)
     sticky = True

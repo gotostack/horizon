@@ -66,6 +66,13 @@ class Pool(neutron.NeutronAPIDictWrapper):
         super(Pool, self).__init__(apiresource)
 
 
+class LoadbalancerStats(neutron.NeutronAPIDictWrapper):
+    """Wrapper for neutron load balancer pool stats."""
+
+    def __init__(self, apiresource):
+        super(LoadbalancerStats, self).__init__(apiresource)
+
+
 def get_agent_hosting_loadbalancer(request, loadbalancer_id, **kwargs):
     """Get lbaas v2 agent hosting a loadbalancer.
 
@@ -139,6 +146,13 @@ def loadbalancer_update(request, loadbalancer_id, **kwargs):
         request).update_loadbalancer(loadbalancer_id,
                                      body).get('loadbalancer')
     return Loadbalancer(loadbalancer)
+
+
+def loadbalancer_stats(request, loadbalancer_id, **kwargs):
+    """LBaaS v2 retrieve loadbalancer stats."""
+    stats = neutronclient(request).retrieve_loadbalancer_stats(
+        loadbalancer_id, **kwargs).get('stats')
+    return LoadbalancerStats(stats)
 
 
 def listener_create(request, **kwargs):

@@ -56,11 +56,24 @@ class LoadbalancerDetailView(tabs.TabbedTableView):
             exceptions.handle(self.request, msg, redirect=self.failure_url)
         return loadbalancer
 
+    def _get_stats(self):
+        try:
+            loadbalancer_id = self.kwargs['loadbalancer_id']
+            stats = api.lbaas_v2.loadbalancer_stats(self.request,
+                                                    loadbalancer_id)
+        except Exception:
+            msg = _('Unable to retrieve stats for loadbalancer "%s".') \
+                % loadbalancer_id
+            exceptions.handle(self.request, msg, redirect=self.failure_url)
+        return stats
+
     def get_context_data(self, **kwargs):
         context = super(LoadbalancerDetailView,
                         self).get_context_data(**kwargs)
         loadbalancer = self._get_data()
+        loadbalancer.stats = self._get_stats()
         context["loadbalancer"] = loadbalancer
+        context["loadbalancer_id"] = loadbalancer.id
         return context
 
     def get_tabs(self, request, *args, **kwargs):
