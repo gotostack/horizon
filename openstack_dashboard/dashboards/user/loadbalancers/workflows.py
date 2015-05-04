@@ -99,7 +99,7 @@ class AddLoadbalancerAction(workflows.Action):
                         _("%s (default)") % default_provider))
         else:
             if providers is None:
-                msg = _("Provider for Load Balancer is not supported")
+                msg = _("Provider for Load Balancer V2 is not supported")
             else:
                 msg = _("No provider is available")
             provider_choices = [('', msg)]

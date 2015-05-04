@@ -20,6 +20,7 @@ def load_test_data(load_onto=None):
     from openstack_dashboard.test.test_data import glance_data
     from openstack_dashboard.test.test_data import heat_data
     from openstack_dashboard.test.test_data import keystone_data
+    from openstack_dashboard.test.test_data import lbaas_v2_data
     from openstack_dashboard.test.test_data import neutron_data
     from openstack_dashboard.test.test_data import nova_data
     from openstack_dashboard.test.test_data import sahara_data
@@ -34,6 +35,7 @@ def load_test_data(load_onto=None):
         nova_data.data,
         cinder_data.data,
         neutron_data.data,
+        lbaas_v2_data.data,
         swift_data.data,
         heat_data.data,
         ceilometer_data.data,
