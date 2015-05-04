@@ -739,6 +739,12 @@ def data(TEST):
                   "default": True}
     TEST.providers.add(provider_1)
 
+    # Service providers.
+    provider_2 = {"service_type": "LOADBALANCERV2",
+                  "name": "haproxy",
+                  "default": True}
+    TEST.providers.add(provider_2)
+
     # VPNaaS.
 
     # 1st VPNService.
