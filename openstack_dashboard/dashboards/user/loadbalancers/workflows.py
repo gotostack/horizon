@@ -199,7 +199,8 @@ class AddListenerAction(workflows.Action):
         tenant_id = request.user.tenant_id
         loadbalancer_choices = [('', _("Select a Loadbalancer"))]
         try:
-            loadbalancers = api.lbaas_v2.loadbalancer_list(request, tenant_id)
+            loadbalancers = api.lbaas_v2.loadbalancer_list(
+                request, tenant_id=tenant_id)
         except Exception:
             exceptions.handle(request,
                               _('Unable to retrieve loadbalancer list.'))
@@ -275,7 +276,8 @@ class AddPoolAction(workflows.Action):
         tenant_id = request.user.tenant_id
         listener_choices = [('', _("Select a Loadbalancer"))]
         try:
-            listeners = api.lbaas_v2.listener_list(request, tenant_id)
+            listeners = api.lbaas_v2.listener_list(request,
+                                                   tenant_id=tenant_id)
         except Exception:
             exceptions.handle(request,
                               _('Unable to retrieve listener list.'))
@@ -587,9 +589,11 @@ class AddHealthmonitorAction(workflows.Action):
 
     def __init__(self, request, *args, **kwargs):
         super(AddHealthmonitorAction, self).__init__(request, *args, **kwargs)
+        tenant_id = request.user.tenant_id
         pool_id_choices = [('', _("Select a Pool"))]
         try:
-            pools = api.lbaas_v2.pool_list(request)
+            pools = api.lbaas_v2.pool_list(request,
+                                           tenant_id=tenant_id)
         except Exception:
             exceptions.handle(request,
                               _('Unable to retrieve pool list.'))
@@ -663,6 +667,90 @@ class AddHealthmonitor(workflows.Workflow):
         try:
             api.lbaas_v2.healthmonitor_create(request,
                                               **context)
+            return True
+        except Exception as e:
+            exceptions.handle(request, e)
+            return False
+
+
+class AddRedundanceAction(workflows.Action):
+    loadbalancer_id = forms.CharField(label=_("Loadbalancer"),
+                                      widget=forms.TextInput(
+                                          attrs={'readonly': 'readonly'}))
+    name = forms.CharField(max_length=80,
+                           required=False,
+                           initial="",
+                           label=_("Name"))
+    description = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Description"))
+    admin_state_up = forms.ChoiceField(choices=[(True, _('UP')),
+                                                (False, _('DOWN'))],
+                                       label=_("Admin State"))
+
+    def __init__(self, request, *args, **kwargs):
+        super(AddRedundanceAction, self).__init__(request, *args, **kwargs)
+
+        if ENABLE_SPECIFY_LBV2_AGENT:
+            self.fields['agent_id'] = forms.ChoiceField(
+                label=_("Agent Host"), required=False)
+            agent_choices = [('', _("Select an Agent Host"))]
+            try:
+                agents = api.neutron.agent_list(request)
+            except Exception:
+                exceptions.handle(request,
+                                  _('Unable to retrieve agent list.'))
+                agents = []
+            for a in agents:
+                if a.agent_type == "Loadbalancerv2 agent":
+                    agent_choices.append((a.id, a.host))
+            self.fields['agent_id'].choices = agent_choices
+
+    class Meta(object):
+        name = _("Add New Redundance")
+        permissions = ('openstack.services.network',)
+        help_text = _("Create redundance for current project.\n\n"
+                      "Assign a name and description for the redundance. "
+                      "Choose one subnet where all redundances of this "
+                      "redundance must be on. "
+                      "Select the protocol and load balancing method "
+                      "for this redundance. "
+                      "Admin State is UP (checked) by default.")
+
+
+class AddRedundanceStep(workflows.Step):
+    action_class = AddRedundanceAction
+    contributes = ("loadbalancer_id", "name", "description", "agent_id",
+                   "admin_state_up")
+
+    def contribute(self, data, context):
+        context = super(AddRedundanceStep, self).contribute(data, context)
+        context['admin_state_up'] = (context['admin_state_up'] == 'True')
+        if data:
+            return context
+
+
+class AddRedundance(workflows.Workflow):
+    slug = "addredundance"
+    name = _("Add Redundance")
+    finalize_button_name = _("Add")
+    success_message = _('Added redundance "%s".')
+    failure_message = _('Unable to add redundance "%s".')
+    success_url = "horizon:user:loadbalancers:loadbalancerdetails"
+    default_steps = (AddRedundanceStep,)
+
+    def get_success_url(self):
+        loadbalancer_id = self.context.get('loadbalancer_id')
+        return reverse(self.success_url, args=(loadbalancer_id,))
+
+    def format_status_message(self, message):
+        address = self.context.get('address')
+        return message % address
+
+    def handle(self, request, context):
+        try:
+            api.lbaas_v2.redundance_create(request,
+                                           **context)
             return True
         except Exception as e:
             exceptions.handle(request, e)

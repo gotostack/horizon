@@ -34,6 +34,12 @@ urlpatterns = patterns(
         views.LoadbalancerDetailView.as_view(),
         name='loadbalancerdetails'),
 
+    url(r'^addredundance/(?P<loadbalancer_id>[^/]+)/$',
+        views.AddRedundanceView.as_view(), name='addredundance'),
+    url(r'^updateredundance/(?P<loadbalancer_id>[^/]+)'
+        '/(?P<redundance_id>[^/]+)/$',
+        views.UpdateRedundanceView.as_view(), name='updateredundance'),
+
     url(r'^addlistener$',
         views.AddListenerView.as_view(), name='addlistener'),
     url(r'^updatelistener/(?P<listener_id>[^/]+)/$',

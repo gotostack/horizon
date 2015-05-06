@@ -116,9 +116,33 @@ class LoadbalancerOverviewTab(tabs.Tab):
         return {"loadbalancer": self.tab_group.kwargs['loadbalancer']}
 
 
+class LbRedundancesTab(tabs.TableTab):
+    table_classes = (l_tables.LbRedundancesTable,)
+    name = _("Loadbalancer Redundances")
+    slug = "lbredundances"
+    template_name = "horizon/common/_detail_table.html"
+    preload = False
+
+    def get_lbredundances_data(self):
+        loadbalancer_id = self.tab_group.kwargs['loadbalancer_id']
+        tenant_id = self.request.user.tenant_id
+        try:
+            lbredundances = api.lbaas_v2.redundance_list(
+                self.request,
+                loadbalancer_id=loadbalancer_id,
+                tenant_id=tenant_id)
+        except Exception:
+            lbredundances = []
+            exceptions.handle(
+                self.request,
+                _('Unable to retrieve loadbalancer redundance list.'))
+        return lbredundances
+
+
 class LoadbalancerDetailTabs(tabs.TabGroup):
     slug = "loadbalancer_details"
-    tabs = (LoadbalancerOverviewTab,)
+    tabs = (LoadbalancerOverviewTab,
+            LbRedundancesTab)
     sticky = True
 
 

@@ -296,3 +296,68 @@ class UpdateHealthmonitor(forms.SelfHandlingForm):
             LOG.info(msg)
             redirect = reverse(self.failure_url)
             exceptions.handle(request, msg, redirect=redirect)
+
+
+class UpdateRedundance(forms.SelfHandlingForm):
+    redundance_id = forms.CharField(label=_("ID"),
+                                    widget=forms.TextInput(
+                                        attrs={'readonly': 'readonly'}))
+    loadbalancer_id = forms.CharField(label=_("Loadbalancer"),
+                                      widget=forms.TextInput(
+                                          attrs={'readonly': 'readonly'}))
+    refresh = forms.ChoiceField(
+        initial='false',
+        required=False,
+        choices=[('true', _('True')),
+                 ('false', _('False'))],
+        label=_("Refresh"),
+        help_text=_("Refresh a load balancer"
+                    " redundance haproxy config file."),
+        widget=forms.Select(attrs={
+            'class': 'switchable',
+            'data-slug': 'refresh'
+        }))
+    name = forms.CharField(
+        max_length=80,
+        label=_("Name"),
+        required=False,
+        initial="",
+        widget=forms.TextInput(attrs={
+            'class': 'switched',
+            'data-switch-on': 'refresh',
+            'data-refresh-false': _('Name')
+        }))
+    description = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Description"),
+        widget=forms.TextInput(attrs={
+            'class': 'switched',
+            'data-switch-on': 'refresh',
+            'data-refresh-false': _('Description')
+        }))
+    admin_state_up = forms.ChoiceField(
+        choices=[(True, _('UP')),
+                 (False, _('DOWN'))],
+        label=_("Admin State"))
+
+    failure_url = 'horizon:user:loadbalancers:index'
+
+    def __init__(self, request, *args, **kwargs):
+        super(UpdateRedundance, self).__init__(request, *args, **kwargs)
+
+    def handle(self, request, context):
+        context['admin_state_up'] = (context['admin_state_up'] == 'True')
+        try:
+            redundance = api.lbaas_v2.redundance_update(request,
+                                                        **context)
+            msg = _('Redundance %s was successfully updated.')\
+                % context['redundance_id']
+            LOG.debug(msg)
+            messages.success(request, msg)
+            return redundance
+        except Exception:
+            msg = _(
+                'Failed to update redundance %s') % context['redundance_id']
+            LOG.info(msg)
+            redirect = reverse(self.failure_url)
+            exceptions.handle(request, msg, redirect=redirect)

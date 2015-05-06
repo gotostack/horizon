@@ -427,3 +427,57 @@ class UpdateHealthmonitorView(forms.ModalFormView):
                 "url_path": _obg['url_path'],
                 "expected_codes": _obg['expected_codes'],
                 "admin_state_up": _obg['admin_state_up']}
+
+
+class AddRedundanceView(workflows.WorkflowView):
+    workflow_class = user_workflows.AddRedundance
+
+    def get_initial(self):
+        return {"loadbalancer_id": self.kwargs['loadbalancer_id']}
+
+
+class UpdateRedundanceView(forms.ModalFormView):
+    form_class = user_forms.UpdateRedundance
+    form_id = "update_redundance_form"
+    modal_header = _("Edit Redundance")
+    template_name = "user/loadbalancers/updateredundance.html"
+    context_object_name = 'redundance'
+    submit_label = _("Save Changes")
+    submit_url = "horizon:user:loadbalancers:updateredundance"
+    success_url = "horizon:user:loadbalancers:loadbalancerdetails"
+    page_title = _("Edit Redundance")
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdateRedundanceView,
+                        self).get_context_data(**kwargs)
+        context["loadbalancer_id"] = self.kwargs['loadbalancer_id']
+        context["redundance_id"] = self.kwargs['redundance_id']
+        args = (self.kwargs['loadbalancer_id'],
+                self.kwargs['redundance_id'])
+        context['submit_url'] = reverse(self.submit_url, args=args)
+        return context
+
+    def get_success_url(self):
+        return reverse(self.success_url,
+                       args=(self.kwargs['loadbalancer_id'],))
+
+    @memoized.memoized_method
+    def _get_object(self, *args, **kwargs):
+        redundance_id = self.kwargs['redundance_id']
+        loadbalancer_id = self.kwargs['loadbalancer_id']
+        try:
+            return api.lbaas_v2.redundance_get(self.request,
+                                               redundance_id,
+                                               loadbalancer_id)
+        except Exception as e:
+            redirect = self.success_url
+            msg = _('Unable to retrieve redundance details. %s') % e
+            exceptions.handle(self.request, msg, redirect=redirect)
+
+    def get_initial(self):
+        _obg = self._get_object()
+        return {'redundance_id': _obg['id'],
+                'loadbalancer_id': self.kwargs['loadbalancer_id'],
+                'name': _obg['name'],
+                'description': _obg['description'],
+                'admin_state_up': _obg['admin_state_up']}
