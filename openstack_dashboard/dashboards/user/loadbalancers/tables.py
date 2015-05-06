@@ -18,6 +18,7 @@ import logging
 from django.core.urlresolvers import reverse
 from django.template import defaultfilters as filters
 from django.utils.http import urlencode
+from django.utils.translation import pgettext_lazy
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import ungettext_lazy
 
@@ -114,6 +115,33 @@ class AddListenerLink(tables.LinkAction):
         return reverse(self.url)
 
 
+STATUS_CHOICES = (
+    ("Active", True),
+    ("Down", True),
+    ("Error", False),
+)
+
+
+STATUS_DISPLAY_CHOICES = (
+    ("Active", pgettext_lazy("Current status of a Pool",
+                             u"Active")),
+    ("Down", pgettext_lazy("Current status of a Pool",
+                           u"Down")),
+    ("Error", pgettext_lazy("Current status of a Pool",
+                            u"Error")),
+    ("Created", pgettext_lazy("Current status of a Pool",
+                              u"Created")),
+    ("Pending_Create", pgettext_lazy("Current status of a Pool",
+                                     u"Pending Create")),
+    ("Pending_Update", pgettext_lazy("Current status of a Pool",
+                                     u"Pending Update")),
+    ("Pending_Delete", pgettext_lazy("Current status of a Pool",
+                                     u"Pending Delete")),
+    ("Inactive", pgettext_lazy("Current status of a Pool",
+                               u"Inactive")),
+)
+
+
 class LoadbalancerTable(tables.DataTable):
     name = tables.Column("name",
                          verbose_name=_("Name"),
@@ -128,7 +156,9 @@ class LoadbalancerTable(tables.DataTable):
     subnet_name = tables.Column('subnet_name', verbose_name=_("Subnet"))
     status = tables.Column('provisioning_status',
                            verbose_name=_("Status"),
-                           status=True)
+                           status=True,
+                           status_choices=STATUS_CHOICES,
+                           display_choices=STATUS_DISPLAY_CHOICES)
 
     class Meta(object):
         name = "loadbalancers"
@@ -331,6 +361,15 @@ class AddHealthmonitorLink(tables.LinkAction):
         return reverse(self.url)
 
 
+class AddPool(tables.LinkAction):
+    name = "addpool"
+    verbose_name = _("Add Pool")
+    url = "horizon:user:loadbalancers:addpool"
+    classes = ("ajax-modal",)
+    icon = "plus"
+    policy_rules = (("network", "create_pool"),)
+
+
 class PoolsTable(tables.DataTable):
     name = tables.Column("name",
                          verbose_name=_("Name"),
@@ -345,7 +384,7 @@ class PoolsTable(tables.DataTable):
     class Meta(object):
         name = "pools"
         verbose_name = _("Pools")
-        table_actions = (NameFilterAction, AddPoolLink,
+        table_actions = (NameFilterAction, AddPool,
                          DeletePool)
         row_actions = (UpdatePoolLink,
                        AddMemberToPoolLink,
@@ -591,3 +630,97 @@ class HealthmonitorsTable(tables.DataTable):
         table_actions = (NameFilterAction, AddHealthmonitorLink,
                          DeleteHealthmonitor)
         row_actions = (UpdateHealthmonitorLink, DeleteHealthmonitor)
+
+
+class AddRedundanceLink(tables.LinkAction):
+    name = "addredundance"
+    verbose_name = _("Add Redundance")
+    url = "horizon:user:loadbalancers:addredundance"
+    classes = ("ajax-modal",)
+    icon = "plus"
+    policy_rules = (("network", "create_redundance"),)
+
+    def get_link_url(self, datum=None):
+        loadbalancer_id = self.table.kwargs['loadbalancer_id']
+        return reverse(self.url, args=(loadbalancer_id,))
+
+
+class DeleteRedundance(tables.DeleteAction):
+    name = "deleteredundance"
+    policy_rules = (("network", "delete_redundance"),)
+    help_text = _("Deleted redundances are not recoverable.")
+
+    @staticmethod
+    def action_present(count):
+        return ungettext_lazy(
+            u"Delete Redundance",
+            u"Delete Redundances",
+            count
+        )
+
+    @staticmethod
+    def action_past(count):
+        return ungettext_lazy(
+            u"Scheduled deletion of Redundance",
+            u"Scheduled deletion of Redundances",
+            count
+        )
+
+    def delete(self, request, obj_id):
+        loadbalancer_id = self.table.kwargs['loadbalancer_id']
+        api.lbaas_v2.redundance_delete(request,
+                                       obj_id,
+                                       loadbalancer_id)
+
+
+class UpdateRedundanceLink(policy.PolicyTargetMixin, tables.LinkAction):
+    name = "updateredundance"
+    verbose_name = _("Edit Redundance")
+    classes = ("ajax-modal", "btn-update",)
+    policy_rules = (("network", "update_redundance"),)
+
+    def get_link_url(self, redundance):
+        loadbalancer_id = self.table.kwargs['loadbalancer_id']
+        base_url = reverse("horizon:user:loadbalancers:updateredundance",
+                           kwargs={
+                               'loadbalancer_id': loadbalancer_id,
+                               'redundance_id': redundance.id})
+        return base_url
+
+
+class UpdateLbRedundancesRow(tables.Row):
+    ajax = True
+
+    def get_data(self, request, lbr_id):
+        loadbalancer_id = self.table.kwargs['loadbalancer_id']
+        lbredundance = api.lbaas_v2.redundance_get(request,
+                                                   lbr_id,
+                                                   loadbalancer_id)
+        return lbredundance
+
+
+class LbRedundancesTable(tables.DataTable):
+    name = tables.Column("name",
+                         verbose_name=_("Name"))
+    vip_address = tables.Column('vip_address',
+                                verbose_name=_("IP Address"),
+                                attrs={'data-type': "ip"})
+    description = tables.Column('description', verbose_name=_("Description"))
+    admin_state_up = tables.Column('admin_state_up',
+                                   verbose_name=_("Admin State"))
+    status = tables.Column('provisioning_status',
+                           verbose_name=_("Status"),
+                           status=True,
+                           status_choices=STATUS_CHOICES,
+                           display_choices=STATUS_DISPLAY_CHOICES)
+    agent_id = tables.Column('agent_id',
+                             verbose_name=_("Agent"))
+
+    class Meta(object):
+        name = "lbredundances"
+        verbose_name = _("Loadbalancer Redundances")
+        status_columns = ["status"]
+        row_class = UpdateLbRedundancesRow
+        table_actions = (NameFilterAction, AddRedundanceLink,
+                         DeleteRedundance)
+        row_actions = (UpdateRedundanceLink, DeleteRedundance)

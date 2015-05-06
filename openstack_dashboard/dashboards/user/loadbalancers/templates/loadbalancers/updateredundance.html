@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Edit Loadbalancer Redundance" %}{% endblock %}
+
+{% block main %}
+  {% include 'user/loadbalancers/_updateredundance.html' %}
+{% endblock %}

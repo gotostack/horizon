@@ -240,7 +240,8 @@ class JSONView(View):
                  'id': lb.id,
                  'port_id': lb.vip_port_id}
                 for lb in loadbalancers]
-        self.add_resource_url('horizon:user:loadbalancers:detail', data)
+        self.add_resource_url(
+            'horizon:user:loadbalancers:loadbalancerdetails', data)
         return data
 
     def get(self, request, *args, **kwargs):

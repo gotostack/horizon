@@ -1,5 +1,5 @@
 # Copyright 2015 Letv Cloud Computing
-# All Rights Reserved
+# All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -51,14 +51,14 @@ class Loadbalancer(neutron.NeutronAPIDictWrapper):
 
 
 class Member(neutron.NeutronAPIDictWrapper):
-    """Wrapper for neutron load balancer member."""
+    """Wrapper for neutron load balancer v2 member."""
 
     def __init__(self, apiresource):
         super(Member, self).__init__(apiresource)
 
 
 class Pool(neutron.NeutronAPIDictWrapper):
-    """Wrapper for neutron load balancer pool."""
+    """Wrapper for neutron load balancer v2 pool."""
 
     def __init__(self, apiresource):
         if 'provider' not in apiresource:
@@ -67,10 +67,24 @@ class Pool(neutron.NeutronAPIDictWrapper):
 
 
 class LoadbalancerStats(neutron.NeutronAPIDictWrapper):
-    """Wrapper for neutron load balancer pool stats."""
+    """Wrapper for neutron load balancer stats."""
 
     def __init__(self, apiresource):
         super(LoadbalancerStats, self).__init__(apiresource)
+
+
+class LbRedundance(neutron.NeutronAPIDictWrapper):
+    """Wrapper for neutron load balancer Redundance stats."""
+
+    def __init__(self, apiresource):
+        super(LbRedundance, self).__init__(apiresource)
+
+
+class LbRedundanceStats(neutron.NeutronAPIDictWrapper):
+    """Wrapper for neutron load balancer Redundance stats."""
+
+    def __init__(self, apiresource):
+        super(LbRedundanceStats, self).__init__(apiresource)
 
 
 def get_agent_hosting_loadbalancer(request, loadbalancer_id, **kwargs):
@@ -442,3 +456,71 @@ def acl_update(request, acl_id, **kwargs):
         request).update_acl(acl_id,
                             body).get('acl')
     return Acl(acl)
+
+
+def redundance_create(request, loadbalancer_id, **kwargs):
+    """LBaaS v2 Create a redundance."""
+    body = {"redundance": {
+        "admin_state_up": kwargs['admin_state_up'],
+        "name": kwargs['name'],
+        "description": kwargs['description']}}
+    if (kwargs['agent_id']
+            and kwargs['agent_id'] != ''):
+        body['redundance']['agent_id'] = kwargs['agent_id']
+    else:
+        body['redundance']['agent_id'] = None
+    redundance = neutronclient(
+        request).create_lbaas_redundance(loadbalancer_id,
+                                         body).get('redundance')
+    return LbRedundance(redundance)
+
+
+def redundance_delete(request, redundance_id, loadbalancer_id):
+    """LBaaS v2 Delete a given redundance."""
+    neutronclient(request).delete_lbaas_redundance(redundance_id,
+                                                   loadbalancer_id)
+
+
+@memoized
+def redundance_list(request, loadbalancer_id, retrieve_all=True, **kwargs):
+    """LBaaS v2 List redundances that belong to a given tenant."""
+    redundances = neutronclient(
+        request).list_lbaas_redundances(loadbalancer_id,
+                                        retrieve_all,
+                                        **kwargs).get('redundances')
+    return [LbRedundance(m) for m in redundances]
+
+
+@memoized
+def redundance_get(request, redundance_id, loadbalancer_id, **kwargs):
+    """LBaaS v2 Show information of a given redundance."""
+    redundance = neutronclient(
+        request).show_lbaas_redundance(redundance_id,
+                                       loadbalancer_id,
+                                       **kwargs).get('redundance')
+    return LbRedundance(redundance)
+
+
+def redundance_update(request,
+                      redundance_id,
+                      loadbalancer_id,
+                      refresh='false',
+                      **kwargs):
+    """LBaaS v2 Update or Refresh a given redundance."""
+    body = {"redundance": {}}
+    if refresh == 'true':
+            redundance = neutronclient(
+                request).update_lbaas_redundance(redundance_id,
+                                                 loadbalancer_id,
+                                                 body).get('redundance')
+    else:
+        body["redundance"] = {
+            "admin_state_up": kwargs['admin_state_up'],
+            "name": kwargs['name'],
+            "description": kwargs['description']}
+
+        redundance = neutronclient(
+            request).update_lbaas_redundance(redundance_id,
+                                             loadbalancer_id,
+                                             body).get('redundance')
+    return LbRedundance(redundance)

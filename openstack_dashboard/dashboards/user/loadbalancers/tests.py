@@ -303,7 +303,7 @@ class LoadBalancerTests(test.TestCase):
         loadbalancers = self.v2_loadbalancers.list()
         api.lbaas_v2.loadbalancer_list(
             IsA(http.HttpRequest),
-            self.tenant.id) \
+            tenant_id=self.tenant.id) \
             .AndReturn(loadbalancers)
         self.mox.ReplayAll()
 
@@ -330,7 +330,7 @@ class LoadBalancerTests(test.TestCase):
                 'admin_state_up': listener.admin_state_up}
         api.lbaas_v2.loadbalancer_list(
             IsA(http.HttpRequest),
-            self.tenant.id) \
+            tenant_id=self.tenant.id) \
             .AndReturn(loadbalancers)
         api.lbaas_v2.listener_create(
             IsA(http.HttpRequest), **data).AndReturn(listener)
