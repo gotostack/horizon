@@ -21,6 +21,7 @@ def data(TEST):
     # Data returned by openstack_dashboard.api.neutron wrapper.
     TEST.v2_loadbalancers = utils.TestDataContainer()
     TEST.v2_loadbalancer_stats = utils.TestDataContainer()
+    TEST.v2_lbredundances = utils.TestDataContainer()
     TEST.v2_listeners = utils.TestDataContainer()
     TEST.v2_acls = utils.TestDataContainer()
     TEST.v2_pools = utils.TestDataContainer()
@@ -30,6 +31,7 @@ def data(TEST):
     # Data return by neutronclient.
     TEST.v2_api_loadbalancers = utils.TestDataContainer()
     TEST.v2_api_loadbalancer_stats = utils.TestDataContainer()
+    TEST.v2_api_lbredundances = utils.TestDataContainer()
     TEST.v2_api_listeners = utils.TestDataContainer()
     TEST.v2_api_acls = utils.TestDataContainer()
     TEST.v2_api_pools = utils.TestDataContainer()
@@ -172,3 +174,19 @@ def data(TEST):
     }
     TEST.v2_api_acls.add(acl_dict)
     TEST.v2_acls.add(lbaas_v2.Acl(acl_dict))
+
+    # 1st redundance for loadbalancer 1st.
+    redundance_dict = {
+        "description": "redundance",
+        "provisioning_status": "ACTIVE",
+        "tenant_id": "1",
+        "admin_state_up": True,
+        "vip_port_id": "063cf7f3-ded1-4297-bc4c-31eae876cc91",
+        "agent_id": "9c0105df-aa9f-43b2-88fe-80ef0834803e",
+        "vip_address": "192.168.100.103",
+        "id": "dea64779-8d33-4826-b56e-3a8b605b094c",
+        "operating_status": "ONLINE",
+        "name": "redundance"
+    }
+    TEST.v2_api_lbredundances.add(redundance_dict)
+    TEST.v2_lbredundances.add(lbaas_v2.LbRedundance(redundance_dict))

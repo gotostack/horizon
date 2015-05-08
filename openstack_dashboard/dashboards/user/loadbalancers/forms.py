@@ -68,6 +68,13 @@ class UpdateLoadbalancer(UpdateBase):
 
 
 class UpdateListener(UpdateBase):
+    connection_limit = forms.ChoiceField(
+        choices=[('5000', '5000'),
+                 ('10000', '10000'),
+                 ('20000', '20000'),
+                 ('40000', '40000')],
+        label=_("Connection Limit"),
+        help_text=_("Maximum number of connections allowed."))
 
     def handle(self, request, context):
         context['admin_state_up'] = (context['admin_state_up'] == 'True')
@@ -212,6 +219,10 @@ class UpdateHealthmonitor(forms.SelfHandlingForm):
                                            attrs={'readonly': 'readonly'}))
     type = forms.ChoiceField(
         label=_("Type"),
+        choices=[('ping', _('PING')),
+                 ('tcp', _('TCP')),
+                 ('http', _('HTTP')),
+                 ('https', _('HTTPS'))],
         widget=forms.TextInput(
             attrs={'readonly': 'readonly'}))
     delay = forms.IntegerField(

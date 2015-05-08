@@ -211,6 +211,7 @@ def listener_update(request, listener_id, **kwargs):
     body = {"listener": {
         'name': kwargs['name'],
         'description': kwargs['description'],
+        'connection_limit': kwargs['connection_limit'],
         'admin_state_up': kwargs['admin_state_up']}}
     listener = neutronclient(
         request).update_listener(listener_id,
@@ -376,17 +377,19 @@ def healthmonitor_get(request, healthmonitor_id, **kwargs):
 
 def healthmonitor_update(request, healthmonitor_id, **kwargs):
     """LBaaS v2 Update a given healthmonitor."""
+    monitor_type = kwargs['type'].upper()
     body = {
         "healthmonitor": {
             "delay": kwargs['delay'],
             "timeout": kwargs['timeout'],
             "max_retries": kwargs['max_retries'],
-            "http_method": kwargs['http_method'],
-            "url_path": kwargs['url_path'],
-            "expected_codes": kwargs['expected_codes'],
             "admin_state_up": kwargs['admin_state_up']
         }
     }
+    if monitor_type in ['HTTP', 'HTTPS']:
+        body['healthmonitor']['http_method'] = kwargs['http_method']
+        body['healthmonitor']['url_path'] = kwargs['url_path']
+        body['healthmonitor']['expected_codes'] = kwargs['expected_codes']
     healthmonitor = neutronclient(
         request).update_lbaas_healthmonitor(healthmonitor_id,
                                             body).get('healthmonitor')

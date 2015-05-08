@@ -183,10 +183,10 @@ class AddListenerAction(workflows.Action):
         validators=[validators.validate_port_range])
 
     connection_limit = forms.ChoiceField(
-        choices=[(5000, 5000),
-                 (10000, 10000),
-                 (20000, 20000),
-                 (40000, 40000)],
+        choices=[('5000', '5000'),
+                 ('10000', '10000'),
+                 ('20000', '20000'),
+                 ('40000', '40000')],
         label=_("Connection Limit"),
         help_text=_("Maximum number of connections allowed."))
 
@@ -745,8 +745,7 @@ class AddRedundance(workflows.Workflow):
 
     def handle(self, request, context):
         try:
-            api.lbaas_v2.redundance_create(request,
-                                           **context)
+            api.lbaas_v2.redundance_create(request, **context)
             return True
         except Exception as e:
             exceptions.handle(request, e)
