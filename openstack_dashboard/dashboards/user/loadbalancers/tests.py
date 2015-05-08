@@ -25,6 +25,7 @@ from horizon.workflows import views
 from openstack_dashboard import api
 from openstack_dashboard.test import helpers as test
 
+from openstack_dashboard.dashboards.user.loadbalancers import tabs
 from openstack_dashboard.dashboards.user.loadbalancers import workflows
 
 DASHBOARD = 'user'
@@ -52,6 +53,9 @@ UPDATEHEALTHMONITOR_PATH = PATH_BASE + 'updatehealthmonitor'
 
 ADDACL_PATH = PATH_BASE + 'addacl'
 UPDATEACL_PATH = PATH_BASE + 'updateacl'
+
+ADDREDUNANCE_PATH = PATH_BASE + 'addredundance'
+UPDATEREDUNANCE_PATH = PATH_BASE + 'updateredundance'
 
 
 class LoadBalancerTests(test.TestCase):
@@ -212,6 +216,17 @@ class LoadBalancerTests(test.TestCase):
         self.assertNoFormErrors(res)
         self.assertRedirectsNoFollow(res, INDEX_URL)
 
+    @test.create_stubs({api.lbaas_v2: ('loadbalancer_get',)})
+    def test_update_loadbalancer_get(self):
+        loadbalancer = self.v2_loadbalancers.first()
+        api.lbaas_v2.loadbalancer_get(IsA(http.HttpRequest),
+                                      loadbalancer.id).AndReturn(loadbalancer)
+        self.mox.ReplayAll()
+        res = self.client.get(reverse(UPDATELOADBALANCER_PATH,
+                                      args=(loadbalancer.id,)))
+        self.assertTemplateUsed(res,
+                                'user/loadbalancers/updateloadbalancer.html')
+
     @test.create_stubs({api.lbaas_v2: ('loadbalancer_get',
                                        'loadbalancer_update')})
     def test_update_loadbalancer_post(self):
@@ -236,17 +251,6 @@ class LoadBalancerTests(test.TestCase):
         self.assertNoFormErrors(res)
         self.assertRedirectsNoFollow(res, INDEX_URL)
 
-    @test.create_stubs({api.lbaas_v2: ('loadbalancer_get',)})
-    def test_update_loadbalancer_get(self):
-        loadbalancer = self.v2_loadbalancers.first()
-        api.lbaas_v2.loadbalancer_get(IsA(http.HttpRequest),
-                                      loadbalancer.id).AndReturn(loadbalancer)
-        self.mox.ReplayAll()
-        res = self.client.get(reverse(UPDATELOADBALANCER_PATH,
-                                      args=(loadbalancer.id,)))
-        self.assertTemplateUsed(res,
-                                'user/loadbalancers/updateloadbalancer.html')
-
     @test.create_stubs({api.lbaas_v2: ('loadbalancer_get',
                                        'loadbalancer_stats')})
     def test_loadbalancer_detail(self):
@@ -267,37 +271,41 @@ class LoadBalancerTests(test.TestCase):
         self.assertContains(res, "<dd>30</dd>")
         self.assertContains(res, "<dd>40</dd>")
 
-    """
-    ADDLISTENER_PATH = PATH_BASE + 'addlistener'
-    UPDATELISTENER_PATH = PATH_BASE + 'updatelistener'
-    LISTENER_DETAIL_PATH = PATH_BASE + 'listenerdetails'
+    @test.create_stubs({api.lbaas_v2: ('loadbalancer_get',
+                                       'loadbalancer_stats',
+                                       'redundance_list')})
+    def test_loadbalancer_detail_redundances_tab(self):
+        loadbalancer = self.v2_loadbalancers.first()
+        stats = self.v2_loadbalancer_stats.first()
+        lbredundances = self.v2_lbredundances.list()
+        api.lbaas_v2.loadbalancer_get(IsA(http.HttpRequest),
+                                      loadbalancer.id).AndReturn(loadbalancer)
+        api.lbaas_v2.loadbalancer_stats(IsA(http.HttpRequest),
+                                        loadbalancer.id).AndReturn(stats)
+        api.lbaas_v2.redundance_list(
+            IsA(http.HttpRequest),
+            loadbalancer_id=loadbalancer.id,
+            tenant_id=self.tenant.id).AndReturn(lbredundances)
+        self.mox.ReplayAll()
 
-        name = forms.CharField(max_length=80, label=_("Name"))
-        description = forms.CharField(
-            initial="", required=False,
-            max_length=80, label=_("Description"))
+        url = reverse(LOADBALANCER_DETAIL_PATH,
+                      args=(loadbalancer.id,))
+        tg = tabs.LoadbalancerDetailTabs(self.request,
+                                         loadbalancer=loadbalancer)
+        url += "?%s=%s" % (tg.param_name,
+                           tg.get_tab("lbredundances").get_id())
 
-        loadbalancer_id = forms.ChoiceField(label=_("Loadbalancer"))
+        res = self.client.get(url)
+        self.assertTemplateUsed(res,
+                                'user/loadbalancers/loadbalancer_detail.html')
 
-        protocol = forms.ChoiceField(label=_("Protocol"))
-        protocol_port = forms.IntegerField(
-            label=_("Protocol Port"), min_value=1,
-            help_text=_("Enter an integer value "
-                        "between 1 and 65535."),
-            validators=[validators.validate_port_range])
+        self.assertIn('lbredundances_table', res.context)
+        lbredundances_table = res.context['lbredundances_table']
+        lbredundances = lbredundances_table.data
+        self.assertEqual(len(lbredundances), 1)
+        row_actions = lbredundances_table.get_row_actions(lbredundances[0])
+        self.assertEqual(len(row_actions), 2)
 
-        connection_limit = forms.ChoiceField(
-            choices=[(5000, 5000),
-                     (10000, 10000),
-                     (20000, 20000),
-                     (40000, 40000)],
-            label=_("Connection Limit"),
-            help_text=_("Maximum number of connections allowed."))
-
-        admin_state_up = forms.ChoiceField(choices=[(True, _('UP')),
-                                                    (False, _('DOWN'))],
-                                           label=_("Admin State"))
-    """
     @test.create_stubs({api.lbaas_v2: ('loadbalancer_list',)})
     def test_add_listener_get(self):
         loadbalancers = self.v2_loadbalancers.list()
@@ -342,6 +350,545 @@ class LoadBalancerTests(test.TestCase):
 
         self.assertNoFormErrors(res)
         self.assertRedirectsNoFollow(res, INDEX_URL)
+
+    @test.create_stubs({api.lbaas_v2: ('listener_get',)})
+    def test_update_listener_get(self):
+        listener = self.v2_listeners.first()
+        api.lbaas_v2.listener_get(IsA(http.HttpRequest),
+                                  listener.id).AndReturn(listener)
+        self.mox.ReplayAll()
+        res = self.client.get(reverse(UPDATELISTENER_PATH,
+                                      args=(listener.id,)))
+        self.assertTemplateUsed(res,
+                                'user/loadbalancers/updatelistener.html')
+
+    @test.create_stubs({api.lbaas_v2: ('listener_get',
+                                       'listener_update')})
+    def test_update_listener_post(self):
+        listener = self.v2_listeners.first()
+        api.lbaas_v2.listener_get(IsA(http.HttpRequest),
+                                  listener.id).AndReturn(listener)
+
+        data = {'id': listener.id,
+                'name': listener.name,
+                'description': listener.description,
+                'connection_limit': '5000',
+                'admin_state_up': listener.admin_state_up}
+
+        api.lbaas_v2.listener_update(
+            IsA(http.HttpRequest),
+            listener.id, **data).AndReturn(listener)
+
+        self.mox.ReplayAll()
+
+        res = self.client.post(
+            reverse(UPDATELISTENER_PATH, args=(listener.id,)), data)
+
+        self.assertNoFormErrors(res)
+        self.assertRedirectsNoFollow(res, INDEX_URL)
+
+    @test.create_stubs({api.lbaas_v2: ('listener_get',)})
+    def test_listener_detail(self):
+        listener = self.v2_listeners.first()
+        api.lbaas_v2.listener_get(IsA(http.HttpRequest),
+                                  listener.id).AndReturn(listener)
+        self.mox.ReplayAll()
+        res = self.client.get(reverse(LISTENER_DETAIL_PATH,
+                                      args=(listener.id,)))
+        self.assertTemplateUsed(res,
+                                'user/loadbalancers/listener_detail.html')
+        self.assertContains(res, "<dt>Protocol</dt>")
+        self.assertContains(res, "<dd>-1</dd>")
+        self.assertContains(res, "<dd>TCP</dd>")
+
+    @test.create_stubs({api.lbaas_v2: ('listener_get',
+                                       'acl_list')})
+    def test_listener_detail_acl_tab(self):
+        listener = self.v2_listeners.first()
+        acls = self.v2_acls.list()
+        api.lbaas_v2.listener_get(IsA(http.HttpRequest),
+                                  listener.id).AndReturn(listener)
+        api.lbaas_v2.acl_list(IsA(http.HttpRequest),
+                              listener_id=listener.id,
+                              tenant_id=self.tenant.id).AndReturn(acls)
+        self.mox.ReplayAll()
+        url = reverse(LISTENER_DETAIL_PATH,
+                      args=(listener.id,))
+        tg = tabs.ListenerDetailTabs(self.request, listener=listener)
+        url += "?%s=%s" % (tg.param_name, tg.get_tab("acls").get_id())
+
+        res = self.client.get(url)
+        self.assertTemplateUsed(res,
+                                'user/loadbalancers/listener_detail.html')
+
+        self.assertIn('acls_table', res.context)
+        acls_table = res.context['acls_table']
+        acls = acls_table.data
+        self.assertEqual(len(acls), 1)
+        row_actions = acls_table.get_row_actions(acls[0])
+        self.assertEqual(len(row_actions), 2)
+
+    @test.create_stubs({api.lbaas_v2: ('listener_list',)})
+    def test_add_pool_get(self):
+        listeners = self.v2_listeners.list()
+        api.lbaas_v2.listener_list(
+            IsA(http.HttpRequest),
+            tenant_id=self.tenant.id) \
+            .AndReturn(listeners)
+        self.mox.ReplayAll()
+
+        res = self.client.get(reverse(ADDPOOL_PATH))
+        workflow = res.context['workflow']
+        self.assertTemplateUsed(res, views.WorkflowView.template_name)
+        self.assertEqual(workflow.name, workflows.AddPool.name)
+
+        expected_objs = ['<AddPoolStep: addpoolaction>', ]
+        self.assertQuerysetEqual(workflow.steps, expected_objs)
+
+    @test.create_stubs({api.lbaas_v2: ('listener_list',
+                                       'pool_create')})
+    def test_add_pool_post(self):
+        listeners = self.v2_listeners.list()
+        listener = self.v2_listeners.first()
+        pool = self.v2_pools.first()
+        data = {'name': pool.name,
+                'description': pool.description,
+                'listener_id': listener.id,
+                'lb_algorithm': pool.lb_algorithm,
+                'protocol': pool.protocol,
+                'admin_state_up': pool.admin_state_up}
+        api.lbaas_v2.listener_list(
+            IsA(http.HttpRequest),
+            tenant_id=self.tenant.id) \
+            .AndReturn(listeners)
+        api.lbaas_v2.pool_create(
+            IsA(http.HttpRequest), **data).AndReturn(pool)
+
+        self.mox.ReplayAll()
+
+        res = self.client.post(
+            reverse(ADDPOOL_PATH), data)
+
+        self.assertNoFormErrors(res)
+        self.assertRedirectsNoFollow(res, INDEX_URL)
+
+    @test.create_stubs({api.lbaas_v2: ('pool_get',)})
+    def test_update_pool_get(self):
+        pool = self.v2_pools.first()
+        api.lbaas_v2.pool_get(IsA(http.HttpRequest),
+                              pool.id).AndReturn(pool)
+        self.mox.ReplayAll()
+        res = self.client.get(reverse(UPDATEPOOL_PATH,
+                              args=(pool.id,)))
+        self.assertTemplateUsed(res,
+                                'user/loadbalancers/updatepool.html')
+
+    @test.create_stubs({api.lbaas_v2: ('pool_get',
+                                       'pool_update')})
+    def test_update_pool_post(self):
+        pool = self.v2_pools.first()
+        api.lbaas_v2.pool_get(IsA(http.HttpRequest),
+                              pool.id).AndReturn(pool)
+        data = {'id': pool.id,
+                'name': pool.name,
+                'description': pool.description,
+                'lb_algorithm': pool.lb_algorithm,
+                'admin_state_up': pool.admin_state_up}
+
+        api.lbaas_v2.pool_update(
+            IsA(http.HttpRequest),
+            pool.id, **data).AndReturn(pool)
+
+        self.mox.ReplayAll()
+
+        res = self.client.post(
+            reverse(UPDATEPOOL_PATH, args=(pool.id,)), data)
+
+        self.assertNoFormErrors(res)
+        self.assertRedirectsNoFollow(res, INDEX_URL)
+
+    @test.create_stubs({api.lbaas_v2: ('pool_get',)})
+    def test_pool_detail(self):
+        pool = self.v2_pools.first()
+        api.lbaas_v2.pool_get(IsA(http.HttpRequest),
+                              pool.id).AndReturn(pool)
+        self.mox.ReplayAll()
+        res = self.client.get(reverse(POOL_DETAIL_PATH,
+                                      args=(pool.id,)))
+        self.assertTemplateUsed(res,
+                                'user/loadbalancers/pool_detail.html')
+        self.assertContains(res, "<dt>Algorithm</dt>")
+        self.assertContains(res, "<dd>ROUND_ROBIN</dd>")
+
+    @test.create_stubs({api.lbaas_v2: ('pool_get',
+                                       'member_list')})
+    def test_pool_detail_member_tab(self):
+        pool = self.v2_pools.first()
+        members = self.v2_members.list()
+        api.lbaas_v2.pool_get(IsA(http.HttpRequest),
+                              pool.id).AndReturn(pool)
+        api.lbaas_v2.member_list(IsA(http.HttpRequest),
+                                 pool=pool.id,
+                                 pool_id=pool.id,
+                                 tenant_id=self.tenant.id).AndReturn(members)
+        self.mox.ReplayAll()
+        url = reverse(POOL_DETAIL_PATH,
+                      args=(pool.id,))
+        tg = tabs.PoolDetailTabs(self.request, pool=pool)
+        url += "?%s=%s" % (tg.param_name, tg.get_tab("members").get_id())
+
+        res = self.client.get(url)
+        self.assertTemplateUsed(res,
+                                'user/loadbalancers/pool_detail.html')
+
+        self.assertIn('members_table', res.context)
+        members_table = res.context['members_table']
+        members = members_table.data
+        self.assertEqual(len(members), 2)
+        row_actions = members_table.get_row_actions(members[0])
+        self.assertEqual(len(row_actions), 2)
+
+    @test.create_stubs({api.lbaas_v2: ('pool_list',)})
+    def test_add_healthmonitor_get(self):
+        pools = self.v2_pools.list()
+        api.lbaas_v2.pool_list(
+            IsA(http.HttpRequest),
+            tenant_id=self.tenant.id) \
+            .AndReturn(pools)
+        self.mox.ReplayAll()
+
+        res = self.client.get(reverse(ADDHEALTHMONITOR_PATH))
+        workflow = res.context['workflow']
+        self.assertTemplateUsed(res, views.WorkflowView.template_name)
+        self.assertEqual(workflow.name, workflows.AddHealthmonitor.name)
+
+        expected_objs = ['<AddHealthmonitorStep: addhealthmonitoraction>', ]
+        self.assertQuerysetEqual(workflow.steps, expected_objs)
+
+    @test.create_stubs({api.lbaas_v2: ('pool_list',
+                                       'healthmonitor_create')})
+    def test_add_healthmonitor_post(self):
+        pools = self.v2_pools.list()
+        healthmonitor = self.v2_healthmonitors.first()
+        pool = self.v2_pools.first()
+        data = {'pool_id': pool.id,
+                'type': 'ping',
+                'delay': healthmonitor.delay,
+                'timeout': healthmonitor.timeout,
+                'max_retries': healthmonitor.max_retries,
+                'http_method': healthmonitor.http_method,
+                'url_path': healthmonitor.url_path,
+                'expected_codes': healthmonitor.expected_codes,
+                'admin_state_up': healthmonitor.admin_state_up}
+        api.lbaas_v2.pool_list(
+            IsA(http.HttpRequest),
+            tenant_id=self.tenant.id) \
+            .AndReturn(pools)
+        api.lbaas_v2.healthmonitor_create(
+            IsA(http.HttpRequest), **data).AndReturn(healthmonitor)
+
+        self.mox.ReplayAll()
+
+        res = self.client.post(
+            reverse(ADDHEALTHMONITOR_PATH), data)
+
+        self.assertNoFormErrors(res)
+        self.assertRedirectsNoFollow(res, INDEX_URL)
+
+    @test.create_stubs({api.lbaas_v2: ('healthmonitor_get',)})
+    def test_update_healthmonitor_get(self):
+        healthmonitor = self.v2_healthmonitors.first()
+        api.lbaas_v2.healthmonitor_get(
+            IsA(http.HttpRequest),
+            healthmonitor.id).AndReturn(healthmonitor)
+        self.mox.ReplayAll()
+        res = self.client.get(reverse(UPDATEHEALTHMONITOR_PATH,
+                              args=(healthmonitor.id,)))
+        self.assertTemplateUsed(res,
+                                'user/loadbalancers/updatehealthmonitor.html')
+
+    @test.create_stubs({api.lbaas_v2: ('healthmonitor_get',
+                                       'healthmonitor_update')})
+    def test_update_healthmonitor_post(self):
+        healthmonitor = self.v2_healthmonitors.first()
+        api.lbaas_v2.healthmonitor_get(
+            IsA(http.HttpRequest),
+            healthmonitor.id).AndReturn(healthmonitor)
+        data = {'healthmonitor_id': healthmonitor.id,
+                'type': 'ping',
+                'delay': healthmonitor.delay,
+                'timeout': healthmonitor.timeout,
+                'max_retries': healthmonitor.max_retries,
+                'http_method': healthmonitor.http_method,
+                'url_path': healthmonitor.url_path,
+                'expected_codes': healthmonitor.expected_codes,
+                'admin_state_up': healthmonitor.admin_state_up}
+
+        api.lbaas_v2.healthmonitor_update(
+            IsA(http.HttpRequest),
+            **data).AndReturn(healthmonitor)
+
+        self.mox.ReplayAll()
+
+        res = self.client.post(
+            reverse(UPDATEHEALTHMONITOR_PATH, args=(healthmonitor.id,)), data)
+
+        self.assertNoFormErrors(res)
+        self.assertRedirectsNoFollow(res, INDEX_URL)
+
+    @test.create_stubs({api.lbaas_v2: ('pool_list',),
+                        api.neutron: ('network_list_for_tenant',)})
+    def test_add_member_get(self):
+        pool = self.v2_pools.first()
+        subnet = self.subnets.first()
+        networks = [{'subnets': [subnet, ]}, ]
+        api.neutron.network_list_for_tenant(
+            IsA(http.HttpRequest), self.tenant.id).AndReturn(networks)
+        self.mox.ReplayAll()
+
+        res = self.client.get(reverse(ADDMEMBER_PATH, args=(pool.id,)))
+        workflow = res.context['workflow']
+        self.assertTemplateUsed(res, views.WorkflowView.template_name)
+        self.assertEqual(workflow.name, workflows.AddMember.name)
+
+        expected_objs = ['<AddMemberStep: addmemberaction>', ]
+        self.assertQuerysetEqual(workflow.steps, expected_objs)
+
+    @test.create_stubs({api.lbaas_v2: ('member_create',),
+                        api.neutron: ('network_list_for_tenant',)})
+    def test_add_member_post(self):
+        pool = self.v2_pools.first()
+        member = self.v2_members.first()
+        subnet = self.subnets.first()
+        networks = [{'subnets': [subnet, ]}, ]
+        api.neutron.network_list_for_tenant(
+            IsA(http.HttpRequest), self.tenant.id).AndReturn(networks)
+        data = {'pool_id': pool.id,
+                'protocol_port': member.protocol_port,
+                'weight': member.weight,
+                'subnet_id': member.subnet_id,
+                'address': member.address,
+                'admin_state_up': member.admin_state_up}
+        api.lbaas_v2.member_create(
+            IsA(http.HttpRequest), **data).AndReturn(member)
+
+        self.mox.ReplayAll()
+
+        res = self.client.post(
+            reverse(ADDMEMBER_PATH, args=(pool.id,)), data)
+
+        self.assertNoFormErrors(res)
+        expected_url = reverse(POOL_DETAIL_PATH, args=(pool.id,))
+        self.assertRedirects(res, expected_url, 302, 302)
+
+    @test.create_stubs({api.lbaas_v2: ('member_get',)})
+    def test_update_member_get(self):
+        pool = self.v2_pools.first()
+        member = self.v2_members.first()
+        api.lbaas_v2.member_get(IsA(http.HttpRequest),
+                                member.id,
+                                pool.id).AndReturn(member)
+        self.mox.ReplayAll()
+        res = self.client.get(reverse(UPDATEMEMBER_PATH,
+                              args=(pool.id,
+                                    member.id)))
+        self.assertTemplateUsed(res,
+                                'user/loadbalancers/updatemember.html')
+
+    @test.create_stubs({api.lbaas_v2: ('member_get',
+                                       'member_update')})
+    def test_update_member_post(self):
+        pool = self.v2_pools.first()
+        member = self.v2_members.first()
+        api.lbaas_v2.member_get(IsA(http.HttpRequest),
+                                member.id,
+                                pool.id).AndReturn(member)
+        data = {'member_id': member.id,
+                'pool_id': pool.id,
+                'weight': member.weight,
+                'admin_state_up': member.admin_state_up}
+
+        api.lbaas_v2.member_update(
+            IsA(http.HttpRequest),
+            **data).AndReturn(member)
+
+        self.mox.ReplayAll()
+
+        res = self.client.post(
+            reverse(UPDATEMEMBER_PATH,
+                    args=(pool.id,
+                          member.id)),
+            data)
+
+        self.assertNoFormErrors(res)
+        expected_url = reverse(POOL_DETAIL_PATH, args=(pool.id,))
+        self.assertRedirects(res, expected_url, 302, 302)
+
+    def test_add_acl_get(self):
+        listener = self.v2_listeners.first()
+        self.mox.ReplayAll()
+        res = self.client.get(reverse(ADDACL_PATH, args=(listener.id,)))
+        workflow = res.context['workflow']
+        self.assertTemplateUsed(res, views.WorkflowView.template_name)
+        self.assertEqual(workflow.name, workflows.AddAcl.name)
+
+        expected_objs = ['<AddAclStep: addaclaction>', ]
+        self.assertQuerysetEqual(workflow.steps, expected_objs)
+
+    @test.create_stubs({api.lbaas_v2: ('acl_create',)})
+    def test_add_acl_post(self):
+        listener = self.v2_listeners.first()
+        acl = self.v2_acls.first()
+        data = {'listener_id': acl.listener_id,
+                'name': acl.name,
+                'description': acl.description,
+                'action': acl.action,
+                'condition': acl.condition,
+                'acl_type': acl.acl_type,
+                'operator': acl.operator,
+                'match': acl.match,
+                'match_condition': acl.match_condition,
+                'admin_state_up': acl.admin_state_up}
+        api.lbaas_v2.acl_create(
+            IsA(http.HttpRequest), **data).AndReturn(acl)
+
+        self.mox.ReplayAll()
+
+        res = self.client.post(
+            reverse(ADDACL_PATH, args=(listener.id,)), data)
+
+        self.assertNoFormErrors(res)
+        expected_url = reverse(LISTENER_DETAIL_PATH, args=(listener.id,))
+        self.assertRedirects(res, expected_url, 302, 302)
+
+    @test.create_stubs({api.lbaas_v2: ('acl_get',)})
+    def test_update_acl_get(self):
+        listener = self.v2_listeners.first()
+        acl = self.v2_acls.first()
+        api.lbaas_v2.acl_get(IsA(http.HttpRequest),
+                             acl.id).AndReturn(acl)
+        self.mox.ReplayAll()
+        res = self.client.get(reverse(UPDATEACL_PATH,
+                              args=(listener.id,
+                                    acl.id)))
+        self.assertTemplateUsed(res,
+                                'user/loadbalancers/updateacl.html')
+
+    @test.create_stubs({api.lbaas_v2: ('acl_get',
+                                       'acl_update')})
+    def test_update_acl_post(self):
+        listener = self.v2_listeners.first()
+        acl = self.v2_acls.first()
+        api.lbaas_v2.acl_get(IsA(http.HttpRequest),
+                             acl.id).AndReturn(acl)
+        data = {'listener_id': acl.listener_id,
+                'acl_id': acl.id,
+                'name': acl.name,
+                'description': acl.description,
+                'action': acl.action,
+                'condition': acl.condition,
+                'acl_type': acl.acl_type,
+                'operator': acl.operator,
+                'match': acl.match,
+                'match_condition': acl.match_condition,
+                'admin_state_up': acl.admin_state_up}
+
+        api.lbaas_v2.acl_update(
+            IsA(http.HttpRequest),
+            **data).AndReturn(acl)
+
+        self.mox.ReplayAll()
+
+        res = self.client.post(reverse(UPDATEACL_PATH,
+                                       args=(listener.id,
+                                             acl.id)),
+                               data)
+
+        self.assertNoFormErrors(res)
+        expected_url = reverse(LISTENER_DETAIL_PATH, args=(listener.id,))
+        self.assertRedirects(res, expected_url, 302, 302)
+
+    def test_add_redundance_get(self):
+        loadbalancer = self.v2_loadbalancers.first()
+        self.mox.ReplayAll()
+        res = self.client.get(reverse(ADDREDUNANCE_PATH,
+                                      args=(loadbalancer.id,)))
+        workflow = res.context['workflow']
+        self.assertTemplateUsed(res, views.WorkflowView.template_name)
+        self.assertEqual(workflow.name, workflows.AddRedundance.name)
+
+        expected_objs = ['<AddRedundanceStep: addredundanceaction>', ]
+        self.assertQuerysetEqual(workflow.steps, expected_objs)
+
+    @test.create_stubs({api.lbaas_v2: ('redundance_create',)})
+    def test_add_redundance_post(self):
+        loadbalancer = self.v2_loadbalancers.first()
+        redundance = self.v2_lbredundances.first()
+        data = {'loadbalancer_id': loadbalancer.id,
+                'name': redundance.name,
+                'agent_id': None,
+                'description': redundance.description,
+                'admin_state_up': redundance.admin_state_up}
+        api.lbaas_v2.redundance_create(
+            IsA(http.HttpRequest),
+            **data).AndReturn(redundance)
+
+        self.mox.ReplayAll()
+
+        res = self.client.post(
+            reverse(ADDREDUNANCE_PATH,
+                    args=(loadbalancer.id,)),
+            data)
+
+        self.assertNoFormErrors(res)
+        expected_url = reverse(LOADBALANCER_DETAIL_PATH,
+                               args=(loadbalancer.id,))
+        self.assertRedirects(res, expected_url, 302, 302)
+
+    @test.create_stubs({api.lbaas_v2: ('redundance_get',)})
+    def test_update_redundance_get(self):
+        loadbalancer = self.v2_loadbalancers.first()
+        redundance = self.v2_lbredundances.first()
+        api.lbaas_v2.redundance_get(IsA(http.HttpRequest),
+                                    redundance.id,
+                                    loadbalancer.id).AndReturn(redundance)
+        self.mox.ReplayAll()
+        res = self.client.get(reverse(UPDATEREDUNANCE_PATH,
+                              args=(loadbalancer.id,
+                                    redundance.id)))
+        self.assertTemplateUsed(res,
+                                'user/loadbalancers/updateredundance.html')
+
+    @test.create_stubs({api.lbaas_v2: ('redundance_get',
+                                       'redundance_update')})
+    def test_update_redundance_post(self):
+        loadbalancer = self.v2_loadbalancers.first()
+        redundance = self.v2_lbredundances.first()
+        api.lbaas_v2.redundance_get(IsA(http.HttpRequest),
+                                    redundance.id,
+                                    loadbalancer.id).AndReturn(redundance)
+        data = {'redundance_id': redundance.id,
+                'loadbalancer_id': loadbalancer.id,
+                'refresh': 'false',
+                'name': redundance.name,
+                'description': redundance.description,
+                'admin_state_up': redundance.admin_state_up}
+
+        api.lbaas_v2.redundance_update(
+            IsA(http.HttpRequest),
+            **data).AndReturn(redundance)
+
+        self.mox.ReplayAll()
+
+        res = self.client.post(reverse(UPDATEREDUNANCE_PATH,
+                                       args=(loadbalancer.id,
+                                             redundance.id)),
+                               data)
+
+        self.assertNoFormErrors(res)
+        expected_url = reverse(LOADBALANCER_DETAIL_PATH,
+                               args=(loadbalancer.id,))
+        self.assertRedirects(res, expected_url, 302, 302)
 
     @test.create_stubs({api.neutron: ('subnet_list',),
                         api.lbaas_v2: (

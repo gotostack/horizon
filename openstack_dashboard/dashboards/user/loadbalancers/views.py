@@ -423,7 +423,7 @@ class UpdateHealthmonitorView(forms.ModalFormView):
     def get_initial(self):
         _obg = self._get_object()
         return {"healthmonitor_id": _obg["id"],
-                "type": _obg["type"],
+                "type": _obg["type"].lower(),
                 "delay": _obg['delay'],
                 "timeout": _obg['timeout'],
                 "max_retries": _obg['max_retries'],
