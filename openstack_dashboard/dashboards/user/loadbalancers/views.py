@@ -343,8 +343,12 @@ class UpdateAclView(forms.ModalFormView):
     context_object_name = 'acl'
     submit_label = _("Save Changes")
     submit_url = "horizon:user:loadbalancers:updateacl"
-    success_url = reverse_lazy("horizon:user:loadbalancers:index")
+    success_url = "horizon:user:loadbalancers:listenerdetails"
     page_title = _("Edit Acl")
+
+    def get_success_url(self):
+        return reverse(self.success_url,
+                       args=(self.kwargs['listener_id'],))
 
     def get_context_data(self, **kwargs):
         context = super(UpdateAclView,

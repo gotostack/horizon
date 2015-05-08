@@ -47,7 +47,8 @@ ON_STATE = 'ON'
 
 ROUTER_INTERFACE_OWNERS = (
     'network:router_interface',
-    'network:router_interface_distributed'
+    'network:router_interface_distributed',
+    'neutron:LOADBALANCERV2'
 )
 
 

@@ -1,5 +1,8 @@
-# Copyright 2015 Letv Cloud Computing
+# Copyright 2012 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration.
 # All Rights Reserved.
+#
+# Copyright 2012 Nebula, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -13,21 +16,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from django.utils.translation import ugettext_lazy as _
+from django.conf.urls import patterns
+from django.conf.urls import url
 
-import horizon
-
-
-class User(horizon.Dashboard):
-    name = _("User")
-    slug = "user"
-    panels = (
-        'network_topology',
-        'networks',
-        'routers',
-        'loadbalancers',
-        'access_and_security')
-    default_panel = 'network_topology'
+from openstack_dashboard.dashboards.user.access_and_security.\
+    floating_ips import views
 
 
-horizon.register(User)
+urlpatterns = patterns(
+    '',
+    url(r'^associate/$', views.AssociateView.as_view(), name='associate'),
+    url(r'^allocate/$', views.AllocateView.as_view(), name='allocate')
+)

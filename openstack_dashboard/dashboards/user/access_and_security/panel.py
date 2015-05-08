@@ -1,5 +1,5 @@
-# Copyright 2015 Letv Cloud Computing
-# All Rights Reserved.
+# Copyright 2012 Nebula, Inc.
+# Copyright 2012 OpenStack Foundation
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -17,17 +17,12 @@ from django.utils.translation import ugettext_lazy as _
 
 import horizon
 
-
-class User(horizon.Dashboard):
-    name = _("User")
-    slug = "user"
-    panels = (
-        'network_topology',
-        'networks',
-        'routers',
-        'loadbalancers',
-        'access_and_security')
-    default_panel = 'network_topology'
+from openstack_dashboard.dashboards.user import dashboard
 
 
-horizon.register(User)
+class AccessAndSecurity(horizon.Panel):
+    name = _("Access & Security")
+    slug = 'access_and_security'
+
+
+dashboard.User.register(AccessAndSecurity)

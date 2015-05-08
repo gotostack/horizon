@@ -357,6 +357,29 @@ def tenant_quota_usages(request, tenant_id=None):
     return usages
 
 
+@memoized
+def tenant_network_quota_usages(request, tenant_id=None):
+    """Get our quotas and construct our usage object.
+    If no tenant_id is provided, a the request.user.project_id
+    is assumed to be used
+    """
+    if not tenant_id:
+        tenant_id = request.user.project_id
+
+    disabled_quotas = get_disabled_quotas(request)
+    usages = QuotaUsage()
+
+    for quota in get_tenant_quota_data(request,
+                                       disabled_quotas=disabled_quotas,
+                                       tenant_id=tenant_id):
+        usages.add_quota(quota)
+
+    # Get our usages.
+    _get_tenant_network_usages(request, usages, disabled_quotas, tenant_id)
+
+    return usages
+
+
 def tenant_limit_usages(request):
     # TODO(licostan): This method shall be removed from Quota module.
     # ProjectUsage/BaseUsage maybe used instead on volume/image dashboards.

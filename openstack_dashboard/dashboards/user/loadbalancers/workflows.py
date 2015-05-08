@@ -442,22 +442,18 @@ class AddAclAction(workflows.Action):
         initial="", required=False,
         max_length=80, label=_("Description"))
     action = forms.CharField(
-        initial="", required=False,
         max_length=80, label=_("Action"))
     condition = forms.CharField(
-        initial="", required=False,
         max_length=80, label=_("Condition"))
     acl_type = forms.CharField(
         initial="", required=False,
         max_length=80, label=_("Acl Type"))
     operator = forms.CharField(
-        initial="", required=False,
         max_length=80, label=_("Operator"))
     match = forms.CharField(
         initial="", required=False,
         max_length=80, label=_("Match"))
     match_condition = forms.CharField(
-        initial="", required=False,
         max_length=80, label=_("Match condition"))
     admin_state_up = forms.ChoiceField(choices=[(True, _('UP')),
                                                 (False, _('DOWN'))],
