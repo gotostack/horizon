@@ -122,6 +122,8 @@ def loadbalancer_create(request, **kwargs):
         body['loadbalancer']['vip_address'] = kwargs['vip_address']
     if kwargs.get('agent'):
         body['loadbalancer']['agent'] = kwargs['agent']
+    if kwargs.get('tenant_id'):
+        body['loadbalancer']['tenant_id'] = kwargs['tenant_id']
     loadbalancer = neutronclient(
         request).create_loadbalancer(body).get('loadbalancer')
     return Loadbalancer(loadbalancer)
@@ -178,6 +180,8 @@ def listener_create(request, **kwargs):
         "protocol_port": kwargs['protocol_port'],
         "protocol": kwargs['protocol'],
         'admin_state_up': kwargs['admin_state_up']}}
+    if kwargs.get('tenant_id'):
+        body['loadbalancer']['tenant_id'] = kwargs['tenant_id']
     listener = neutronclient(
         request).create_listener(body).get('listener')
     return Listener(listener)
@@ -231,6 +235,8 @@ def pool_create(request, **kwargs):
             "admin_state_up": kwargs['admin_state_up']
         }
     }
+    if kwargs.get('tenant_id'):
+        body['loadbalancer']['tenant_id'] = kwargs['tenant_id']
     pool = neutronclient(
         request).create_lbaas_pool(body).get('pool')
     return Pool(pool)
@@ -286,6 +292,8 @@ def member_create(request, pool_id, **kwargs):
         body['member']['weight'] = kwargs['weight']
     if kwargs['subnet_id']:
         body['member']['subnet_id'] = kwargs['subnet_id']
+    if kwargs.get('tenant_id'):
+        body['loadbalancer']['tenant_id'] = kwargs['tenant_id']
     member = neutronclient(
         request).create_lbaas_member(pool_id,
                                      body).get('member')
@@ -347,6 +355,8 @@ def healthmonitor_create(request, **kwargs):
         body['healthmonitor']['http_method'] = kwargs['http_method']
         body['healthmonitor']['url_path'] = kwargs['url_path']
         body['healthmonitor']['expected_codes'] = kwargs['expected_codes']
+    if kwargs.get('tenant_id'):
+        body['loadbalancer']['tenant_id'] = kwargs['tenant_id']
     healthmonitor = neutronclient(
         request).create_lbaas_healthmonitor(body).get('healthmonitor')
     return Healthmonitor(healthmonitor)
@@ -412,6 +422,8 @@ def acl_create(request, **kwargs):
             "condition": kwargs['condition'],
         }
     }
+    if kwargs.get('tenant_id'):
+        body['loadbalancer']['tenant_id'] = kwargs['tenant_id']
     acl = neutronclient(
         request).create_acl(body).get('acl')
     return Acl(acl)
@@ -472,6 +484,8 @@ def redundance_create(request, loadbalancer_id, **kwargs):
         body['redundance']['agent_id'] = kwargs['agent_id']
     else:
         body['redundance']['agent_id'] = None
+    if kwargs.get('tenant_id'):
+        body['loadbalancer']['tenant_id'] = kwargs['tenant_id']
     redundance = neutronclient(
         request).create_lbaas_redundance(loadbalancer_id,
                                          body).get('redundance')

@@ -36,10 +36,13 @@ class LoadbalancersTab(tabs.TableTab):
     def get_loadbalancers_data(self):
         subnet_dict = dict([(
             n.id, n.cidr) for n in utils.get_subnets(self.request)])
+        tenant_dict = utils.get_tenants(self.request)
         loadbalancers = utils.get_loadbalancers(self.request)
-        if subnet_dict and loadbalancers:
+        if subnet_dict and tenant_dict and loadbalancers:
             for lb in loadbalancers:
                 lb.subnet_name = subnet_dict.get(lb.vip_subnet_id)
+                tenant = tenant_dict.get(lb.tenant_id, None)
+                lb.tenant_name = getattr(tenant, 'name', None)
         return loadbalancers
 
 
@@ -52,11 +55,12 @@ class ListenersTab(tabs.TableTab):
     def get_listeners_data(self):
         loadbalancer_dict = dict([(
             l.id, l.name) for l in utils.get_loadbalancers(self.request)])
+        tenant_dict = utils.get_tenants(self.request)
         pool_dict = dict([(
             p.id, p.name) for p in utils.get_pools(self.request)])
         listeners = utils.get_listeners(self.request)
 
-        if loadbalancer_dict and pool_dict:
+        if loadbalancer_dict and tenant_dict and pool_dict and listeners:
             for ls in listeners:
                 # NOTE(yulong): Returning a list to
                 # future proof for M:N objects
@@ -65,6 +69,8 @@ class ListenersTab(tabs.TableTab):
                 ls.loadbalancer_name = loadbalancer_dict.get(
                     ls.loadbalancers[0]['id'])
                 ls.pool_name = pool_dict.get(ls.default_pool_id)
+                tenant = tenant_dict.get(ls.tenant_id, None)
+                ls.tenant_name = getattr(tenant, 'name', None)
         return listeners
 
 
@@ -75,7 +81,13 @@ class PoolsTab(tabs.TableTab):
     template_name = "horizon/common/_detail_table.html"
 
     def get_pools_data(self):
-        return utils.get_pools(self.request)
+        tenant_dict = utils.get_tenants(self.request)
+        pools = utils.get_pools(self.request)
+        if tenant_dict and pools:
+            for pl in pools:
+                tenant = tenant_dict.get(pl.tenant_id, None)
+                pl.tenant_name = getattr(tenant, 'name', None)
+        return pools
 
 
 class HealthmonitorsTab(tabs.TableTab):
@@ -86,7 +98,13 @@ class HealthmonitorsTab(tabs.TableTab):
     permissions = ('openstack.services.network',)
 
     def get_healthmonitors_data(self):
-        return utils.get_healthmonitors(self.request)
+        tenant_dict = utils.get_tenants(self.request)
+        hms = utils.get_healthmonitors(self.request)
+        if tenant_dict and hms:
+            for hm in hms:
+                tenant = tenant_dict.get(hm.tenant_id, None)
+                hm.tenant_name = getattr(tenant, 'name', None)
+        return hms
 
 
 class LoadbalancerTabs(tabs.TabGroup):
@@ -98,18 +116,45 @@ class LoadbalancerTabs(tabs.TabGroup):
     sticky = True
 
 
-class OverviewTab(tabs.Tab):
-    name = _("Overview")
-    slug = "overview"
+class LoadbalancerOverviewTab(tabs.Tab):
+    name = _("Loadbalancer Overview")
+    slug = "loadbalanceroverview"
     template_name = "manager/loadbalancers/_loadbalancer_details.html"
 
     def get_context_data(self, request):
         return {"loadbalancer": self.tab_group.kwargs['loadbalancer']}
 
 
+class LbRedundancesTab(tabs.TableTab):
+    table_classes = (l_tables.LbRedundancesTable,)
+    name = _("Loadbalancer Redundances")
+    slug = "lbredundances"
+    template_name = "horizon/common/_detail_table.html"
+    preload = False
+
+    def get_lbredundances_data(self):
+        loadbalancer_id = self.tab_group.kwargs['loadbalancer_id']
+        try:
+            lbredundances = api.lbaas_v2.redundance_list(
+                self.request,
+                loadbalancer_id=loadbalancer_id)
+        except Exception:
+            lbredundances = []
+            exceptions.handle(
+                self.request,
+                _('Unable to retrieve loadbalancer redundance list.'))
+        tenant_dict = utils.get_tenants(self.request)
+        if tenant_dict and lbredundances:
+            for lbr in lbredundances:
+                tenant = tenant_dict.get(lbr.tenant_id, None)
+                lbr.tenant_name = getattr(tenant, 'name', None)
+        return lbredundances
+
+
 class LoadbalancerDetailTabs(tabs.TabGroup):
     slug = "loadbalancer_details"
-    tabs = (OverviewTab,)
+    tabs = (LoadbalancerOverviewTab,
+            LbRedundancesTab)
     sticky = True
 
 
@@ -129,12 +174,26 @@ class AclsTab(tabs.TableTab):
             acls = []
             exceptions.handle(self.request,
                               _('Unable to retrieve acl list.'))
+        tenant_dict = utils.get_tenants(self.request)
+        if tenant_dict and acls:
+            for acl in acls:
+                tenant = tenant_dict.get(acl.tenant_id, None)
+                acl.tenant_name = getattr(tenant, 'name', None)
         return acls
+
+
+class ListenerOverviewTab(tabs.Tab):
+    name = _("ListenerOverview")
+    slug = "listeneroverview"
+    template_name = "manager/loadbalancers/_listener_details.html"
+
+    def get_context_data(self, request):
+        return {"listener": self.tab_group.kwargs['listener']}
 
 
 class ListenerDetailTabs(tabs.TabGroup):
     slug = "listener_details"
-    tabs = (AclsTab,)
+    tabs = (ListenerOverviewTab, AclsTab,)
     sticky = True
 
 
@@ -151,8 +210,11 @@ class MembersTab(tabs.TableTab):
             members = api.lbaas_v2.member_list(self.request,
                                                pool=pool_id,
                                                pool_id=pool_id)
+            tenant_dict = utils.get_tenants(self.request)
             for m in members:
                 m.pool_id = pool_id
+                tenant = tenant_dict.get(m.tenant_id, None)
+                m.tenant_name = getattr(tenant, 'name', None)
         except Exception:
             members = []
             exceptions.handle(self.request,
@@ -160,7 +222,16 @@ class MembersTab(tabs.TableTab):
         return members
 
 
+class PoolOverviewTab(tabs.Tab):
+    name = _("PoolOverview")
+    slug = "pooloverview"
+    template_name = "manager/loadbalancers/_pool_details.html"
+
+    def get_context_data(self, request):
+        return {"pool": self.tab_group.kwargs['pool']}
+
+
 class PoolDetailTabs(tabs.TabGroup):
     slug = "member_details"
-    tabs = (MembersTab,)
+    tabs = (PoolOverviewTab, MembersTab,)
     sticky = True
