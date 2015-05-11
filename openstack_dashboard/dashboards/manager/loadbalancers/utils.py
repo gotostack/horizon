@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from django.utils.datastructures import SortedDict
 from django.utils.translation import ugettext_lazy as _
 
 from horizon import exceptions
@@ -35,6 +36,20 @@ def get_monitor_display_name(monitor):
                  "timeout:%(timeout)d")
     params = dict((key, getattr(monitor, key)) for key in fields)
     return name % params
+
+
+@memoized.memoized_method
+def get_tenants(request):
+    try:
+        tenants, has_more = api.keystone.tenant_list(request)
+    except Exception:
+        tenants = []
+        msg = _("Unable to retrieve information about the "
+                "networks' projects.")
+        exceptions.handle(request, msg)
+
+    tenant_dict = SortedDict([(t.id, t) for t in tenants])
+    return tenant_dict
 
 
 @memoized.memoized_method

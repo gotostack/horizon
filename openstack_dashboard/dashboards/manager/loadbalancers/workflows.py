@@ -38,6 +38,7 @@ LOG = logging.getLogger(__name__)
 
 
 class AddLoadbalancerAction(workflows.Action):
+    tenant_id = forms.ChoiceField(label=_("Project"))
     name = forms.CharField(max_length=80, label=_("Name"))
     description = forms.CharField(
         initial="", required=False,
@@ -59,17 +60,26 @@ class AddLoadbalancerAction(workflows.Action):
 
     def __init__(self, request, *args, **kwargs):
         super(AddLoadbalancerAction, self).__init__(request, *args, **kwargs)
-        tenant_id = request.manager.tenant_id
+        tenant_choices = [('', _("Select a project"))]
+        tenants, has_more = api.keystone.tenant_list(request)
+        for tenant in tenants:
+            if tenant.enabled:
+                tenant_choices.append((tenant.id, tenant.name))
+        self.fields['tenant_id'].choices = tenant_choices
+
         subnet_id_choices = [('', _("Select a Subnet"))]
         try:
-            networks = api.neutron.network_list_for_tenant(request, tenant_id)
+            networks = api.neutron.network_list(request)
         except Exception:
             exceptions.handle(request,
                               _('Unable to retrieve networks list.'))
             networks = []
+
+        tenant_dict = dict([(t.id, t.name) for t in tenants])
         for n in networks:
             for s in n['subnets']:
-                subnet_id_choices.append((s.id, s.cidr))
+                subnet = "%s - %s" % (s.cidr, tenant_dict.get(s.tenant_id))
+                subnet_id_choices.append((s.id, subnet))
         self.fields['vip_subnet_id'].choices = subnet_id_choices
 
         # provider choice
@@ -99,7 +109,7 @@ class AddLoadbalancerAction(workflows.Action):
                         _("%s (default)") % default_provider))
         else:
             if providers is None:
-                msg = _("Provider for Load Balancer is not supported")
+                msg = _("Provider for Load Balancer V2 is not supported")
             else:
                 msg = _("No provider is available")
             provider_choices = [('', msg)]
@@ -136,7 +146,8 @@ class AddLoadbalancerAction(workflows.Action):
 class AddLoadbalancerStep(workflows.Step):
     action_class = AddLoadbalancerAction
     contributes = ("name", "description", "vip_subnet_id", "provider",
-                   "vip_address", "admin_state_up")
+                   "vip_address", "admin_state_up",
+                   "tenant_id")
 
     def contribute(self, data, context):
         context = super(AddLoadbalancerStep, self).contribute(data, context)
@@ -168,6 +179,7 @@ class AddLoadbalancer(workflows.Workflow):
 
 
 class AddListenerAction(workflows.Action):
+    tenant_id = forms.ChoiceField(label=_("Project"))
     name = forms.CharField(max_length=80, label=_("Name"))
     description = forms.CharField(
         initial="", required=False,
@@ -183,10 +195,10 @@ class AddListenerAction(workflows.Action):
         validators=[validators.validate_port_range])
 
     connection_limit = forms.ChoiceField(
-        choices=[(5000, 5000),
-                 (10000, 10000),
-                 (20000, 20000),
-                 (40000, 40000)],
+        choices=[('5000', '5000'),
+                 ('10000', '10000'),
+                 ('20000', '20000'),
+                 ('40000', '40000')],
         label=_("Connection Limit"),
         help_text=_("Maximum number of connections allowed."))
 
@@ -196,16 +208,24 @@ class AddListenerAction(workflows.Action):
 
     def __init__(self, request, *args, **kwargs):
         super(AddListenerAction, self).__init__(request, *args, **kwargs)
-        tenant_id = request.manager.tenant_id
+        tenant_choices = [('', _("Select a project"))]
+        tenants, has_more = api.keystone.tenant_list(request)
+        for tenant in tenants:
+            if tenant.enabled:
+                tenant_choices.append((tenant.id, tenant.name))
+        self.fields['tenant_id'].choices = tenant_choices
+
         loadbalancer_choices = [('', _("Select a Loadbalancer"))]
         try:
-            loadbalancers = api.lbaas_v2.loadbalancer_list(request, tenant_id)
+            loadbalancers = api.lbaas_v2.loadbalancer_list(request)
         except Exception:
             exceptions.handle(request,
                               _('Unable to retrieve loadbalancer list.'))
             loadbalancers = []
+        tenant_dict = dict([(t.id, t.name) for t in tenants])
         for l in loadbalancers:
-            loadbalancer_choices.append((l.id, l.name))
+            lb = "%s - %s" % (l.name, tenant_dict.get(l.tenant_id))
+            loadbalancer_choices.append((l.id, lb))
         self.fields['loadbalancer_id'].choices = loadbalancer_choices
 
         protocol_choices = [('', _("Select a Protocol"))]
@@ -259,6 +279,7 @@ class AddListener(workflows.Workflow):
 
 
 class AddPoolAction(workflows.Action):
+    tenant_id = forms.ChoiceField(label=_("Project"))
     name = forms.CharField(max_length=80, label=_("Name"))
     description = forms.CharField(
         initial="", required=False,
@@ -272,16 +293,25 @@ class AddPoolAction(workflows.Action):
 
     def __init__(self, request, *args, **kwargs):
         super(AddPoolAction, self).__init__(request, *args, **kwargs)
-        tenant_id = request.manager.tenant_id
+        tenant_choices = [('', _("Select a project"))]
+        tenants, has_more = api.keystone.tenant_list(request)
+        for tenant in tenants:
+            if tenant.enabled:
+                tenant_choices.append((tenant.id, tenant.name))
+        self.fields['tenant_id'].choices = tenant_choices
+
         listener_choices = [('', _("Select a Loadbalancer"))]
         try:
-            listeners = api.lbaas_v2.listener_list(request, tenant_id)
+            listeners = api.lbaas_v2.listener_list(request)
         except Exception:
             exceptions.handle(request,
                               _('Unable to retrieve listener list.'))
             listeners = []
+
+        tenant_dict = dict([(t.id, t.name) for t in tenants])
         for l in listeners:
-            listener_choices.append((l.id, l.name))
+            ls = "%s - %s" % (l.name, tenant_dict.get(l.tenant_id))
+            listener_choices.append((l.id, ls))
         self.fields['listener_id'].choices = listener_choices
 
         lb_algorithm_choices = [('', _("Select an Algorithm"))]
@@ -367,10 +397,9 @@ class AddMemberAction(workflows.Action):
 
     def __init__(self, request, *args, **kwargs):
         super(AddMemberAction, self).__init__(request, *args, **kwargs)
-        tenant_id = request.manager.tenant_id
         subnet_id_choices = [('', _("Select a Subnet"))]
         try:
-            networks = api.neutron.network_list_for_tenant(request, tenant_id)
+            networks = api.neutron.network_list(request)
         except Exception:
             exceptions.handle(request,
                               _('Unable to retrieve networks list.'))
@@ -440,22 +469,18 @@ class AddAclAction(workflows.Action):
         initial="", required=False,
         max_length=80, label=_("Description"))
     action = forms.CharField(
-        initial="", required=False,
         max_length=80, label=_("Action"))
     condition = forms.CharField(
-        initial="", required=False,
         max_length=80, label=_("Condition"))
     acl_type = forms.CharField(
         initial="", required=False,
         max_length=80, label=_("Acl Type"))
     operator = forms.CharField(
-        initial="", required=False,
         max_length=80, label=_("Operator"))
     match = forms.CharField(
         initial="", required=False,
         max_length=80, label=_("Match"))
     match_condition = forms.CharField(
-        initial="", required=False,
         max_length=80, label=_("Match condition"))
     admin_state_up = forms.ChoiceField(choices=[(True, _('UP')),
                                                 (False, _('DOWN'))],
@@ -663,6 +688,89 @@ class AddHealthmonitor(workflows.Workflow):
         try:
             api.lbaas_v2.healthmonitor_create(request,
                                               **context)
+            return True
+        except Exception as e:
+            exceptions.handle(request, e)
+            return False
+
+
+class AddRedundanceAction(workflows.Action):
+    loadbalancer_id = forms.CharField(label=_("Loadbalancer"),
+                                      widget=forms.TextInput(
+                                          attrs={'readonly': 'readonly'}))
+    name = forms.CharField(max_length=80,
+                           required=False,
+                           initial="",
+                           label=_("Name"))
+    description = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Description"))
+    admin_state_up = forms.ChoiceField(choices=[(True, _('UP')),
+                                                (False, _('DOWN'))],
+                                       label=_("Admin State"))
+
+    def __init__(self, request, *args, **kwargs):
+        super(AddRedundanceAction, self).__init__(request, *args, **kwargs)
+
+        if ENABLE_SPECIFY_LBV2_AGENT:
+            self.fields['agent_id'] = forms.ChoiceField(
+                label=_("Agent Host"), required=False)
+            agent_choices = [('', _("Select an Agent Host"))]
+            try:
+                agents = api.neutron.agent_list(request)
+            except Exception:
+                exceptions.handle(request,
+                                  _('Unable to retrieve agent list.'))
+                agents = []
+            for a in agents:
+                if a.agent_type == "Loadbalancerv2 agent":
+                    agent_choices.append((a.id, a.host))
+            self.fields['agent_id'].choices = agent_choices
+
+    class Meta(object):
+        name = _("Add New Redundance")
+        permissions = ('openstack.services.network',)
+        help_text = _("Create redundance for current project.\n\n"
+                      "Assign a name and description for the redundance. "
+                      "Choose one subnet where all redundances of this "
+                      "redundance must be on. "
+                      "Select the protocol and load balancing method "
+                      "for this redundance. "
+                      "Admin State is UP (checked) by default.")
+
+
+class AddRedundanceStep(workflows.Step):
+    action_class = AddRedundanceAction
+    contributes = ("loadbalancer_id", "name", "description", "agent_id",
+                   "admin_state_up")
+
+    def contribute(self, data, context):
+        context = super(AddRedundanceStep, self).contribute(data, context)
+        context['admin_state_up'] = (context['admin_state_up'] == 'True')
+        if data:
+            return context
+
+
+class AddRedundance(workflows.Workflow):
+    slug = "addredundance"
+    name = _("Add Redundance")
+    finalize_button_name = _("Add")
+    success_message = _('Added redundance "%s".')
+    failure_message = _('Unable to add redundance "%s".')
+    success_url = "horizon:manager:loadbalancers:loadbalancerdetails"
+    default_steps = (AddRedundanceStep,)
+
+    def get_success_url(self):
+        loadbalancer_id = self.context.get('loadbalancer_id')
+        return reverse(self.success_url, args=(loadbalancer_id,))
+
+    def format_status_message(self, message):
+        address = self.context.get('address')
+        return message % address
+
+    def handle(self, request, context):
+        try:
+            api.lbaas_v2.redundance_create(request, **context)
             return True
         except Exception as e:
             exceptions.handle(request, e)

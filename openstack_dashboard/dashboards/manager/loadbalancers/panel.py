@@ -13,15 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
-
 from django.utils.translation import ugettext_lazy as _
 
 import horizon
 
 from openstack_dashboard.dashboards.manager import dashboard
-
-LOG = logging.getLogger(__name__)
 
 
 class LoadBalancer(horizon.Panel):

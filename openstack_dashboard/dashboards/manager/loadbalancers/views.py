@@ -56,11 +56,24 @@ class LoadbalancerDetailView(tabs.TabbedTableView):
             exceptions.handle(self.request, msg, redirect=self.failure_url)
         return loadbalancer
 
+    def _get_stats(self):
+        try:
+            loadbalancer_id = self.kwargs['loadbalancer_id']
+            stats = api.lbaas_v2.loadbalancer_stats(self.request,
+                                                    loadbalancer_id)
+        except Exception:
+            msg = _('Unable to retrieve stats for loadbalancer "%s".') \
+                % loadbalancer_id
+            exceptions.handle(self.request, msg, redirect=self.failure_url)
+        return stats
+
     def get_context_data(self, **kwargs):
         context = super(LoadbalancerDetailView,
                         self).get_context_data(**kwargs)
         loadbalancer = self._get_data()
+        loadbalancer.stats = self._get_stats()
         context["loadbalancer"] = loadbalancer
+        context["loadbalancer_id"] = loadbalancer.id
         return context
 
     def get_tabs(self, request, *args, **kwargs):
@@ -330,8 +343,12 @@ class UpdateAclView(forms.ModalFormView):
     context_object_name = 'acl'
     submit_label = _("Save Changes")
     submit_url = "horizon:manager:loadbalancers:updateacl"
-    success_url = reverse_lazy("horizon:manager:loadbalancers:index")
+    success_url = "horizon:manager:loadbalancers:listenerdetails"
     page_title = _("Edit Acl")
+
+    def get_success_url(self):
+        return reverse(self.success_url,
+                       args=(self.kwargs['listener_id'],))
 
     def get_context_data(self, **kwargs):
         context = super(UpdateAclView,
@@ -406,7 +423,7 @@ class UpdateHealthmonitorView(forms.ModalFormView):
     def get_initial(self):
         _obg = self._get_object()
         return {"healthmonitor_id": _obg["id"],
-                "type": _obg["type"],
+                "type": _obg["type"].lower(),
                 "delay": _obg['delay'],
                 "timeout": _obg['timeout'],
                 "max_retries": _obg['max_retries'],
@@ -414,3 +431,57 @@ class UpdateHealthmonitorView(forms.ModalFormView):
                 "url_path": _obg['url_path'],
                 "expected_codes": _obg['expected_codes'],
                 "admin_state_up": _obg['admin_state_up']}
+
+
+class AddRedundanceView(workflows.WorkflowView):
+    workflow_class = user_workflows.AddRedundance
+
+    def get_initial(self):
+        return {"loadbalancer_id": self.kwargs['loadbalancer_id']}
+
+
+class UpdateRedundanceView(forms.ModalFormView):
+    form_class = user_forms.UpdateRedundance
+    form_id = "update_redundance_form"
+    modal_header = _("Edit Redundance")
+    template_name = "manager/loadbalancers/updateredundance.html"
+    context_object_name = 'redundance'
+    submit_label = _("Save Changes")
+    submit_url = "horizon:manager:loadbalancers:updateredundance"
+    success_url = "horizon:manager:loadbalancers:loadbalancerdetails"
+    page_title = _("Edit Redundance")
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdateRedundanceView,
+                        self).get_context_data(**kwargs)
+        context["loadbalancer_id"] = self.kwargs['loadbalancer_id']
+        context["redundance_id"] = self.kwargs['redundance_id']
+        args = (self.kwargs['loadbalancer_id'],
+                self.kwargs['redundance_id'])
+        context['submit_url'] = reverse(self.submit_url, args=args)
+        return context
+
+    def get_success_url(self):
+        return reverse(self.success_url,
+                       args=(self.kwargs['loadbalancer_id'],))
+
+    @memoized.memoized_method
+    def _get_object(self, *args, **kwargs):
+        redundance_id = self.kwargs['redundance_id']
+        loadbalancer_id = self.kwargs['loadbalancer_id']
+        try:
+            return api.lbaas_v2.redundance_get(self.request,
+                                               redundance_id,
+                                               loadbalancer_id)
+        except Exception as e:
+            redirect = self.success_url
+            msg = _('Unable to retrieve redundance details. %s') % e
+            exceptions.handle(self.request, msg, redirect=redirect)
+
+    def get_initial(self):
+        _obg = self._get_object()
+        return {'redundance_id': _obg['id'],
+                'loadbalancer_id': self.kwargs['loadbalancer_id'],
+                'name': _obg['name'],
+                'description': _obg['description'],
+                'admin_state_up': _obg['admin_state_up']}
