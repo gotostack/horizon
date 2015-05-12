@@ -247,7 +247,8 @@ class AddListenerAction(workflows.Action):
 class AddListenerStep(workflows.Step):
     action_class = AddListenerAction
     contributes = ("name", "description", "loadbalancer_id", "protocol",
-                   "protocol_port", "connection_limit", "admin_state_up")
+                   "protocol_port", "connection_limit", "admin_state_up",
+                   "tenant_id")
 
     def contribute(self, data, context):
         context = super(AddListenerStep, self).contribute(data, context)
@@ -337,7 +338,7 @@ class AddPoolAction(workflows.Action):
 class AddPoolStep(workflows.Step):
     action_class = AddPoolAction
     contributes = ("name", "description", "listener_id", "lb_algorithm",
-                   "protocol", "admin_state_up")
+                   "protocol", "admin_state_up", "tenant_id")
 
     def contribute(self, data, context):
         context = super(AddPoolStep, self).contribute(data, context)
@@ -369,6 +370,7 @@ class AddPool(workflows.Workflow):
 
 
 class AddMemberAction(workflows.Action):
+    tenant_id = forms.CharField(widget=forms.HiddenInput)
     pool_id = forms.CharField(label=_("Pool"),
                               widget=forms.TextInput(
                                   attrs={'readonly': 'readonly'}))
@@ -424,7 +426,7 @@ class AddMemberAction(workflows.Action):
 class AddMemberStep(workflows.Step):
     action_class = AddMemberAction
     contributes = ("pool_id", "address", "protocol_port", "weight",
-                   "subnet_id", "admin_state_up")
+                   "subnet_id", "admin_state_up", "tenant_id")
 
     def contribute(self, data, context):
         context = super(AddMemberStep, self).contribute(data, context)
@@ -461,6 +463,7 @@ class AddMember(workflows.Workflow):
 
 
 class AddAclAction(workflows.Action):
+    tenant_id = forms.CharField(widget=forms.HiddenInput)
     listener_id = forms.CharField(label=_("Listener"),
                                   widget=forms.TextInput(
                                       attrs={'readonly': 'readonly'}))
@@ -505,7 +508,7 @@ class AddAclStep(workflows.Step):
     action_class = AddAclAction
     contributes = ("listener_id", "name", "description", "action",
                    "condition", "acl_type", "operator",
-                   "match", "match_condition", "admin_state_up")
+                   "match", "match_condition", "admin_state_up", "tenant_id")
 
     def contribute(self, data, context):
         context = super(AddAclStep, self).contribute(data, context)
@@ -542,6 +545,7 @@ class AddAcl(workflows.Workflow):
 
 
 class AddHealthmonitorAction(workflows.Action):
+    tenant_id = forms.ChoiceField(label=_("Project"))
     pool_id = forms.ChoiceField(label=_("Pool"))
     type = forms.ChoiceField(
         label=_("Type"),
@@ -612,6 +616,13 @@ class AddHealthmonitorAction(workflows.Action):
 
     def __init__(self, request, *args, **kwargs):
         super(AddHealthmonitorAction, self).__init__(request, *args, **kwargs)
+        tenant_choices = [('', _("Select a project"))]
+        tenants, has_more = api.keystone.tenant_list(request)
+        for tenant in tenants:
+            if tenant.enabled:
+                tenant_choices.append((tenant.id, tenant.name))
+        self.fields['tenant_id'].choices = tenant_choices
+
         pool_id_choices = [('', _("Select a Pool"))]
         try:
             pools = api.lbaas_v2.pool_list(request)
@@ -666,7 +677,7 @@ class AddHealthmonitorStep(workflows.Step):
     action_class = AddHealthmonitorAction
     contributes = ("pool_id", "type", "delay", "timeout", "max_retries",
                    "http_method", "url_path", "expected_codes",
-                   "admin_state_up")
+                   "admin_state_up", "tenant_id")
 
     def contribute(self, data, context):
         context = super(AddHealthmonitorStep, self).contribute(data, context)
@@ -695,6 +706,7 @@ class AddHealthmonitor(workflows.Workflow):
 
 
 class AddRedundanceAction(workflows.Action):
+    tenant_id = forms.CharField(widget=forms.HiddenInput)
     loadbalancer_id = forms.CharField(label=_("Loadbalancer"),
                                       widget=forms.TextInput(
                                           attrs={'readonly': 'readonly'}))
@@ -742,7 +754,7 @@ class AddRedundanceAction(workflows.Action):
 class AddRedundanceStep(workflows.Step):
     action_class = AddRedundanceAction
     contributes = ("loadbalancer_id", "name", "description", "agent_id",
-                   "admin_state_up")
+                   "admin_state_up", "tenant_id")
 
     def contribute(self, data, context):
         context = super(AddRedundanceStep, self).contribute(data, context)
