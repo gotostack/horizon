@@ -104,7 +104,7 @@ class LoadBalancerTests(test.TestCase):
         loadbalancers = loadbalancers_table.data
         self.assertEqual(len(loadbalancers), 1)
         row_actions = loadbalancers_table.get_row_actions(loadbalancers[0])
-        self.assertEqual(len(row_actions), 3)
+        self.assertEqual(len(row_actions), 4)
 
         self.assertIn('listeners_table', res.context)
         listeners_table = res.context['listeners_table']
@@ -293,7 +293,7 @@ class LoadBalancerTests(test.TestCase):
         tg = tabs.LoadbalancerDetailTabs(self.request,
                                          loadbalancer=loadbalancer)
         url += "?%s=%s" % (tg.param_name,
-                           tg.get_tab("lbredundances").get_id())
+                           tg.get_tab("lbredundances_tab").get_id())
 
         res = self.client.get(url)
         self.assertTemplateUsed(res,
@@ -415,7 +415,7 @@ class LoadBalancerTests(test.TestCase):
         url = reverse(LISTENER_DETAIL_PATH,
                       args=(listener.id,))
         tg = tabs.ListenerDetailTabs(self.request, listener=listener)
-        url += "?%s=%s" % (tg.param_name, tg.get_tab("acls").get_id())
+        url += "?%s=%s" % (tg.param_name, tg.get_tab("acls_tab").get_id())
 
         res = self.client.get(url)
         self.assertTemplateUsed(res,
@@ -535,7 +535,7 @@ class LoadBalancerTests(test.TestCase):
         url = reverse(POOL_DETAIL_PATH,
                       args=(pool.id,))
         tg = tabs.PoolDetailTabs(self.request, pool=pool)
-        url += "?%s=%s" % (tg.param_name, tg.get_tab("members").get_id())
+        url += "?%s=%s" % (tg.param_name, tg.get_tab("members_tab").get_id())
 
         res = self.client.get(url)
         self.assertTemplateUsed(res,

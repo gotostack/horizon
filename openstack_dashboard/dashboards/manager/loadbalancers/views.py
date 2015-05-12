@@ -277,8 +277,21 @@ class UpdatePoolView(forms.ModalFormView):
 class AddMemberView(workflows.WorkflowView):
     workflow_class = user_workflows.AddMember
 
+    @memoized.memoized_method
+    def _get_object(self, *args, **kwargs):
+        pool_id = self.kwargs['pool_id']
+        try:
+            return api.lbaas_v2.pool_get(self.request,
+                                         pool_id)
+        except Exception as e:
+            redirect = self.success_url
+            msg = _('Unable to retrieve pool info. %s') % e
+            exceptions.handle(self.request, msg, redirect=redirect)
+
     def get_initial(self):
-        return {"pool_id": self.kwargs['pool_id']}
+        _obg = self._get_object()
+        return {"pool_id": self.kwargs['pool_id'],
+                'tenant_id': _obg['tenant_id']}
 
 
 class UpdateMemberView(forms.ModalFormView):
@@ -331,8 +344,21 @@ class UpdateMemberView(forms.ModalFormView):
 class AddAclView(workflows.WorkflowView):
     workflow_class = user_workflows.AddAcl
 
+    @memoized.memoized_method
+    def _get_object(self, *args, **kwargs):
+        listener_id = self.kwargs['listener_id']
+        try:
+            return api.lbaas_v2.listener_get(self.request,
+                                             listener_id)
+        except Exception as e:
+            redirect = self.success_url
+            msg = _('Unable to retrieve listener info. %s') % e
+            exceptions.handle(self.request, msg, redirect=redirect)
+
     def get_initial(self):
-        return {"listener_id": self.kwargs['listener_id']}
+        _obg = self._get_object()
+        return {"listener_id": self.kwargs['listener_id'],
+                'tenant_id': _obg['tenant_id']}
 
 
 class UpdateAclView(forms.ModalFormView):
@@ -436,8 +462,21 @@ class UpdateHealthmonitorView(forms.ModalFormView):
 class AddRedundanceView(workflows.WorkflowView):
     workflow_class = user_workflows.AddRedundance
 
+    @memoized.memoized_method
+    def _get_object(self, *args, **kwargs):
+        loadbalancer_id = self.kwargs['loadbalancer_id']
+        try:
+            return api.lbaas_v2.loadbalancer_get(self.request,
+                                                 loadbalancer_id)
+        except Exception as e:
+            redirect = self.success_url
+            msg = _('Unable to retrieve loadbalancer info. %s') % e
+            exceptions.handle(self.request, msg, redirect=redirect)
+
     def get_initial(self):
-        return {"loadbalancer_id": self.kwargs['loadbalancer_id']}
+        _obg = self._get_object()
+        return {"loadbalancer_id": self.kwargs['loadbalancer_id'],
+                'tenant_id': _obg['tenant_id']}
 
 
 class UpdateRedundanceView(forms.ModalFormView):

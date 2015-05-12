@@ -31,7 +31,6 @@ class LoadbalancersTab(tabs.TableTab):
     name = _("Loadbalancers")
     slug = "loadbalancers_tab"
     template_name = "horizon/common/_detail_table.html"
-    permissions = ('openstack.services.network',)
 
     def get_loadbalancers_data(self):
         subnet_dict = dict([(
@@ -49,7 +48,7 @@ class LoadbalancersTab(tabs.TableTab):
 class ListenersTab(tabs.TableTab):
     table_classes = (l_tables.ListenersTable,)
     name = _("Listeners")
-    slug = "listeners"
+    slug = "listeners_tab"
     template_name = "horizon/common/_detail_table.html"
 
     def get_listeners_data(self):
@@ -77,7 +76,7 @@ class ListenersTab(tabs.TableTab):
 class PoolsTab(tabs.TableTab):
     table_classes = (l_tables.PoolsTable,)
     name = _("Pools")
-    slug = "pools"
+    slug = "pools_tab"
     template_name = "horizon/common/_detail_table.html"
 
     def get_pools_data(self):
@@ -95,7 +94,6 @@ class HealthmonitorsTab(tabs.TableTab):
     name = _("Healthmonitors")
     slug = "healthmonitors_tab"
     template_name = "horizon/common/_detail_table.html"
-    permissions = ('openstack.services.network',)
 
     def get_healthmonitors_data(self):
         tenant_dict = utils.get_tenants(self.request)
@@ -128,7 +126,7 @@ class LoadbalancerOverviewTab(tabs.Tab):
 class LbRedundancesTab(tabs.TableTab):
     table_classes = (l_tables.LbRedundancesTable,)
     name = _("Loadbalancer Redundances")
-    slug = "lbredundances"
+    slug = "lbredundances_tab"
     template_name = "horizon/common/_detail_table.html"
     preload = False
 
@@ -161,7 +159,7 @@ class LoadbalancerDetailTabs(tabs.TabGroup):
 class AclsTab(tabs.TableTab):
     table_classes = (l_tables.AclsTable,)
     name = _("Acls")
-    slug = "acls"
+    slug = "acls_tab"
     template_name = "horizon/common/_detail_table.html"
     preload = False
 
@@ -200,7 +198,7 @@ class ListenerDetailTabs(tabs.TabGroup):
 class MembersTab(tabs.TableTab):
     table_classes = (l_tables.MembersTable,)
     name = _("Members")
-    slug = "members"
+    slug = "members_tab"
     template_name = "horizon/common/_detail_table.html"
     preload = False
 
