@@ -16,6 +16,7 @@
 from django.core.urlresolvers import reverse
 from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
+from django.views import generic
 
 from horizon import exceptions
 from horizon import forms
@@ -81,6 +82,30 @@ class LoadbalancerDetailView(tabs.TabbedTableView):
         return self.tab_group_class(request,
                                     loadbalancer=loadbalancer,
                                     **kwargs)
+
+
+class LoadbalancerStatusesDetailView(forms.ModalFormMixin,
+                                     generic.TemplateView):
+    template_name = 'user/loadbalancers/loadbalancer_statuses.html'
+    page_title = _("Loadbalancer Statuses")
+
+    @memoized.memoized_method
+    def get_object(self):
+        try:
+            loadbalancer_id = self.kwargs['loadbalancer_id']
+            return api.lbaas_v2.loadbalancer_statuses(self.request,
+                                                      loadbalancer_id)
+        except Exception:
+            redirect = reverse("horizon:user:loadbalancers:index")
+            exceptions.handle(self.request,
+                              _('Unable to retrieve loadbalancers statuses.'),
+                              redirect=redirect)
+
+    def get_context_data(self, **kwargs):
+        context = super(LoadbalancerStatusesDetailView,
+                        self).get_context_data(**kwargs)
+        context['statuses'] = self.get_object()
+        return context
 
 
 class ListenerDetailsView(tabs.TabbedTableView):
