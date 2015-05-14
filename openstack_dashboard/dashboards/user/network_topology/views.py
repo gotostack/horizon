@@ -235,6 +235,15 @@ class JSONView(View):
         except Exception:
             loadbalancers = []
 
+        redundances = []
+        try:
+            for lb in loadbalancers:
+                redundances = api.lbaas_v2.redundance_list(
+                    request, lb.id,
+                    tenant_id=tenant_id)
+        except Exception:
+            pass
+
         data = [{'name': lb.name,
                  'status': lb.provisioning_status,
                  'id': lb.id,
@@ -242,6 +251,12 @@ class JSONView(View):
                 for lb in loadbalancers]
         self.add_resource_url(
             'horizon:user:loadbalancers:loadbalancerdetails', data)
+
+        data += [{'name': lbr.name,
+                  'status': lbr.provisioning_status,
+                  'id': lbr.id,
+                  'port_id': lbr.vip_port_id}
+                 for lbr in redundances]
         return data
 
     def get(self, request, *args, **kwargs):
