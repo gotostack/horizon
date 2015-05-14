@@ -562,6 +562,8 @@ class AclsTable(tables.DataTable):
     match_condition = tables.Column('match_condition',
                                     verbose_name=_("Match Condition"))
     tenant = tables.Column("tenant_name", verbose_name=_("Project"))
+    admin_state_up = tables.Column('admin_state_up',
+                                   verbose_name=_("Admin State"))
 
     class Meta(object):
         name = "acls"
