@@ -16,6 +16,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
 from django.views import generic
@@ -44,6 +45,9 @@ PROJECT_INFO_FIELDS = ("domain_id",
                        "name",
                        "description",
                        "enabled")
+
+OPENSTACK_QUOTA_ENABLED = getattr(settings,
+                                  "OPENSTACK_QUOTA_ENABLED", True)
 
 INDEX_URL = "horizon:identity:projects:index"
 
@@ -133,32 +137,33 @@ class CreateProjectView(workflows.WorkflowView):
         initial["domain_id"] = domain.id
         initial["domain_name"] = domain.name
 
-        # get initial quota defaults
-        try:
-            quota_defaults = quotas.get_default_quota_data(self.request)
-
+        if OPENSTACK_QUOTA_ENABLED:
+            # get initial quota defaults
             try:
-                if api.base.is_service_enabled(self.request, 'network') and \
-                        api.neutron.is_quotas_extension_supported(
-                            self.request):
-                    # TODO(jpichon): There is no API to access the Neutron
-                    # default quotas (LP#1204956). For now, use the values
-                    # from the current project.
-                    project_id = self.request.user.project_id
-                    quota_defaults += api.neutron.tenant_quota_get(
-                        self.request,
-                        tenant_id=project_id)
+                quota_defaults = quotas.get_default_quota_data(self.request)
+
+                try:
+                    if (api.base.is_service_enabled(self.request, 'network')
+                            and api.neutron.is_quotas_extension_supported(
+                                self.request)):
+                        # TODO(jpichon): There is no API to access the Neutron
+                        # default quotas (LP#1204956). For now, use the values
+                        # from the current project.
+                        project_id = self.request.user.project_id
+                        quota_defaults += api.neutron.tenant_quota_get(
+                            self.request,
+                            tenant_id=project_id)
+                except Exception:
+                    error_msg = _('Unable to retrieve default Neutron quota '
+                                  'values.')
+                    self.add_error_to_step(error_msg, 'create_quotas')
+
+                for field in quotas.QUOTA_FIELDS:
+                    initial[field] = quota_defaults.get(field).limit
+
             except Exception:
-                error_msg = _('Unable to retrieve default Neutron quota '
-                              'values.')
+                error_msg = _('Unable to retrieve default quota values.')
                 self.add_error_to_step(error_msg, 'create_quotas')
-
-            for field in quotas.QUOTA_FIELDS:
-                initial[field] = quota_defaults.get(field).limit
-
-        except Exception:
-            error_msg = _('Unable to retrieve default quota values.')
-            self.add_error_to_step(error_msg, 'create_quotas')
 
         return initial
 
@@ -189,16 +194,17 @@ class UpdateProjectView(workflows.WorkflowView):
                     exceptions.handle(self.request,
                                       _('Unable to retrieve project domain.'),
                                       redirect=reverse(INDEX_URL))
-
-            # get initial project quota
-            quota_data = quotas.get_tenant_quota_data(self.request,
-                                                      tenant_id=project_id)
-            if api.base.is_service_enabled(self.request, 'network') and \
-                    api.neutron.is_quotas_extension_supported(self.request):
-                quota_data += api.neutron.tenant_quota_get(
-                    self.request, tenant_id=project_id)
-            for field in quotas.QUOTA_FIELDS:
-                initial[field] = quota_data.get(field).limit
+            if OPENSTACK_QUOTA_ENABLED:
+                # get initial project quota
+                quota_data = quotas.get_tenant_quota_data(self.request,
+                                                          tenant_id=project_id)
+                if (api.base.is_service_enabled(self.request, 'network')
+                        and api.neutron.is_quotas_extension_supported(
+                            self.request)):
+                    quota_data += api.neutron.tenant_quota_get(
+                        self.request, tenant_id=project_id)
+                for field in quotas.QUOTA_FIELDS:
+                    initial[field] = quota_data.get(field).limit
         except Exception:
             exceptions.handle(self.request,
                               _('Unable to retrieve project details.'),

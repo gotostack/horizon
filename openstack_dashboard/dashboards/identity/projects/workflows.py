@@ -43,6 +43,9 @@ PROJECT_USER_MEMBER_SLUG = "update_members"
 PROJECT_GROUP_MEMBER_SLUG = "update_group_members"
 COMMON_HORIZONTAL_TEMPLATE = "identity/projects/_common_horizontal_form.html"
 
+OPENSTACK_QUOTA_ENABLED = getattr(settings,
+                                  "OPENSTACK_QUOTA_ENABLED", True)
+
 
 class ProjectQuotaAction(workflows.Action):
     ifcb_label = _("Injected File Content (Bytes)")
@@ -378,6 +381,8 @@ class UpdateProjectGroups(workflows.UpdateMembersStep):
 
 class CommonQuotaWorkflow(workflows.Workflow):
     def _update_project_quota(self, request, data, project_id):
+        if not OPENSTACK_QUOTA_ENABLED:
+            return
         # Update the project quota.
         nova_data = dict(
             [(key, data[key]) for key in quotas.NOVA_QUOTA_FIELDS])
@@ -415,11 +420,22 @@ class CreateProject(CommonQuotaWorkflow):
 
     def __init__(self, request=None, context_seed=None, entry_point=None,
                  *args, **kwargs):
-        if PROJECT_GROUP_ENABLED:
+        if PROJECT_GROUP_ENABLED and OPENSTACK_QUOTA_ENABLED:
             self.default_steps = (CreateProjectInfo,
                                   UpdateProjectMembers,
                                   UpdateProjectGroups,
                                   CreateProjectQuota)
+        elif PROJECT_GROUP_ENABLED and not OPENSTACK_QUOTA_ENABLED:
+            self.default_steps = (CreateProjectInfo,
+                                  UpdateProjectMembers,
+                                  UpdateProjectGroups)
+        elif not PROJECT_GROUP_ENABLED and OPENSTACK_QUOTA_ENABLED:
+            self.default_steps = (CreateProjectInfo,
+                                  UpdateProjectMembers,
+                                  CreateProjectQuota)
+        else:
+            self.default_steps = (CreateProjectInfo,
+                                  UpdateProjectMembers)
         super(CreateProject, self).__init__(request=request,
                                             context_seed=context_seed,
                                             entry_point=entry_point,
@@ -525,7 +541,8 @@ class CreateProject(CommonQuotaWorkflow):
         self._update_project_members(request, data, project_id)
         if PROJECT_GROUP_ENABLED:
             self._update_project_groups(request, data, project_id)
-        self._update_project_quota(request, data, project_id)
+        if OPENSTACK_QUOTA_ENABLED:
+            self._update_project_quota(request, data, project_id)
         return True
 
 
@@ -582,11 +599,22 @@ class UpdateProject(CommonQuotaWorkflow):
 
     def __init__(self, request=None, context_seed=None, entry_point=None,
                  *args, **kwargs):
-        if PROJECT_GROUP_ENABLED:
+        if PROJECT_GROUP_ENABLED and OPENSTACK_QUOTA_ENABLED:
             self.default_steps = (UpdateProjectInfo,
                                   UpdateProjectMembers,
                                   UpdateProjectGroups,
                                   UpdateProjectQuota)
+        elif PROJECT_GROUP_ENABLED and not OPENSTACK_QUOTA_ENABLED:
+            self.default_steps = (UpdateProjectInfo,
+                                  UpdateProjectMembers,
+                                  UpdateProjectGroups)
+        elif not PROJECT_GROUP_ENABLED and OPENSTACK_QUOTA_ENABLED:
+            self.default_steps = (UpdateProjectInfo,
+                                  UpdateProjectMembers,
+                                  UpdateProjectQuota)
+        else:
+            self.default_steps = (UpdateProjectInfo,
+                                  UpdateProjectMembers)
 
         super(UpdateProject, self).__init__(request=request,
                                             context_seed=context_seed,
