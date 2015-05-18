@@ -158,7 +158,7 @@ class LoadbalancerDetailTabs(tabs.TabGroup):
 
 class AclsTab(tabs.TableTab):
     table_classes = (l_tables.AclsTable,)
-    name = _("Acls")
+    name = _("ACLs")
     slug = "acls_tab"
     template_name = "horizon/common/_detail_table.html"
     preload = False
@@ -181,7 +181,7 @@ class AclsTab(tabs.TableTab):
 
 
 class ListenerOverviewTab(tabs.Tab):
-    name = _("ListenerOverview")
+    name = _("Listener Overview")
     slug = "listeneroverview"
     template_name = "manager/loadbalancers/_listener_details.html"
 
@@ -221,7 +221,7 @@ class MembersTab(tabs.TableTab):
 
 
 class PoolOverviewTab(tabs.Tab):
-    name = _("PoolOverview")
+    name = _("Pool Overview")
     slug = "pooloverview"
     template_name = "manager/loadbalancers/_pool_details.html"
 

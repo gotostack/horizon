@@ -148,6 +148,17 @@ STATUS_DISPLAY_CHOICES = (
 )
 
 
+class ViewLoadbalancerStatuses(tables.LinkAction):
+    name = "view"
+    verbose_name = _("View Details")
+    url = "horizon:manager:loadbalancers:loadbalancerstatuses"
+    classes = ("ajax-modal", "btn-view")
+
+    def get_link_url(self, datum=None):
+        obj_id = self.table.get_object_id(datum)
+        return reverse(self.url, args=(obj_id,))
+
+
 class LoadbalancerTable(tables.DataTable):
     tenant = tables.Column("tenant_name", verbose_name=_("Project"))
     name = tables.Column(
@@ -175,7 +186,8 @@ class LoadbalancerTable(tables.DataTable):
         row_class = UpdateLoadbalancersRow
         table_actions = (NameFilterAction, AddLoadbalancerLink,
                          DeleteLoadbalancer)
-        row_actions = (UpdateLoadbalancerLink,
+        row_actions = (ViewLoadbalancerStatuses,
+                       UpdateLoadbalancerLink,
                        AddListenerLink,
                        DeleteLoadbalancer)
 
@@ -567,7 +579,7 @@ class AclsTable(tables.DataTable):
 
     class Meta(object):
         name = "acls"
-        verbose_name = _("Acls")
+        verbose_name = _("ACLs")
         table_actions = (NameFilterAction, AddAclLink,
                          DeleteAcl)
         row_actions = (UpdateAclLink, DeleteAcl)

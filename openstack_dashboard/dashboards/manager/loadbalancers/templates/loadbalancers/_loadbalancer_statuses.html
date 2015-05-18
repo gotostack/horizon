@@ -1,0 +1,62 @@
+{% extends "horizon/common/_modal.html" %}
+{% load i18n %}
+{% load url from future %}
+
+{% block modal-header %}{% trans "Loadbalancer Statuses" %}{% endblock %}
+
+{% block modal-body %}
+<div>Provisioning Status: PS</div>
+<div>Operating Status: OS</div>
+<div class="info detail">
+  <table class='table table-bordered'>
+    <tr><th>{% trans 'Name' %}</th><td>{{ statuses.loadbalancer.name }}</td></tr>
+    <tr><th>{% trans 'VIP' %}</th><td>{{ statuses.loadbalancer.vip_address }}</td></tr>
+    <tr><th>{% trans 'PS' %}</th><td style="font-weight: bold;{% if statuses.loadbalancer.provisioning_status != 'ACTIVE' %}color: #d93c27;{% else %} color: #3c763d;{% endif %}">{{ statuses.loadbalancer.provisioning_status }}</td></tr>
+    <tr><th>{% trans 'OS' %}</th><td style="font-weight: bold;{% if statuses.loadbalancer.operating_status != 'ONLINE' %}color: #d93c27;{% else %} color: #3c763d;{% endif %}">{{ statuses.loadbalancer.operating_status }}</td></tr>
+
+    <tr>
+        <th>{% trans 'Listeners' %}</th>
+        <td>
+        {% for listener in statuses.loadbalancer.listeners %}
+        <table class='table table-bordered'>
+            <tr><th>{% trans 'Name' %}</th><td>{{ listener.name }}</td></tr>
+            <tr><th>{% trans 'PS' %}</th><td style="font-weight: bold;{% if listener.provisioning_status != 'ACTIVE' %}color: #d93c27;{% else %} color: #3c763d;{% endif %}">{{ listener.provisioning_status }}</td></tr>
+            <tr><th>{% trans 'OS' %}</th><td style="font-weight: bold;{% if listener.operating_status != 'ONLINE' %}color: #d93c27;{% else %} color: #3c763d;{% endif %}">{{ listener.operating_status }}</td></tr>
+            <tr>
+            <th>{% trans 'Pools' %}</th>
+            <td>
+            {% for pool in listener.pools %}
+            <table class='table table-bordered'>
+                <tr><th>{% trans 'Name' %}</th><td>{{ pool.name }}</td></tr>
+                <tr><th>{% trans 'PS' %}</th><td style="font-weight: bold;{% if pool.provisioning_status != 'ACTIVE' %}color: #d93c27;{% else %} color: #3c763d;{% endif %}">{{ pool.provisioning_status }}</td></tr>
+                <tr><th>{% trans 'OS' %}</th><td style="font-weight: bold;{% if pool.operating_status != 'ONLINE' %}color: #d93c27;{% else %} color: #3c763d;{% endif %}">{{ pool.operating_status }}</td></tr>
+                <tr><th>{% trans 'Healthmonitor' %}</th><td style="font-weight: bold;{% if pool.healthmonitor.provisioning_status != 'ACTIVE' %}color: #d93c27;{% else %} color: #3c763d;{% endif %}">{{ pool.healthmonitor.type }} - {{ pool.healthmonitor.provisioning_status }}</td></tr>
+
+                <tr>
+                    <th>{% trans 'Members' %}</th>
+                    <td>
+                        {% for member in pool.members %}
+                        <table class='table table-bordered'>
+                            <tr><th>{% trans 'Address' %}</th><td>{{ member.address }}</td></tr>
+                            <tr><th>{% trans 'Port' %}</th><td>{{ member.protocol_port }}</td></tr>
+                            <tr><th>{% trans 'PS' %}</th><td style="font-weight: bold;{% if member.provisioning_status != 'ACTIVE' %}color: #d93c27;{% else %} color: #3c763d;{% endif %}">{{ member.provisioning_status }}</td></tr>
+                        </table>
+                        {% endfor %}
+                    </td>
+                </tr>
+            </table>
+            {% endfor %}
+            </td>
+            </tr>
+        </table>
+        {% endfor %}
+        </td>
+    </tr>
+
+  </table>
+</div>
+{% endblock %}
+
+{% block modal-footer %}
+  <a href="{% url 'horizon:manager:loadbalancers:index' %}" class="btn btn-default secondary cancel close">{% trans "Close" %}</a>
+{% endblock %}

@@ -11642,3 +11642,438 @@ msgstr "时间增量必须以天数间隔表示"
 #, python-format
 msgid "Failed to get the resource name: %s"
 msgstr "获取资源名为：%s 失败"
+
+# Load balance V2
+msgid "Loadbalancers"
+msgstr "负载均衡器"
+
+msgid "Loadbalancer"
+msgstr "负载均衡器"
+
+msgid "Listeners"
+msgstr "监听器"
+
+msgid "Healthmonitors"
+msgstr "健康检查"
+
+msgid "Add Loadbalancer"
+msgstr "增加负载均衡器"
+
+msgid "Agent Host"
+msgstr "负载均衡服务器列表"
+
+msgid "Select an Agent Host"
+msgstr "选择一个负载均衡服务"
+
+msgid "Add New Loadbalancer"
+msgstr "创建一个新的负载均衡器"
+
+msgid ""
+"Create loadbalancer for current project.\n\n"
+"Assign a name and description for the loadbalancer. "
+"Choose one subnet where you can get the"
+" loadbalancer VIP. \n\n"
+"Admin State is UP (checked) by default."
+msgstr ""
+"为当前项目创建一个新的负载均衡器。\n\n"
+"设置负载均衡器的名称和描述信息。 "
+"选择一个网络来获取负载均衡器的VIP。\n\n"
+"管理员状态默认开启。"
+
+msgid "Provider for Load Balancer V2 is not supported."
+msgstr "不支持负载均衡V2版本"
+
+msgid "Add Listener"
+msgstr "增加监听器"
+
+msgid "Add New Listener"
+msgstr "增加一个新的监听器"
+
+msgid "Maximum number of connections allowed."
+msgstr "最大连接数"
+
+msgid "Select a Loadbalancer"
+msgstr "选择一个负载均衡器"
+
+msgid "Unable to retrieve loadbalancer list."
+msgstr "无法获取负载均衡器列表."
+
+msgid ""
+"Create a listener for specific loadbalancer.\n\n"
+"Assign a name and description for the listener. "
+"Select the protocol, port,  and connection limit "
+"for this listener. "
+"Admin State is UP (checked) by default."
+msgstr ""
+"为特定的负载均衡器增加监听器.\n\n"
+"设置监听器的名称和描述. "
+"选择监听器的协议,端口和最大连接数. "
+"管理员状态默认开启。"
+
+msgid "Listener"
+msgstr "监听器"
+
+msgid "Select a Listener"
+msgstr "选择一个监听器"
+
+msgid "Unable to retrieve listener list."
+msgstr "无法获取监听器列表"
+
+msgid "Select an Algorithm"
+msgstr "选择一个负载均衡算法"
+
+msgid ""
+"Create a pool for specific listener.\n\n"
+"Assign a name and description for the pool. "
+"Select the protocol and load balancing algorithm "
+"for this pool. "
+"Admin State is UP (checked) by default."
+msgstr ""
+"为特定的监听器创建一个资源池.\n\n"
+"设置资源池的名称和描述. "
+"为资源池选择和其指定的监听器相同的协议，以及指定负载均衡算法。 "
+"管理员状态默认开启。"
+
+msgid "Input An Service IP address"
+msgstr "成员所在IP地址"
+
+msgid ""
+"Create a member for specific pool.\n\n"
+"Set the weight of this member. "
+"Set the member service port and IP. "
+"Choose one subnet where this member is on. "
+"Address is the member service IP."
+"Admin State is UP (checked) by default."
+msgstr ""
+"为特定的资源池创建一个成员.\n\n"
+"设置成员权重. "
+"选择一个子网来放置该成员（可选）. "
+"设置成员提供服务的端口和IP地址"
+"管理员状态默认开启。"
+
+msgid "Add ACL"
+msgstr "增加ACL"
+
+msgid "Add New ACL"
+msgstr "为监听器增加一个新的ACL"
+
+msgid "ACL Name"
+msgstr "ACL名称"
+
+msgid ""
+"ACL name must begin with letter"
+" and only contain letters, numbers and underline."
+" ACL name must be unique in same listener."
+msgstr ""
+"ACL名称只能以字母开头并且只能包含数字字母和下划线。"
+" 同一个监听器下，ACL名称必须唯一。"
+
+msgid "ACL Action"
+msgstr "ACL动作"
+
+msgid "ACL Condition"
+msgstr "ACL动作条件"
+
+msgid "ACL Type"
+msgstr "ACL类型"
+
+msgid "ACL Operator"
+msgstr "ACL触发行为"
+
+msgid "ACL Match"
+msgstr "ACL触发行为目标"
+
+msgid "ACL Match condition"
+msgstr "ACL触发别名"
+
+msgid ""
+"Create an acl for specific listener.\n\n"
+"A complete haproxy acl is assembled like:\n\n"
+"acl [ACL Name] [ACL Action] [ACL Condition]\n\n"
+"[ACL Operator] [ACL Match] if [ACL Match condition]\n\n"
+"Admin State is UP (checked) by default."
+msgstr ""
+"为监听器创建一个ACL.\n\n"
+"一个完整的ACL将被组装成:\n\n"
+"acl [ACL名称] [ACL动作] [ACL动作条件]\n\n"
+"[ACL触发行为] [ACL触发行为目标] if [ACL触发别名(通常就是本条ACL的名称)]\n\n"
+"管理员状态默认开启。"
+
+msgid "Add Redundance"
+msgstr "增加冗余实例"
+
+msgid "Add New Redundance"
+msgstr "增加冗余实例"
+
+msgid ""
+"Create a redundance for specific loadbalancer.\n\n"
+"A haproxy instance will be create"
+" in a different agent host. "
+"Admin State is UP (checked) by default."
+msgstr ""
+"为特定的负载均衡器增加冗余实例.\n\n"
+"新的haproxy实例将在不同的agent节点被启动。"
+"管理员状态默认开启。"
+
+msgid "Add Healthmonitor"
+msgstr "增加健康监控"
+
+msgid "Add Acl"
+msgstr "增加ACL"
+
+msgid "Condition"
+msgstr "动作条件"
+
+msgid "Operator"
+msgstr "触发行为"
+
+msgid "Match"
+msgstr "触发行为目标"
+
+msgid "Match Condition"
+msgstr "触发别名"
+
+msgid "Algorithm"
+msgstr "均衡算法"
+
+msgid "Healthmonitor"
+msgstr "监控监控"
+
+msgid "Agent"
+msgstr "Agent"
+
+msgid "Http Method"
+msgstr "HTTP方法"
+
+msgid "Url Path"
+msgstr "URL PATH"
+
+msgid "Loadbalancer Details: {{ loadbalancer.name }}"
+msgstr "负载均衡器详情 : {{ loadbalancer.name }}"
+
+msgid "Loadbalancer Overview"
+msgstr "负载均衡器概览"
+
+msgid "Loadbalancer Redundances"
+msgstr "负载均衡器冗余实例"
+
+msgid "Pool Overview"
+msgstr "资源池概览"
+
+msgid "Pool Details: {{ pool.name }}"
+msgstr "资源池详情 : {{ pool.name }}"
+
+msgid "Listener Details: {{ listener.name }}"
+msgstr "监听器详情 : {{ listener.name }}"
+
+msgid "Listener Overview"
+msgstr "监听器概览"
+
+msgid "ACLs"
+msgstr "ACLs"
+
+msgid "Loadbalancer Statistics"
+msgstr "用量统计"
+
+msgid "Bytes In"
+msgstr "流入比特数"
+
+msgid "Bytes Out"
+msgstr "流出比特数"
+
+msgid "Active Connections"
+msgstr "活动连接数"
+
+msgid "Total Connections"
+msgstr "总连接数"
+
+msgid "Default Pool"
+msgstr "默认资源池"
+
+msgid "Loadbalancer Statuses"
+msgstr "负载均衡器状态"
+
+msgid "Added loadbalancer \"%s\"."
+msgstr "已增加负载均衡器 \"%s\""
+
+msgid "Unable to add loadbalancer \"%s\"."
+msgstr "无法增加负载均衡器 \"%s\""
+
+msgid "Added listener \"%s\"."
+msgstr "已增加监听器 \"%s\""
+
+msgid "Unable to add listener \"%s\"."
+msgstr "无法增加监听器 \"%s\""
+
+msgid "Added member \"%s\"."
+msgstr "已增加成员 \"%s\""
+
+msgid "Unable to add member \"%s\"."
+msgstr "无法增加成员 \"%s\""
+
+msgid "Added acl \"%s\"."
+msgstr "已增加ACL \"%s\""
+
+msgid "Unable to add acl \"%s\"."
+msgstr "无法增加ACL \"%s\""
+
+msgid "Added redundance \"%s\"."
+msgstr "已增加冗余实例 \"%s\""
+
+msgid "Unable to add redundance \"%s\"."
+msgstr "无法增加冗余实例 \"%s\""
+
+msgid "Edit Loadbalancer"
+msgstr "编辑负载均衡器"
+
+msgid "Edit Listener"
+msgstr "编辑监听器"
+
+msgid "Edit Healthmonitor"
+msgstr "编辑健康监控"
+
+msgid "Edit Acl"
+msgstr "编辑ACL"
+
+msgid "Edit Redundance"
+msgstr "编辑冗余实例"
+
+msgid "You may update loadbalancer attributes here: edit name, description or admin state."
+msgstr "你可以更新负载均衡器的属性：名称，描述，管理员状态。"
+
+msgid "You may update listener attributes here: edit name, description, max connection or admin state."
+msgstr "你可以更新监听器的属性：名称，描述，最大连接数，管理员状态。"
+
+msgid "You may update healthmonitor attributes here."
+msgstr "你可以更新健康监控的属性。"
+
+msgid "You may update member attributes here: edit weight or admin state."
+msgstr "你可以更新成员的属性：权重和管理员状态。"
+
+msgid "You may update ACL attributes here."
+msgstr "你可以更新ACL的属性。"
+
+msgid "You may update redundance attributes here."
+msgstr "你可以更新冗余实例的属性。"
+
+msgid "If 'Refresh' is True, it will reload the redundance haproxy with newest config file."
+msgstr "如果'刷新'被选择，那么后台将更新冗余实例的配置文件为其冗余对象的最新配置。"
+
+msgid "Loadbalancer %s was successfully updated."
+msgstr "负载均衡器 %s 成功更新"
+
+msgid "Failed to update loadbalancer %s"
+msgstr "负载均衡器 %s 更新失败"
+
+msgid "Listener %s was successfully updated."
+msgstr "监听器 %s 成功更新"
+
+msgid "Failed to update listener %s"
+msgstr "监听器 %s 更新失败"
+
+msgid "ACL %s was successfully updated."
+msgstr "ACL %s 成功更新"
+
+msgid "Failed to update acl %s"
+msgstr "ACL %s 更新失败"
+
+msgid "Healthmonitor %s was successfully updated."
+msgstr "健康监控 %s 成功更新"
+
+msgid "Failed to update healthmonitor %s"
+msgstr "健康监控 %s 更新失败"
+
+msgid "Redundance %s was successfully updated."
+msgstr "冗余实例 %s 成功更新"
+
+msgid "Failed to update redundance %s"
+msgstr "冗余实例 %s 更新失败"
+
+msgid "Deleted Loadbalancer"
+msgid_plural "Deleted Loadbalancers"
+msgstr[0] "已删除的负载均衡器"
+
+msgid "Scheduled deletion of Loadbalancer"
+msgid_plural "Scheduled deletion of Loadbalancers"
+msgstr[0] "已安排删除的负载均衡器"
+
+msgid "Deleted Listener"
+msgid_plural "Deleted Listeners"
+msgstr[0] "已删除的监听器"
+
+msgid "Scheduled deletion of Listener"
+msgid_plural "Scheduled deletion of Listeners"
+msgstr[0] "已安排删除的监听器"
+
+msgid "Deleted Pool"
+msgid_plural "Deleted Pools"
+msgstr[0] "已删除的资源池"
+
+msgid "Deleted Member"
+msgid_plural "Deleted Members"
+msgstr[0] "已删除的成员"
+
+msgid "Deleted Acl"
+msgid_plural "Deleted Acls"
+msgstr[0] "已删除的ACL"
+
+msgid "Scheduled deletion of Acl"
+msgid_plural "Scheduled deletion of Acls"
+msgstr[0] "已安排删除的ACL"
+
+msgid "Deleted Healthmonitor"
+msgid_plural "Deleted Healthmonitors"
+msgstr[0] "已删除的健康监控"
+
+msgid "Scheduled deletion of Healthmonitor"
+msgid_plural "Scheduled deletion of Healthmonitors"
+msgstr[0] "已安排删除的健康监控"
+
+msgid "Deleted Redundance"
+msgid_plural "Deleted Redundances"
+msgstr[0] "已删除的冗余实例"
+
+msgid "Scheduled deletion of Redundance"
+msgid_plural "Scheduled deletion of Redundances"
+msgstr[0] "已安排删除的冗余实例"
+
+msgid "Delete Loadbalancer"
+msgid_plural "Delete Loadbalancers"
+msgstr[0] "删除负载均衡器"
+
+msgid "Delete Listener"
+msgid_plural "Delete Listeners"
+msgstr[0] "删除监听器"
+
+msgid "Delete Healthmonitor"
+msgid_plural "Delete Healthmonitors"
+msgstr[0] "删除健康监控"
+
+msgid "Delete Acl"
+msgid_plural "Delete Acls"
+msgstr[0] "删除ACL"
+
+msgid "Delete Redundance"
+msgid_plural "Delete Redundances"
+msgstr[0] "删除冗余实例"
+
+msgid "Deleted loadbalancers are not recoverable."
+msgstr "删除的负载均衡器无法恢复。"
+
+msgid "Deleted listeners are not recoverable."
+msgstr "删除的监听器无法恢复。"
+
+msgid "Deleted pools are not recoverable."
+msgstr "删除的资源池无法恢复。"
+
+msgid "Deleted members are not recoverable."
+msgstr "删除的成员无法恢复。"
+
+msgid "Deleted acls are not recoverable."
+msgstr "删除的ACL例无法恢复。"
+
+msgid "Deleted healthmonitors are not recoverable."
+msgstr "删除的健康监控无法恢复。"
+
+msgid "Deleted redundances are not recoverable."
+msgstr "删除的冗余实例无法恢复。"

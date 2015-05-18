@@ -14,6 +14,7 @@
 #    under the License.
 
 import logging
+import re
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
@@ -33,6 +34,13 @@ AVAILABLE_METHODS = ('ROUND_ROBIN', 'LEAST_CONNECTIONS', 'SOURCE_IP')
 ENABLE_SPECIFY_LBV2_AGENT = getattr(settings,
                                     'ENABLE_SPECIFY_LBV2_AGENT',
                                     False)
+
+NAME_REGEX = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]*$", re.UNICODE)
+ACL_NAME_HELP_TEXT = _(
+    'ACL name must begin with letter'
+    ' and only contain letters, numbers and underline.'
+    ' ACL name must be unique in same listener.')
+ACL_NAME_ERROR_MESSAGES = {'invalid': ACL_NAME_HELP_TEXT}
 
 LOG = logging.getLogger(__name__)
 
@@ -99,7 +107,7 @@ class AddLoadbalancerAction(workflows.Action):
                         _("%s (default)") % default_provider))
         else:
             if providers is None:
-                msg = _("Provider for Load Balancer V2 is not supported")
+                msg = _("Provider for Load Balancer V2 is not supported.")
             else:
                 msg = _("No provider is available")
             provider_choices = [('', msg)]
@@ -126,10 +134,8 @@ class AddLoadbalancerAction(workflows.Action):
         permissions = ('openstack.services.network',)
         help_text = _("Create loadbalancer for current project.\n\n"
                       "Assign a name and description for the loadbalancer. "
-                      "Choose one subnet where all members of this "
-                      "pool must be on. "
-                      "Select the protocol and load balancing method "
-                      "for this pool. "
+                      "Choose one subnet where you can get the"
+                      " loadbalancer VIP. \n\n"
                       "Admin State is UP (checked) by default.")
 
 
@@ -216,12 +222,10 @@ class AddListenerAction(workflows.Action):
     class Meta(object):
         name = _("Add New Listener")
         permissions = ('openstack.services.network',)
-        help_text = _("Create listener for current project.\n\n"
+        help_text = _("Create a listener for specific loadbalancer.\n\n"
                       "Assign a name and description for the listener. "
-                      "Choose one subnet where all members of this "
-                      "pool must be on. "
-                      "Select the protocol and load balancing method "
-                      "for this pool. "
+                      "Select the protocol, port,  and connection limit "
+                      "for this listener. "
                       "Admin State is UP (checked) by default.")
 
 
@@ -274,7 +278,7 @@ class AddPoolAction(workflows.Action):
     def __init__(self, request, *args, **kwargs):
         super(AddPoolAction, self).__init__(request, *args, **kwargs)
         tenant_id = request.user.tenant_id
-        listener_choices = [('', _("Select a Loadbalancer"))]
+        listener_choices = [('', _("Select a Listener"))]
         try:
             listeners = api.lbaas_v2.listener_list(request,
                                                    tenant_id=tenant_id)
@@ -297,11 +301,9 @@ class AddPoolAction(workflows.Action):
     class Meta(object):
         name = _("Add New Pool")
         permissions = ('openstack.services.network',)
-        help_text = _("Create pool for current project.\n\n"
+        help_text = _("Create a pool for specific listener.\n\n"
                       "Assign a name and description for the pool. "
-                      "Choose one subnet where all members of this "
-                      "pool must be on. "
-                      "Select the protocol and load balancing method "
+                      "Select the protocol and load balancing algorithm "
                       "for this pool. "
                       "Admin State is UP (checked) by default.")
 
@@ -359,8 +361,7 @@ class AddMemberAction(workflows.Action):
     subnet_id = forms.ChoiceField(label=_("VIP Subnet"),
                                   # temporarily set to required
                                   required=True)
-    address = forms.IPField(label=_("Specify a free IP address "
-                                    "from the selected subnet"),
+    address = forms.IPField(label=_("Input An Service IP address"),
                             version=forms.IPv4,
                             mask=False)
     admin_state_up = forms.ChoiceField(choices=[(True, _('UP')),
@@ -385,12 +386,11 @@ class AddMemberAction(workflows.Action):
     class Meta(object):
         name = _("Add New Member")
         permissions = ('openstack.services.network',)
-        help_text = _("Create member for current project.\n\n"
-                      "Assign a name and description for the member. "
-                      "Choose one subnet where all members of this "
-                      "member must be on. "
-                      "Select the protocol and load balancing method "
-                      "for this member. "
+        help_text = _("Create a member for specific pool.\n\n"
+                      "Set the weight of this member. "
+                      "Set the member service port and IP. "
+                      "Choose one subnet where this member is on. "
+                      "Address is the member service IP."
                       "Admin State is UP (checked) by default.")
 
 
@@ -437,24 +437,28 @@ class AddAclAction(workflows.Action):
     listener_id = forms.CharField(label=_("Listener"),
                                   widget=forms.TextInput(
                                       attrs={'readonly': 'readonly'}))
-    name = forms.CharField(max_length=80, label=_("Name"))
+    name = forms.RegexField(max_length=80,
+                            label=_("ACL Name"),
+                            regex=NAME_REGEX,
+                            error_messages=ACL_NAME_ERROR_MESSAGES,
+                            help_text=ACL_NAME_HELP_TEXT)
     description = forms.CharField(
         initial="", required=False,
         max_length=80, label=_("Description"))
     action = forms.CharField(
-        max_length=80, label=_("Action"))
+        max_length=80, label=_("ACL Action"))
     condition = forms.CharField(
-        max_length=80, label=_("Condition"))
+        max_length=80, label=_("ACL Condition"))
     acl_type = forms.CharField(
         initial="", required=False,
-        max_length=80, label=_("Acl Type"))
+        max_length=80, label=_("ACL Type"))
     operator = forms.CharField(
-        max_length=80, label=_("Operator"))
+        max_length=80, label=_("ACL Operator"))
     match = forms.CharField(
         initial="", required=False,
-        max_length=80, label=_("Match"))
+        max_length=80, label=_("ACL Match"))
     match_condition = forms.CharField(
-        max_length=80, label=_("Match condition"))
+        max_length=80, label=_("ACL Match condition"))
     admin_state_up = forms.ChoiceField(choices=[(True, _('UP')),
                                                 (False, _('DOWN'))],
                                        label=_("Admin State"))
@@ -463,14 +467,12 @@ class AddAclAction(workflows.Action):
         super(AddAclAction, self).__init__(request, *args, **kwargs)
 
     class Meta(object):
-        name = _("Add New Acl")
+        name = _("Add New ACL")
         permissions = ('openstack.services.network',)
-        help_text = _("Create acl for current project.\n\n"
-                      "Assign a name and description for the acl. "
-                      "Choose one subnet where all acls of this "
-                      "acl must be on. "
-                      "Select the protocol and load balancing method "
-                      "for this acl. "
+        help_text = _("Create an acl for specific listener.\n\n"
+                      "A complete haproxy acl is assembled like:\n\n"
+                      "acl [ACL Name] [ACL Action] [ACL Condition]\n\n"
+                      "[ACL Operator] [ACL Match] if [ACL Match condition]\n\n"
                       "Admin State is UP (checked) by default.")
 
 
@@ -489,7 +491,7 @@ class AddAclStep(workflows.Step):
 
 class AddAcl(workflows.Workflow):
     slug = "addacl"
-    name = _("Add Acl")
+    name = _("Add ACL")
     finalize_button_name = _("Add")
     success_message = _('Added acl "%s".')
     failure_message = _('Unable to add acl "%s".')
@@ -705,12 +707,9 @@ class AddRedundanceAction(workflows.Action):
     class Meta(object):
         name = _("Add New Redundance")
         permissions = ('openstack.services.network',)
-        help_text = _("Create redundance for current project.\n\n"
-                      "Assign a name and description for the redundance. "
-                      "Choose one subnet where all redundances of this "
-                      "redundance must be on. "
-                      "Select the protocol and load balancing method "
-                      "for this redundance. "
+        help_text = _("Create a redundance for specific loadbalancer.\n\n"
+                      "A haproxy instance will be create"
+                      " in a different agent host. "
                       "Admin State is UP (checked) by default.")
 
 
