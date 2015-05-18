@@ -166,7 +166,7 @@ class UpdateAcl(forms.SelfHandlingForm):
     listener_id = forms.CharField(label=_("Listener"),
                                   widget=forms.TextInput(
                                       attrs={'readonly': 'readonly'}))
-    acl_id = forms.CharField(label=_("Acl ID"),
+    acl_id = forms.CharField(label=_("ACL ID"),
                              widget=forms.TextInput(
                                  attrs={'readonly': 'readonly'}))
     name = forms.CharField(max_length=80, label=_("Name"))
@@ -174,19 +174,19 @@ class UpdateAcl(forms.SelfHandlingForm):
         initial="", required=False,
         max_length=80, label=_("Description"))
     action = forms.CharField(
-        max_length=80, label=_("Action"))
+        max_length=80, label=_("ACL Action"))
     condition = forms.CharField(
-        max_length=80, label=_("Condition"))
+        max_length=80, label=_("ACL Condition"))
     acl_type = forms.CharField(
         initial="", required=False,
-        max_length=80, label=_("Acl Type"))
+        max_length=80, label=_("ACL Type"))
     operator = forms.CharField(
-        max_length=80, label=_("Operator"))
+        max_length=80, label=_("ACL Operator"))
     match = forms.CharField(
         initial="", required=False,
-        max_length=80, label=_("Match"))
+        max_length=80, label=_("ACL Match"))
     match_condition = forms.CharField(
-        max_length=80, label=_("Match condition"))
+        max_length=80, label=_("ACL Match condition"))
     admin_state_up = forms.ChoiceField(choices=[(True, _('UP')),
                                                 (False, _('DOWN'))],
                                        label=_("Admin State"))
@@ -201,7 +201,7 @@ class UpdateAcl(forms.SelfHandlingForm):
         try:
             acl = api.lbaas_v2.acl_update(request,
                                           **context)
-            msg = _('Acl %s was successfully updated.')\
+            msg = _('ACL %s was successfully updated.')\
                 % context['acl_id']
             LOG.debug(msg)
             messages.success(request, msg)

@@ -567,7 +567,7 @@ class AclsTable(tables.DataTable):
 
     class Meta(object):
         name = "acls"
-        verbose_name = _("Acls")
+        verbose_name = _("ACLs")
         table_actions = (NameFilterAction, AddAclLink,
                          DeleteAcl)
         row_actions = (UpdateAclLink, DeleteAcl)
