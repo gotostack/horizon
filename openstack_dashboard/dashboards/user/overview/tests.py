@@ -1,5 +1,8 @@
-# Copyright 2015 Letv Cloud Computing
+# Copyright 2012 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration.
 # All Rights Reserved.
+#
+# Copyright 2012 Nebula, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -13,22 +16,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from django.utils.translation import ugettext_lazy as _
+from django.core.urlresolvers import reverse
 
-import horizon
+from mox import IsA  # noqa
 
-
-class User(horizon.Dashboard):
-    name = _("User")
-    slug = "user"
-    panels = (
-        'overview',
-        'network_topology',
-        'networks',
-        'routers',
-        'loadbalancers',
-        'access_and_security')
-    default_panel = 'overview'
+from openstack_dashboard.test import helpers as test
 
 
-horizon.register(User)
+INDEX_URL = reverse('horizon:project:overview:index')
+
+
+class UsageViewTests(test.TestCase):
+    pass

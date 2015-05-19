@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load i18n horizon humanize sizeformat %}
+
+{% block main %}
+
+<div class="quota-dynamic">
+  <h3 class="quota-heading">{% trans "Limit Summary" %}</h3>
+    <div class="d3_quota_bar">
+      <div class="d3_pie_chart_usage" data-used="{% quotapercent usage.used.network usage.limit.network %}"></div>
+      <strong>{% trans "Network" %} <br />
+        {% blocktrans with used=usage.used.network|intcomma available=usage.limit.network|quotainf|intcomma %}Used <span> {{ used }} </span> of <span> {{ available }} </span>{% endblocktrans %}
+      </strong>
+    </div>
+
+    <div class="d3_quota_bar">
+      <div class="d3_pie_chart_usage" data-used="{% quotapercent usage.used.subnet usage.limit.subnet %}"></div>
+      <strong>{% trans "Subnet" %} <br />
+        {% blocktrans with used=usage.used.subnet|intcomma available=usage.limit.subnet|quotainf|intcomma %}Used <span> {{ used }} </span> of <span> {{ available }} </span>{% endblocktrans %}
+      </strong>
+    </div>
+
+    <div class="d3_quota_bar">
+      <div class="d3_pie_chart_usage" data-used="{% quotapercent usage.used.router usage.limit.router %}"></div>
+      <strong>{% trans "Router" %} <br />
+        {% blocktrans with used=usage.used.router|intcomma available=usage.limit.router|quotainf|intcomma %}Used <span> {{ used }} </span> of <span> {{ available }} </span>{% endblocktrans %}
+      </strong>
+    </div>
+
+    <div class="d3_quota_bar">
+      <div class="d3_pie_chart_usage" data-used="{% quotapercent usage.used.loadbalancer usage.limit.loadbalancer %}"></div>
+      <strong>{% trans "Loadbalancer" %} <br />
+        {% blocktrans with used=usage.used.loadbalancer|intcomma available=usage.limit.loadbalancer|quotainf|intcomma %}Used <span> {{ used }} </span> of <span> {{ available }} </span>{% endblocktrans %}
+      </strong>
+    </div>
+</div>
+
+{{ table.render }}
+{% endblock %}
