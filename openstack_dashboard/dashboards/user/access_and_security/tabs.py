@@ -26,6 +26,7 @@ from neutronclient.common import exceptions as neutron_exc
 
 from openstack_dashboard.api import keystone
 from openstack_dashboard.api import network
+from openstack_dashboard.api import neutron
 
 from openstack_dashboard.dashboards.user.access_and_security.\
     api_access.tables import EndpointsTable
@@ -52,6 +53,9 @@ class SecurityGroupsTab(tabs.TableTab):
             exceptions.handle(self.request,
                               _('Unable to retrieve security groups.'))
         return security_groups
+
+    def allowed(self, request):
+        return neutron.is_extension_supported(request, 'security-group')
 
 
 class FloatingIPsTab(tabs.TableTab):
