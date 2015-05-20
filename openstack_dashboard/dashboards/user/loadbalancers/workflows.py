@@ -749,3 +749,99 @@ class AddRedundance(workflows.Workflow):
         except Exception as e:
             exceptions.handle(request, e)
             return False
+
+
+class AddLVSPortAction(workflows.Action):
+    name = forms.CharField(max_length=80,
+                           required=False,
+                           initial="",
+                           label=_("Name"))
+    description = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Description"))
+
+    loadbalancer_id = forms.ChoiceField(label=_("Loadbalancer"))
+    vip_address = forms.IPField(label=_("Specify a free IP address "
+                                        "from the selected subnet"),
+                                version=forms.IPv4,
+                                mask=False,
+                                required=True)
+
+    rip_address = forms.IPField(label=_("Specify a real IP address"),
+                                version=forms.IPv4,
+                                mask=False,
+                                required=False)
+
+    subnet_id = forms.ChoiceField(label=_("VIP Subnet"),
+                                  required=False)
+    admin_state_up = forms.ChoiceField(choices=[(True, _('UP')),
+                                                (False, _('DOWN'))],
+                                       label=_("Admin State"))
+
+    def __init__(self, request, *args, **kwargs):
+        super(AddLVSPortAction, self).__init__(request, *args, **kwargs)
+        tenant_id = request.user.tenant_id
+
+        loadbalancer_choices = [('', _("Select a Loadbalancer"))]
+        try:
+            loadbalancers = api.lbaas_v2.loadbalancer_list(
+                request, tenant_id=tenant_id)
+        except Exception:
+            exceptions.handle(request,
+                              _('Unable to retrieve loadbalancer list.'))
+            loadbalancers = []
+        for l in loadbalancers:
+            loadbalancer_choices.append((l.id, l.name))
+        self.fields['loadbalancer_id'].choices = loadbalancer_choices
+
+        subnet_id_choices = [('', _("Select a Subnet"))]
+        try:
+            networks = api.neutron.network_list_for_tenant(request, tenant_id)
+        except Exception:
+            exceptions.handle(request,
+                              _('Unable to retrieve networks list.'))
+            networks = []
+        for n in networks:
+            for s in n['subnets']:
+                subnet_id_choices.append((s.id, s.cidr))
+        self.fields['subnet_id'].choices = subnet_id_choices
+
+    class Meta(object):
+        name = _("Add New LVS Port")
+        permissions = ('openstack.services.network',)
+        help_text = _("Create a lvs port for specific loadbalancer.\n\n"
+                      "Admin State is UP (checked) by default.")
+
+
+class AddLVSPortStep(workflows.Step):
+    action_class = AddLVSPortAction
+    contributes = ("loadbalancer_id", "name", "description", "subnet_id",
+                   "admin_state_up", "vip_address", "rip_address")
+
+    def contribute(self, data, context):
+        context = super(AddLVSPortStep, self).contribute(data, context)
+        context['admin_state_up'] = (context['admin_state_up'] == 'True')
+        if data:
+            return context
+
+
+class AddLVSPort(workflows.Workflow):
+    slug = "addredundance"
+    name = _("Add LVS Port")
+    finalize_button_name = _("Add")
+    success_message = _('Added LVS port "%s".')
+    failure_message = _('Unable to add LVS port "%s".')
+    success_url = "horizon:user:loadbalancers:index"
+    default_steps = (AddLVSPortStep,)
+
+    def format_status_message(self, message):
+        name = self.context.get('name')
+        return message % name
+
+    def handle(self, request, context):
+        try:
+            api.lbaas_v2.lvsport_create(request, **context)
+            return True
+        except Exception as e:
+            exceptions.handle(request, e)
+            return False

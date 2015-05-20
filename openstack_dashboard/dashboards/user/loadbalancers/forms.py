@@ -368,3 +368,43 @@ class UpdateRedundance(forms.SelfHandlingForm):
             LOG.info(msg)
             redirect = reverse(self.failure_url)
             exceptions.handle(request, msg, redirect=redirect)
+
+
+class UpdateLVSPort(forms.SelfHandlingForm):
+    lvs_id = forms.CharField(label=_("Loadbalancer"),
+                             widget=forms.TextInput(
+                                 attrs={'readonly': 'readonly'}))
+    name = forms.CharField(
+        max_length=80,
+        label=_("Name"),
+        required=False,
+        initial="")
+    description = forms.CharField(
+        initial="", required=False,
+        max_length=80, label=_("Description"))
+    admin_state_up = forms.ChoiceField(
+        choices=[(True, _('UP')),
+                 (False, _('DOWN'))],
+        label=_("Admin State"))
+
+    failure_url = 'horizon:user:loadbalancers:index'
+
+    def __init__(self, request, *args, **kwargs):
+        super(UpdateLVSPort, self).__init__(request, *args, **kwargs)
+
+    def handle(self, request, context):
+        context['admin_state_up'] = (context['admin_state_up'] == 'True')
+        try:
+            lvsport = api.lbaas_v2.lvsport_update(request,
+                                                  **context)
+            msg = _('LVS Port %s was successfully updated.') \
+                % context['lvs_id']
+            LOG.debug(msg)
+            messages.success(request, msg)
+            return lvsport
+        except Exception:
+            msg = _(
+                'Failed to update LVS Port %s') % context['lvs_id']
+            LOG.info(msg)
+            redirect = reverse(self.failure_url)
+            exceptions.handle(request, msg, redirect=redirect)

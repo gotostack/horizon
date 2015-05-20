@@ -81,7 +81,7 @@ class LoadbalancerStatuses(neutron.NeutronAPIDictWrapper):
 
 
 class LbRedundance(neutron.NeutronAPIDictWrapper):
-    """Wrapper for neutron load balancer Redundance stats."""
+    """Wrapper for neutron load balancer Redundance."""
 
     def __init__(self, apiresource):
         super(LbRedundance, self).__init__(apiresource)
@@ -92,6 +92,13 @@ class LbRedundanceStats(neutron.NeutronAPIDictWrapper):
 
     def __init__(self, apiresource):
         super(LbRedundanceStats, self).__init__(apiresource)
+
+
+class LVSPort(neutron.NeutronAPIDictWrapper):
+    """Wrapper for neutron load balancer LVS port."""
+
+    def __init__(self, apiresource):
+        super(LVSPort, self).__init__(apiresource)
 
 
 def get_agent_hosting_loadbalancer(request, loadbalancer_id, **kwargs):
@@ -555,3 +562,57 @@ def redundance_update(request,
                                              loadbalancer_id,
                                              body).get('redundance')
     return LbRedundance(redundance)
+
+
+def lvsport_create(request, **kwargs):
+    """LBaaS v2 Create a lvs port."""
+    body = {"lvs": {
+        "admin_state_up": kwargs['admin_state_up'],
+        "name": kwargs['name'],
+        "description": kwargs['description'],
+        "vip_address": kwargs['vip_address'],
+        "loadbalancer_id": kwargs['loadbalancer_id']}}
+    if kwargs.get('rip_address'):
+        body['lvs']['rip_address'] = kwargs['rip_address']
+    if kwargs.get('subnet_id'):
+        body['lvs']['subnet_id'] = kwargs['subnet_id']
+    if kwargs.get('tenant_id'):
+        body['lvs']['tenant_id'] = kwargs['tenant_id']
+    lvs = neutronclient(
+        request).create_lvs(body).get('lvs')
+    return LVSPort(lvs)
+
+
+def lvsport_delete(request, lvs_id):
+    """LBaaS v2 Delete a given lvs port."""
+    neutronclient(request).delete_lvs(lvs_id)
+
+
+@memoized
+def lvsport_list(request, retrieve_all=True, **kwargs):
+    """LBaaS v2 List lvs port that belong to a given tenant."""
+    lvses = neutronclient(
+        request).list_lvses(retrieve_all,
+                            **kwargs).get('lvses')
+    return [LVSPort(m) for m in lvses]
+
+
+@memoized
+def lvsport_get(request, lvs_id, **kwargs):
+    """LBaaS v2 Show information of a given lvs port."""
+    lvs = neutronclient(
+        request).show_lvs(lvs_id,
+                          **kwargs).get('lvs')
+    return LVSPort(lvs)
+
+
+def lvsport_update(request, lvs_id, **kwargs):
+    """LBaaS v2 Update or Refresh a given lvs port."""
+    body = {"lvs": {
+            "admin_state_up": kwargs['admin_state_up'],
+            "name": kwargs['name'],
+            "description": kwargs['description']}}
+
+    lvs = neutronclient(
+        request).update_lvs(lvs_id, body).get('lvs')
+    return LVSPort(lvs)

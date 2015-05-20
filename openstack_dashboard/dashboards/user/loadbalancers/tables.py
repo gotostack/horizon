@@ -738,3 +738,82 @@ class LbRedundancesTable(tables.DataTable):
         table_actions = (NameFilterAction, AddRedundanceLink,
                          DeleteRedundance)
         row_actions = (UpdateRedundanceLink, DeleteRedundance)
+
+
+class AddLVSPortLink(tables.LinkAction):
+    name = "addlvsport"
+    verbose_name = _("Add LVS Port")
+    url = "horizon:user:loadbalancers:addlvsport"
+    classes = ("ajax-modal",)
+    icon = "plus"
+    policy_rules = (("network", "create_lvsport"),)
+
+    def get_link_url(self, datum=None):
+        if datum:
+            base_url = reverse(self.url)
+            params = urlencode({"loadbalancer_id": datum.id})
+            return "?".join([base_url, params])
+        return reverse(self.url)
+
+
+class DeleteLVSPort(tables.DeleteAction):
+    name = "deletelvsport"
+    policy_rules = (("network", "delete_lvsport"),)
+    help_text = _("Deleted LVS Ports are not recoverable.")
+
+    @staticmethod
+    def action_present(count):
+        return ungettext_lazy(
+            u"Delete LVS Port",
+            u"Delete LVS Ports",
+            count
+        )
+
+    @staticmethod
+    def action_past(count):
+        return ungettext_lazy(
+            u"Scheduled deletion of LVS Port",
+            u"Scheduled deletion of LVS Ports",
+            count
+        )
+
+    def delete(self, request, obj_id):
+        api.lbaas_v2.lvsport_delete(request, obj_id)
+
+
+class UpdateLVSPortLink(policy.PolicyTargetMixin, tables.LinkAction):
+    name = "updatelvsport"
+    verbose_name = _("Edit LVS Port")
+    classes = ("ajax-modal", "btn-update",)
+    policy_rules = (("network", "update_lvsport"),)
+
+    def get_link_url(self, datum):
+        base_url = reverse("horizon:user:loadbalancers:updatelvsport",
+                           kwargs={'lvs_id': datum.id})
+        return base_url
+
+
+class LVSPortsTable(tables.DataTable):
+    name = tables.Column("name",
+                         verbose_name=_("Name"))
+    description = tables.Column('description', verbose_name=_("Description"))
+    vip_address = tables.Column('vip_address',
+                                verbose_name=_("IP Address"),
+                                attrs={'data-type': "ip"})
+    rip_address = tables.Column('rip_address',
+                                verbose_name=_("Real IP Address"),
+                                attrs={'data-type': "ip"})
+    subnet_name = tables.Column('subnet_name', verbose_name=_("Subnet"))
+    loadbalancer = tables.Column('loadbalancer_name',
+                                 verbose_name=_("Loadbalancer"))
+    admin_state_up = tables.Column('admin_state_up',
+                                   verbose_name=_("Admin State"))
+    status = tables.Column('provisioning_status',
+                           verbose_name=_("Status"))
+
+    class Meta(object):
+        name = "lvsports"
+        verbose_name = _("LVS Ports")
+        table_actions = (NameFilterAction, AddLVSPortLink,
+                         DeleteLVSPort)
+        row_actions = (UpdateLVSPortLink, DeleteLVSPort)
