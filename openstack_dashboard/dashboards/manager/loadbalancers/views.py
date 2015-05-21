@@ -549,3 +549,45 @@ class UpdateRedundanceView(forms.ModalFormView):
                 'name': _obg['name'],
                 'description': _obg['description'],
                 'admin_state_up': _obg['admin_state_up']}
+
+
+class AddLVSPortView(workflows.WorkflowView):
+    workflow_class = user_workflows.AddLVSPort
+
+
+class UpdateLVSPortView(forms.ModalFormView):
+    form_class = user_forms.UpdateLVSPort
+    form_id = "update_lvsport_form"
+    modal_header = _("Edit LVS Port")
+    template_name = "manager/loadbalancers/updatelvsport.html"
+    context_object_name = 'lvsport'
+    submit_label = _("Save Changes")
+    submit_url = "horizon:manager:loadbalancers:updatelvsport"
+    success_url = reverse_lazy("horizon:manager:loadbalancers:index")
+    page_title = _("Edit LVS Port")
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdateLVSPortView,
+                        self).get_context_data(**kwargs)
+        context["lvs_id"] = self.kwargs['lvs_id']
+        args = (self.kwargs['lvs_id'],)
+        context['submit_url'] = reverse(self.submit_url, args=args)
+        return context
+
+    @memoized.memoized_method
+    def _get_object(self, *args, **kwargs):
+        lvs_id = self.kwargs['lvs_id']
+        try:
+            return api.lbaas_v2.lvsport_get(self.request,
+                                            lvs_id)
+        except Exception as e:
+            redirect = self.success_url
+            msg = _('Unable to retrieve LVS Port details. %s') % e
+            exceptions.handle(self.request, msg, redirect=redirect)
+
+    def get_initial(self):
+        _obg = self._get_object()
+        return {'lvs_id': _obg['id'],
+                'name': _obg['name'],
+                'description': _obg['description'],
+                'admin_state_up': _obg['admin_state_up']}

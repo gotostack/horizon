@@ -105,12 +105,46 @@ class HealthmonitorsTab(tabs.TableTab):
         return hms
 
 
+class LVSPortTab(tabs.TableTab):
+    table_classes = (l_tables.LVSPortsTable,)
+    name = _("LVS Ports")
+    slug = "lvsports_tab"
+    template_name = "horizon/common/_detail_table.html"
+    preload = False
+
+    def get_lvsports_data(self):
+        tenant_dict = utils.get_tenants(self.request)
+        subnet_dict = dict([(
+            n.id, n.cidr) for n in utils.get_subnets(self.request)])
+        loadbalancer_dict = dict([(
+            l.id, l.name) for l in utils.get_loadbalancers(self.request)])
+        try:
+            lvsports = api.lbaas_v2.lvsport_list(
+                self.request)
+        except Exception:
+            lvsports = []
+            exceptions.handle(
+                self.request,
+                _('Unable to retrieve loadbalancer LVS Port list.'))
+
+        if lvsports:
+            if subnet_dict and lvsports:
+                for lv in lvsports:
+                    tenant = tenant_dict.get(lv.tenant_id, None)
+                    lv.tenant_name = getattr(tenant, 'name', None)
+                    lv.loadbalancer_name = loadbalancer_dict.get(
+                        lv.loadbalancer_id)
+                    lv.subnet_name = subnet_dict.get(lv.subnet_id)
+        return lvsports
+
+
 class LoadbalancerTabs(tabs.TabGroup):
     slug = "loadbalancer_tabs"
     tabs = (LoadbalancersTab,
             ListenersTab,
             PoolsTab,
-            HealthmonitorsTab)
+            HealthmonitorsTab,
+            LVSPortTab)
     sticky = True
 
 

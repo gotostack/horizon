@@ -44,6 +44,11 @@ urlpatterns = patterns(
         '/(?P<redundance_id>[^/]+)/$',
         views.UpdateRedundanceView.as_view(), name='updateredundance'),
 
+    url(r'^addlvsport$',
+        views.AddLVSPortView.as_view(), name='addlvsport'),
+    url(r'^updatelvsport/(?P<lvs_id>[^/]+)/$',
+        views.UpdateLVSPortView.as_view(), name='updatelvsport'),
+
     url(r'^addlistener$',
         views.AddListenerView.as_view(), name='addlistener'),
     url(r'^updatelistener/(?P<listener_id>[^/]+)/$',

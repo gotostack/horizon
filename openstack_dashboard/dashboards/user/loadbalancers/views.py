@@ -543,7 +543,7 @@ class UpdateLVSPortView(forms.ModalFormView):
                                             lvs_id)
         except Exception as e:
             redirect = self.success_url
-            msg = _('Unable to retrieve lvs port details. %s') % e
+            msg = _('Unable to retrieve LVS Port details. %s') % e
             exceptions.handle(self.request, msg, redirect=redirect)
 
     def get_initial(self):

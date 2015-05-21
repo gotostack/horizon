@@ -119,7 +119,7 @@ class LVSPortTab(tabs.TableTab):
             lvsports = []
             exceptions.handle(
                 self.request,
-                _('Unable to retrieve loadbalancer lvs port list.'))
+                _('Unable to retrieve loadbalancer LVS Port list.'))
 
         if lvsports:
             if subnet_dict and lvsports:

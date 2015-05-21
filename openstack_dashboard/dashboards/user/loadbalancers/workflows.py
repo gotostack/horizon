@@ -809,7 +809,7 @@ class AddLVSPortAction(workflows.Action):
     class Meta(object):
         name = _("Add New LVS Port")
         permissions = ('openstack.services.network',)
-        help_text = _("Create a lvs port for specific loadbalancer.\n\n"
+        help_text = _("Create a LVS Port for specific loadbalancer.\n\n"
                       "Admin State is UP (checked) by default.")
 
 
@@ -829,8 +829,8 @@ class AddLVSPort(workflows.Workflow):
     slug = "addredundance"
     name = _("Add LVS Port")
     finalize_button_name = _("Add")
-    success_message = _('Added LVS port "%s".')
-    failure_message = _('Unable to add LVS port "%s".')
+    success_message = _('Added LVS Port "%s".')
+    failure_message = _('Unable to add LVS Port "%s".')
     success_url = "horizon:user:loadbalancers:index"
     default_steps = (AddLVSPortStep,)
 

@@ -12085,3 +12085,64 @@ msgstr "删除的健康监控无法恢复。"
 
 msgid "Deleted redundances are not recoverable."
 msgstr "删除的冗余实例无法恢复。"
+
+msgid "LVS Ports"
+msgstr "负载均衡器LVS"
+
+msgid "Real IP Address"
+msgstr "真实IP"
+
+msgid "Edit LVS Port"
+msgstr "编辑LVS"
+
+msgid "Add LVS Port"
+msgstr "增加LVS"
+
+msgid "Add New LVS Port"
+msgstr "新增LVS"
+
+msgid "Added LVS Port \"%s\"."
+msgstr "已增加LVS \"%s\""
+
+msgid "Unable to add LVS Port \"%s\"."
+msgstr "无法增加LVS \"%s\""
+
+msgid "Specify a real IP address"
+msgstr "设置一个真实IP"
+
+msgid "You may update LVS Port attributes here: edit name, description or admin state."
+msgstr "你可以更新负LVS的属性：名称，描述，管理员状态。"
+
+msgid "LVS Port %s was successfully updated."
+msgstr "LVS %s 成功更新"
+
+msgid "Failed to update LVS Port %s"
+msgstr "LVS %s 更新失败"
+
+msgid ""
+"Create a LVS Port for specific loadbalancer.\n\n"
+"Admin State is UP (checked) by default."
+msgstr ""
+"为特定的负载均衡器创建LVS.\n\n"
+"管理员状态默认开启。"
+
+msgid "Delete LVS Port"
+msgid_plural "Delete LVS Ports"
+msgstr[0] "删除LVS"
+
+msgid "Deleted LVS Ports are not recoverable."
+msgstr "删除的LVS无法恢复。"
+
+msgid "Deleted LVS Port"
+msgid_plural "Deleted LVS Ports"
+msgstr[0] "已删除的LVS"
+
+msgid "Scheduled deletion of LVS Port"
+msgid_plural "Scheduled deletion of LVS Ports"
+msgstr[0] "已安排删除的LVS"
+
+msgid "Unable to retrieve LVS Port details. %s"
+msgstr "无法获取LVS %s"
+
+msgid "Unable to retrieve loadbalancer LVS Port list."
+msgstr "无法获取LVS列表"
