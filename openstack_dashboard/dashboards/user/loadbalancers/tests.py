@@ -13,8 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from socket import timeout as socket_timeout  # noqa
-
 from django.core.urlresolvers import reverse
 from django import http
 
@@ -57,6 +55,9 @@ UPDATEACL_PATH = PATH_BASE + 'updateacl'
 ADDREDUNANCE_PATH = PATH_BASE + 'addredundance'
 UPDATEREDUNANCE_PATH = PATH_BASE + 'updateredundance'
 
+ADDLVSPORT_PATH = PATH_BASE + 'addlvsport'
+UPDATELVSPORT_PATH = PATH_BASE + 'updatelvsport'
+
 
 class LoadBalancerTests(test.TestCase):
     @test.create_stubs({api.neutron: ('subnet_list',),
@@ -64,17 +65,19 @@ class LoadBalancerTests(test.TestCase):
                             'loadbalancer_list',
                             'pool_list',
                             'listener_list',
-                            'healthmonitor_list')})
+                            'healthmonitor_list',
+                            'lvsport_list')})
     def test_index(self):
         subnets = self.subnets.list()
         loadbalancers = self.v2_loadbalancers.list()
         listeners = self.v2_listeners.list()
         pools = self.v2_pools.list()
         healthmonitors = self.v2_healthmonitors.list()
+        lvs_ports = self.v2_lvs_ports.list()
 
         api.neutron.subnet_list(
             IsA(http.HttpRequest),
-            tenant_id=self.tenant.id) \
+            tenant_id=self.tenant.id).MultipleTimes() \
             .AndReturn(subnets)
         api.lbaas_v2.loadbalancer_list(
             IsA(http.HttpRequest),
@@ -92,6 +95,10 @@ class LoadBalancerTests(test.TestCase):
             IsA(http.HttpRequest),
             tenant_id=self.tenant.id) \
             .AndReturn(healthmonitors)
+        api.lbaas_v2.lvsport_list(
+            IsA(http.HttpRequest),
+            tenant_id=self.tenant.id) \
+            .AndReturn(lvs_ports)
 
         self.mox.ReplayAll()
 
@@ -125,6 +132,13 @@ class LoadBalancerTests(test.TestCase):
         healthmonitors = healthmonitors_table.data
         self.assertEqual(len(healthmonitors), 1)
         row_actions = healthmonitors_table.get_row_actions(healthmonitors[0])
+        self.assertEqual(len(row_actions), 2)
+
+        self.assertIn('lvsports_table', res.context)
+        lvsports_table = res.context['lvsports_table']
+        lvsports = lvsports_table.data
+        self.assertEqual(len(lvsports), 1)
+        row_actions = lvsports_table.get_row_actions(lvsports[0])
         self.assertEqual(len(row_actions), 2)
 
     def _add_loadbalancer_get(self,
@@ -890,6 +904,102 @@ class LoadBalancerTests(test.TestCase):
                                args=(loadbalancer.id,))
         self.assertRedirects(res, expected_url, 302, 302)
 
+    @test.create_stubs({api.neutron: ('network_list_for_tenant',),
+                        api.lbaas_v2: (
+                            'loadbalancer_list',)})
+    def test_add_lvsport_get(self):
+        subnet = self.subnets.first()
+        networks = [{'subnets': [subnet, ]}, ]
+        loadbalancers = self.v2_loadbalancers.list()
+
+        api.neutron.network_list_for_tenant(
+            IsA(http.HttpRequest), self.tenant.id).AndReturn(networks)
+        api.lbaas_v2.loadbalancer_list(
+            IsA(http.HttpRequest),
+            tenant_id=self.tenant.id) \
+            .AndReturn(loadbalancers)
+
+        self.mox.ReplayAll()
+
+        res = self.client.get(reverse(ADDLVSPORT_PATH))
+        workflow = res.context['workflow']
+        self.assertTemplateUsed(res, views.WorkflowView.template_name)
+        self.assertEqual(workflow.name, workflows.AddLVSPort.name)
+
+        expected_objs = ['<AddLVSPortStep: addlvsportaction>', ]
+        self.assertQuerysetEqual(workflow.steps, expected_objs)
+
+    @test.create_stubs({api.neutron: ('network_list_for_tenant',),
+                        api.lbaas_v2: (
+                            'loadbalancer_list',
+                            'lvsport_create')})
+    def test_add_lvsport_post(self):
+        subnet = self.subnets.first()
+        networks = [{'subnets': [subnet, ]}, ]
+        loadbalancers = self.v2_loadbalancers.list()
+        lvs_port = self.v2_lvs_ports.first()
+        loadbalancer = self.v2_loadbalancers.first()
+
+        data = {'loadbalancer_id': loadbalancer.id,
+                'name': lvs_port.name,
+                'description': lvs_port.description,
+                'subnet_id': lvs_port.subnet_id,
+                'vip_address': lvs_port.vip_address,
+                'rip_address': '8.8.8.8',
+                'admin_state_up': lvs_port.admin_state_up}
+
+        api.neutron.network_list_for_tenant(
+            IsA(http.HttpRequest), self.tenant.id).AndReturn(networks)
+        api.lbaas_v2.loadbalancer_list(
+            IsA(http.HttpRequest),
+            tenant_id=self.tenant.id) \
+            .AndReturn(loadbalancers)
+        api.lbaas_v2.lvsport_create(
+            IsA(http.HttpRequest),
+            **data) \
+            .AndReturn(loadbalancers)
+
+        self.mox.ReplayAll()
+        res = self.client.post(
+            reverse(ADDLVSPORT_PATH), data)
+
+        self.assertNoFormErrors(res)
+        self.assertRedirectsNoFollow(res, INDEX_URL)
+
+    @test.create_stubs({api.lbaas_v2: ('lvsport_get',)})
+    def test_update_lvsport_get(self):
+        lvs_port = self.v2_lvs_ports.first()
+        api.lbaas_v2.lvsport_get(IsA(http.HttpRequest),
+                                 lvs_port.id).AndReturn(lvs_port)
+        self.mox.ReplayAll()
+        res = self.client.get(reverse(UPDATELVSPORT_PATH,
+                                      args=(lvs_port.id,)))
+        self.assertTemplateUsed(res,
+                                'user/loadbalancers/updatelvsport.html')
+
+    @test.create_stubs({api.lbaas_v2: ('lvsport_get',
+                                       'lvsport_update')})
+    def test_update_lvsport_post(self):
+        lvs_port = self.v2_lvs_ports.first()
+        api.lbaas_v2.lvsport_get(IsA(http.HttpRequest),
+                                 lvs_port.id).AndReturn(lvs_port)
+        data = {'lvs_id': lvs_port.id,
+                'name': lvs_port.name,
+                'description': lvs_port.description,
+                'admin_state_up': lvs_port.admin_state_up}
+
+        api.lbaas_v2.lvsport_update(
+            IsA(http.HttpRequest),
+            **data).AndReturn(lvs_port)
+
+        self.mox.ReplayAll()
+
+        res = self.client.post(reverse(UPDATELVSPORT_PATH,
+                                       args=(lvs_port.id,)), data)
+
+        self.assertNoFormErrors(res)
+        self.assertRedirectsNoFollow(res, INDEX_URL)
+
     @test.create_stubs({api.neutron: ('subnet_list',),
                         api.lbaas_v2: (
                             'loadbalancer_list',
@@ -1042,5 +1152,74 @@ class LoadBalancerTests(test.TestCase):
             "members__deletemember__%s" % member.id}
         res = self.client.post(
             reverse(POOL_DETAIL_PATH, args=(pool.id,)), form_data)
+
+        self.assertNoFormErrors(res)
+
+    @test.create_stubs({api.lbaas_v2: ('redundance_list',
+                                       'redundance_delete',
+                                       'loadbalancer_get')})
+    def test_delete_redundance(self):
+        redundances = self.v2_lbredundances.list()
+        redundance = self.v2_lbredundances.first()
+        loadbalancer = self.v2_loadbalancers.first()
+        api.lbaas_v2.loadbalancer_get(IsA(http.HttpRequest),
+                                      loadbalancer.id).AndReturn(loadbalancer)
+
+        api.lbaas_v2.redundance_list(
+            IsA(http.HttpRequest),
+            loadbalancer_id=loadbalancer.id,
+            tenant_id=self.tenant.id).AndReturn(redundances)
+
+        api.lbaas_v2.redundance_delete(IsA(http.HttpRequest),
+                                       redundance.id,
+                                       loadbalancer.id)
+        self.mox.ReplayAll()
+
+        url = reverse(LOADBALANCER_DETAIL_PATH,
+                      args=(loadbalancer.id,))
+        tg = tabs.LoadbalancerDetailTabs(self.request,
+                                         loadbalancer=loadbalancer)
+        url += "?%s=%s" % (tg.param_name,
+                           tg.get_tab("lbredundances_tab").get_id())
+
+        form_data = {
+            "action":
+            "lbredundances__deleteredundance__%s" % redundance.id}
+        res = self.client.post(url, form_data)
+
+        self.assertNoFormErrors(res)
+
+    @test.create_stubs({api.neutron: ('subnet_list',),
+                        api.lbaas_v2: (
+                            'loadbalancer_list',
+                            'lvsport_list',
+                            'lvsport_delete')})
+    def test_delete_lvsport(self):
+        lvsport = self.v2_lvs_ports.first()
+        subnets = self.subnets.list()
+        loadbalancers = self.v2_loadbalancers.list()
+        lvs_ports = self.v2_lvs_ports.list()
+
+        api.neutron.subnet_list(
+            IsA(http.HttpRequest),
+            tenant_id=self.tenant.id) \
+            .AndReturn(subnets)
+        api.lbaas_v2.loadbalancer_list(
+            IsA(http.HttpRequest),
+            tenant_id=self.tenant.id) \
+            .AndReturn(loadbalancers)
+        api.lbaas_v2.lvsport_list(
+            IsA(http.HttpRequest),
+            tenant_id=self.tenant.id) \
+            .AndReturn(lvs_ports)
+
+        api.lbaas_v2.lvsport_delete(IsA(http.HttpRequest),
+                                    lvsport.id)
+        self.mox.ReplayAll()
+
+        form_data = {
+            "action":
+            "lvsports__deletelvsport__%s" % lvsport.id}
+        res = self.client.post(INDEX_URL, form_data)
 
         self.assertNoFormErrors(res)

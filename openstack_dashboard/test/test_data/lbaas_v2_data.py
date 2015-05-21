@@ -27,6 +27,7 @@ def data(TEST):
     TEST.v2_pools = utils.TestDataContainer()
     TEST.v2_members = utils.TestDataContainer()
     TEST.v2_healthmonitors = utils.TestDataContainer()
+    TEST.v2_lvs_ports = utils.TestDataContainer()
 
     # Data return by neutronclient.
     TEST.v2_api_loadbalancers = utils.TestDataContainer()
@@ -37,6 +38,7 @@ def data(TEST):
     TEST.v2_api_pools = utils.TestDataContainer()
     TEST.v2_api_members = utils.TestDataContainer()
     TEST.v2_api_healthmonitors = utils.TestDataContainer()
+    TEST.v2_api_lvs_ports = utils.TestDataContainer()
 
     # LBaaS V2.
 
@@ -190,3 +192,19 @@ def data(TEST):
     }
     TEST.v2_api_lbredundances.add(redundance_dict)
     TEST.v2_lbredundances.add(lbaas_v2.LbRedundance(redundance_dict))
+
+    # 1st lvs for loadbalancer 1st.
+    lvs_dict = {
+        "description": "lvs",
+        "admin_state_up": True,
+        "subnet_id": "e8abc972-eb0c-41f1-9edd-4bc6e3bcd8c9",
+        "tenant_id": "1",
+        "id": "43a9f731-fb7f-4859-be7e-ef35d974a276",
+        "rip_address": None,
+        "vip_address": "3.3.3.3",
+        "rip_port_id": None,
+        "loadbalancer_id": "183b46dc-57a5-42cb-8f9b-253afce781b2",
+        "name": "lvs"
+    }
+    TEST.v2_api_lvs_ports.add(lvs_dict)
+    TEST.v2_lvs_ports.add(lbaas_v2.LVSPort(lvs_dict))

@@ -101,7 +101,6 @@ class LVSPortTab(tabs.TableTab):
     name = _("LVS Ports")
     slug = "lvsports_tab"
     template_name = "horizon/common/_detail_table.html"
-    preload = False
 
     def get_lvsports_data(self):
         tenant_id = self.request.user.tenant_id
