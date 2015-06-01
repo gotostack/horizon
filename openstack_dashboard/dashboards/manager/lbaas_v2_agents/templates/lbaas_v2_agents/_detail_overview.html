@@ -1,0 +1,46 @@
+{% load i18n sizeformat %}
+{% load url from future %}
+
+<h3>{% trans "Load Balancing v2 Agent Overview" %}</h3>
+
+<div class="info row-fluid detail">
+  <h4>{% trans "Load Balancing v2 Agent" %}</h4>
+  <hr class="header_rule">
+  <dl class="dl-horizontal">
+    <dt>{% trans "ID" %}</dt>
+    <dd>{{ agent.id|default:_("None") }}</dd>
+    <dt>{% trans "Alive" %}</dt>
+    <dd>{{ agent.alive|default:_("None") }}</dd>
+    <dt>{% trans "Description" %}</dt>
+    <dd>{{ agent.description|default:_("None") }}</dd>
+    <dt>{% trans "Binary" %}</dt>
+    <dd>{{ agent.binary|default:_("None") }}</dd>
+    <dt>{% trans "Admin State" %}</dt>
+    <dd>{{ agent.admin_state_up|default:_("None") }}</dd>
+    <dt>{% trans "Agent Type" %}</dt>
+    <dd>{{ agent.agent_type|default:_("None") }}</dd>
+    <dt>{% trans "Host" %}</dt>
+    <dd>{{ agent.host|default:_("None") }}</dd>
+    <dt>{% trans "Heartbeat Timestamp" %}</dt>
+    <dd>{{ agent.heartbeat_timestamp|default:_("None") }}</dd>
+    <dt>{% trans "Topic" %}</dt>
+    <dd>{{ agent.topic|default:_("None") }}</dd>
+    <dt>{% trans "Started At" %}</dt>
+    <dd>{{ agent.started_at|default:_("None") }}</dd>
+    <dt>{% trans "Created At" %}</dt>
+    <dd>{{ agent.created_at|default:_("None") }}</dd>
+  </dl>
+</div>
+
+{% if agent.configurations %}
+<div class="status detail">
+    <h4>{% trans "Configurations" %}</h4>
+    <hr class="header_rule">
+    <dl class="dl-horizontal">
+      <dt>{% trans "Device Drivers" %}</dt>
+      <dd>{{ agent.configurations.device_drivers }}</dd>
+      <dt>{% trans "Instances Quantity" %}</dt>
+      <dd>{{ agent.configurations.instances }}</dd>
+    </dl>
+</div>
+{% endif %}
