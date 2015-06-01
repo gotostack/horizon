@@ -22,7 +22,8 @@ class Manager(horizon.Dashboard):
     name = _("Manager")
     slug = "manager"
     panels = ('networks', 'routers',
-              'floating_ips', 'loadbalancers')
+              'floating_ips', 'loadbalancers',
+              'lbaas_v2_agents')
     default_panel = 'networks'
     permissions = ('openstack.roles.admin',)
 

@@ -12146,3 +12146,57 @@ msgstr "无法获取LVS %s"
 
 msgid "Unable to retrieve loadbalancer LVS Port list."
 msgstr "无法获取LVS列表"
+
+msgid "Lbaas v2 Agents"
+msgstr "负载均衡Agnet"
+
+msgid "Load Balancing v2 Agents"
+msgstr "负载均衡Agnet"
+
+msgid "Load Balancing v2 Agent"
+msgstr "负载均衡Agnet"
+
+msgid "Load Balancing v2 Agent Overview"
+msgstr "概要"
+
+msgid "Load Balancing v2 Agent Details"
+msgstr "详细信息"
+
+msgid "Agent Type"
+msgstr "类型"
+
+msgid "Alive"
+msgstr "运行"
+
+msgid "Binary Service"
+msgstr "二进制服务名"
+
+msgid "Heartbeat Timestamp"
+msgstr "心跳时间"
+
+msgid "Time since started"
+msgstr "启动时间"
+
+msgid "Binary"
+msgstr "二进制服务名"
+
+msgid "Started At"
+msgstr "启动时间"
+
+msgid "Configurations"
+msgstr "配置"
+
+msgid "Created At"
+msgstr "创建时间"
+
+msgid "Device Drivers"
+msgstr "负载均衡驱动"
+
+msgid "Instances Quantity"
+msgstr "负载均衡实例数量"
+
+msgid "Unable to list the loadbalancers on a loadbalancer v2 agent: %s."
+msgstr "无法获取agent \"%s\" 上的负载均衡器列表"
+
+msgid "Unable to retrieve details for agent \"%s\"."
+msgstr "无法获取agent \"%s\" 的详细信息"
