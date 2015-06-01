@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Agent Details"%}{% endblock %}
+
+{% block main %}
+<div class="row">
+  <div class="col-sm-12">
+    {% include "manager/lbaas_v2_agents/_detail_overview.html" %}
+    <hr>
+    <div id="loadbalancers">
+      {{ loadbalancers_table.render }}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -963,6 +963,12 @@ def agent_list(request, **params):
     return [Agent(a) for a in agents['agents']]
 
 
+def agent_get(request, agent_id, **params):
+    agent = neutronclient(request).show_agent(agent_id,
+                                              **params).get('agent')
+    return Agent(agent)
+
+
 def list_dhcp_agent_hosting_networks(request, network, **params):
     agents = neutronclient(request).list_dhcp_agent_hosting_networks(network,
                                                                      **params)
