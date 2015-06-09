@@ -62,43 +62,17 @@ UPDATELVSPORT_PATH = PATH_BASE + 'updatelvsport'
 class LoadBalancerTests(test.TestCase):
     @test.create_stubs({api.neutron: ('subnet_list',),
                         api.lbaas_v2: (
-                            'loadbalancer_list',
-                            'pool_list',
-                            'listener_list',
-                            'healthmonitor_list',
-                            'lvsport_list')})
+                            'loadbalancer_list',)})
     def test_index(self):
         subnets = self.subnets.list()
         loadbalancers = self.v2_loadbalancers.list()
-        listeners = self.v2_listeners.list()
-        pools = self.v2_pools.list()
-        healthmonitors = self.v2_healthmonitors.list()
-        lvs_ports = self.v2_lvs_ports.list()
 
         api.neutron.subnet_list(
             IsA(http.HttpRequest),
-            tenant_id=self.tenant.id).MultipleTimes() \
-            .AndReturn(subnets)
+            tenant_id=self.tenant.id).AndReturn(subnets)
         api.lbaas_v2.loadbalancer_list(
             IsA(http.HttpRequest),
-            tenant_id=self.tenant.id).MultipleTimes() \
-            .AndReturn(loadbalancers)
-        api.lbaas_v2.pool_list(
-            IsA(http.HttpRequest),
-            tenant_id=self.tenant.id).MultipleTimes() \
-            .AndReturn(pools)
-        api.lbaas_v2.listener_list(
-            IsA(http.HttpRequest),
-            tenant_id=self.tenant.id) \
-            .AndReturn(listeners)
-        api.lbaas_v2.healthmonitor_list(
-            IsA(http.HttpRequest),
-            tenant_id=self.tenant.id) \
-            .AndReturn(healthmonitors)
-        api.lbaas_v2.lvsport_list(
-            IsA(http.HttpRequest),
-            tenant_id=self.tenant.id) \
-            .AndReturn(lvs_ports)
+            tenant_id=self.tenant.id).AndReturn(loadbalancers)
 
         self.mox.ReplayAll()
 
@@ -112,34 +86,6 @@ class LoadBalancerTests(test.TestCase):
         self.assertEqual(len(loadbalancers), 1)
         row_actions = loadbalancers_table.get_row_actions(loadbalancers[0])
         self.assertEqual(len(row_actions), 4)
-
-        self.assertIn('listeners_table', res.context)
-        listeners_table = res.context['listeners_table']
-        listeners = listeners_table.data
-        self.assertEqual(len(listeners), 1)
-        row_actions = listeners_table.get_row_actions(listeners[0])
-        self.assertEqual(len(row_actions), 4)
-
-        self.assertIn('pools_table', res.context)
-        pools_table = res.context['pools_table']
-        pools = pools_table.data
-        self.assertEqual(len(pools), 1)
-        row_actions = pools_table.get_row_actions(pools[0])
-        self.assertEqual(len(row_actions), 4)
-
-        self.assertIn('healthmonitors_table', res.context)
-        healthmonitors_table = res.context['healthmonitors_table']
-        healthmonitors = healthmonitors_table.data
-        self.assertEqual(len(healthmonitors), 1)
-        row_actions = healthmonitors_table.get_row_actions(healthmonitors[0])
-        self.assertEqual(len(row_actions), 2)
-
-        self.assertIn('lvsports_table', res.context)
-        lvsports_table = res.context['lvsports_table']
-        lvsports = lvsports_table.data
-        self.assertEqual(len(lvsports), 1)
-        row_actions = lvsports_table.get_row_actions(lvsports[0])
-        self.assertEqual(len(row_actions), 2)
 
     def _add_loadbalancer_get(self,
                               with_service_type=True,

@@ -1,4 +1,5 @@
-# Copyright 2012,  Nachi Ueno,  NTT MCL,  Inc.
+# Copyright 2015 Letv Cloud Computing
+# All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 
 import horizon
@@ -25,4 +27,6 @@ class Routers(horizon.Panel):
     permissions = ('openstack.services.network',)
 
 
-dashboard.User.register(Routers)
+network_config = getattr(settings, 'OPENSTACK_NEUTRON_NETWORK', {})
+if network_config.get('enable_router', True):
+    dashboard.User.register(Routers)

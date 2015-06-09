@@ -50,6 +50,7 @@ class ListenersTab(tabs.TableTab):
     name = _("Listeners")
     slug = "listeners_tab"
     template_name = "horizon/common/_detail_table.html"
+    preload = False
 
     def get_listeners_data(self):
         tenant_id = self.request.user.tenant_id
@@ -79,6 +80,7 @@ class PoolsTab(tabs.TableTab):
     name = _("Pools")
     slug = "pools_tab"
     template_name = "horizon/common/_detail_table.html"
+    preload = False
 
     def get_pools_data(self):
         tenant_id = self.request.user.tenant_id
@@ -90,6 +92,7 @@ class HealthmonitorsTab(tabs.TableTab):
     name = _("Healthmonitors")
     slug = "healthmonitors_tab"
     template_name = "horizon/common/_detail_table.html"
+    preload = False
 
     def get_healthmonitors_data(self):
         tenant_id = self.request.user.tenant_id
@@ -101,6 +104,7 @@ class LVSPortTab(tabs.TableTab):
     name = _("LVS Ports")
     slug = "lvsports_tab"
     template_name = "horizon/common/_detail_table.html"
+    preload = False
 
     def get_lvsports_data(self):
         tenant_id = self.request.user.tenant_id

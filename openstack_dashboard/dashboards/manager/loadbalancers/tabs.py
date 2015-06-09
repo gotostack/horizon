@@ -50,6 +50,7 @@ class ListenersTab(tabs.TableTab):
     name = _("Listeners")
     slug = "listeners_tab"
     template_name = "horizon/common/_detail_table.html"
+    preload = False
 
     def get_listeners_data(self):
         loadbalancer_dict = dict([(
@@ -78,6 +79,7 @@ class PoolsTab(tabs.TableTab):
     name = _("Pools")
     slug = "pools_tab"
     template_name = "horizon/common/_detail_table.html"
+    preload = False
 
     def get_pools_data(self):
         tenant_dict = utils.get_tenants(self.request)
@@ -94,6 +96,7 @@ class HealthmonitorsTab(tabs.TableTab):
     name = _("Healthmonitors")
     slug = "healthmonitors_tab"
     template_name = "horizon/common/_detail_table.html"
+    preload = False
 
     def get_healthmonitors_data(self):
         tenant_dict = utils.get_tenants(self.request)
