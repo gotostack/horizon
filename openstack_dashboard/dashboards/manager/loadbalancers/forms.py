@@ -68,13 +68,10 @@ class UpdateLoadbalancer(UpdateBase):
 
 
 class UpdateListener(UpdateBase):
-    connection_limit = forms.ChoiceField(
-        choices=[('5000', '5000'),
-                 ('10000', '10000'),
-                 ('20000', '20000'),
-                 ('40000', '40000')],
-        label=_("Connection Limit"),
-        help_text=_("Maximum number of connections allowed."))
+    connection_limit = forms.IntegerField(
+        min_value=-1, label=_("Connection Limit"),
+        help_text=_("Maximum number of connections allowed "
+                    "for the loadbalancer or '-1' if the limit is not set"))
 
     def handle(self, request, context):
         context['admin_state_up'] = (context['admin_state_up'] == 'True')

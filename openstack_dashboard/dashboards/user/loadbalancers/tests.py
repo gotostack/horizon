@@ -294,7 +294,7 @@ class LoadBalancerTests(test.TestCase):
                 'loadbalancer_id': loadbalancer.id,
                 'protocol': listener.protocol,
                 'protocol_port': listener.protocol_port,
-                'connection_limit': '5000',
+                'connection_limit': 5000,
                 'admin_state_up': listener.admin_state_up}
         api.lbaas_v2.loadbalancer_list(
             IsA(http.HttpRequest),
@@ -332,7 +332,7 @@ class LoadBalancerTests(test.TestCase):
         data = {'id': listener.id,
                 'name': listener.name,
                 'description': listener.description,
-                'connection_limit': '5000',
+                'connection_limit': 5000,
                 'admin_state_up': listener.admin_state_up}
 
         api.lbaas_v2.listener_update(

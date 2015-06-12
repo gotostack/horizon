@@ -12200,3 +12200,6 @@ msgstr "无法获取agent \"%s\" 上的负载均衡器列表"
 
 msgid "Unable to retrieve details for agent \"%s\"."
 msgstr "无法获取agent \"%s\" 的详细信息"
+
+msgid "Maximum number of connections allowed for the loadbalancer or '-1' if the limit is not set"
+msgstr "负载均衡器的最大连接数，-1表示不设置连接数限制"
